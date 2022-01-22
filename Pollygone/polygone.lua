@@ -72,6 +72,7 @@ tanker=RECOVERYTANKER:New("USS Stennis", "Stennis AAR")
 tanker:SetTakeoffAir()
 tanker:SetRadio(250)
 tanker:SetModex(511)
+tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(1, "TKR")
 tanker:__Start(1)
 
