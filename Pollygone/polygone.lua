@@ -40,26 +40,32 @@ Atis_Sukhumi=ATIS:New(AIRBASE.Caucasus.Sukhumi_Babushara, ATIS_Sukhumi):SetRadio
 Atis_Kutasi=ATIS:New(AIRBASE.Caucasus.Kutaisi, ATIS_Kutaisi):SetRadioRelayUnitName("Radio Relay Kutasi"):SetActiveRunway("07"):SetTowerFrequencies(TOWER_Kutasi):SetTACAN(TACAN_Kutasi):AddILS(ILS_Kutasi, "07"):SetSRS(pathToSRS, 'female', 'en-GB', 5004):Start()
 
 -- BASES
-AIRBASE:FindByName(AIRBASE.Caucasus.Sukhumi_Babushara):GetCoordinate():CircleToAll(7500, 2, {1,1,0}, 1.0, {1,1,0}, 0.2)
-AIRBASE:FindByName(AIRBASE.Caucasus.Kutaisi):GetCoordinate():CircleToAll(7500, 2, {1,1,0}, 1.0, {1,1,0}, 0.2)
+ZONE:New("Kutasi"):GetCoordinate(0):CircleToAll(15000, -1, {0,1,0.5}, 1.0, {0,1,0.5}, 0.2 ,3)
+ZONE:New("Sukhumi"):GetCoordinate(0):CircleToAll(15000, -1, {0,1,0.5}, 1.0, {0,1,0.5}, 0.2, 3)
 
 -- BLUE Aux. flights
 Tanker_Shell = SPAWN:New("Tanker 70Y Shell"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup(function (shell_11) shell_11:CommandSetCallsign(1,0) end):InitRepeatOnLanding()
 Tanker_Texaco = SPAWN:New("Tanker 71Y Texaco"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup(function (texaco_11) texaco_11:CommandSetCallsign(1,0) end):InitRepeatOnLanding()
 AWACS_Overlord = SPAWN:New("EW-AWACS-1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup(function (overlord_11) overlord_11:CommandSetCallsign(1,0) end):InitRepeatOnLanding()
 
+-- F10 Map Markings
+ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0,0,1}, 1, 2, true)
+ZONE:New("TKR-2-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-2-2"):GetCoordinate(0), -1, {0,0,1}, 1, 2, true)
+ZONE:New("AWACS-1-1"):GetCoordinate(0):LineToAll(ZONE:New("AWACS-1-2"):GetCoordinate(0), -1, {0,0,1}, 1, 2, true)
+
 -- SAMs
 BLUE_SAM_1 = SPAWN:New("BLUE-SAM-01"):InitLimit(20, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
+--BLUE_SAM_SUKHUMI = SPAWN:New("Sukhumi-SAM"):InitLimit(13, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 BLUE_MANTIS = MANTIS:New("BLUE_MANTIS", "BLUE-SAM", "EW-AWACS", nil, coalition.side.BLUE, false):Start()
-
--- ZONES
-Shell_Zone = ZONE_POLYGON:New("Shell-Zone", GROUP:FindByName("Tanker 70Y Shell")):DrawZone(-1, {0,0,0.5}, 0.7, {0,0,0.5}, 0.3, 1)
-Texaco_Zone = ZONE_POLYGON:New("Texaco-Zone", GROUP:FindByName("Tanker 71Y Texaco")):DrawZone(-1, {0,0,0.5}, 0.7, {0,0,0.5}, 0.3, 1)
-Awacs_Zone_1 = ZONE_POLYGON:New("AWACS-Zone-1", GROUP:FindByName("EW-AWACS-1")):DrawZone(-1, {0.2,0.5,0.5}, 0.7, {0.2,0.5,0.5}, 0.4, 1)
 
 -- ###########################################################
 -- ###                      BLUE CV                        ###
 -- ###########################################################
+
+-- F10 Map Markings
+
+ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0,.5,1}, 1, 4, true)
+ZONE:New("CV-2"):GetCoordinate(0):LineToAll(ZONE:New("CV-3"):GetCoordinate(0), -1, {0,.5,1}, 1, 4, true)
 
 -- S-3B Recovery Tanker spawning in air.
 tanker=RECOVERYTANKER:New("USS Stennis", "Stennis AAR")
@@ -158,19 +164,6 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
   env.info(string.format("Player %s scored %.1f", name, score))
 end
 
-  
-
---function DisplayWind()
---  local wpa, wpp, wtot = AirbossStennis:GetWindOnDeck()
---  local sog = AirbossStennis.carrier:GetVelocityKNOTS()
---  local text = string.format("SOG=%.1f kts, HDG=%03d, turning=%s, state=%s \n", sog, Airboss_Stennis:GetHeading(), tostring(Airboss_Stennis.turning), Airboss_Stennis:GetState())
---  text = text .. string.format("WIND || %.1f, ==%.1f, total %.1f kts", UTILS.MpsToKnots(wpa), UTILS.MpsToKnots(wpp), UTILS.MpsToKnots(wtot))
---  UTILS.DisplayMissionTime(25)
---  MESSAGE:New(text, 25):ToAll()
---end
---
---SCHEDULER:New(nil, DisplayWind, {}, 30, 10)
-
 trainer = MISSILETRAINER:New(200,"Training mode")
 
 -- ###########################################################
@@ -180,12 +173,16 @@ trainer = MISSILETRAINER:New(200,"Training mode")
 -- ZONES -----------------------------------------------------
 
 A2A_Mineralnye_ZONE = ZONE_POLYGON:New("A2A_Mineralnye", GROUP:FindByName("A2A_Mineralnye")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
-A2A_Leninsky_ZONE = ZONE_POLYGON:New("A2A_Beslan", GROUP:FindByName("A2A_Beslan")):DrawZone(-1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
+A2A_Leninsky_ZONE = ZONE_POLYGON:New("A2A_Beslan", GROUP:FindByName("A2A_Beslan")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
+A2A_Krasnodar_ZONE = ZONE_POLYGON:New("A2A_Krasnodar", GROUP:FindByName("A2A_Krasnodar")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
+
 A2G_Sochi_ZONE = ZONE_AIRBASE:New(AIRBASE.Caucasus.Sochi_Adler, UTILS.NMToMeters(20)):DrawZone(-1, {0.5,0,1}, 1.0, {0.5,0,1}, 0.4, 2)
 
 CAP_Oktyabrskiy = ZONE_POLYGON:New("CAP_Oktyabrskiy", GROUP:FindByName("CAP_Oktyabrskiy")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
 CAP_Russkoye_N = ZONE_POLYGON:New("CAP_Russkoye_N", GROUP:FindByName("CAP_Russkoye_N")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
 CAP_Russkoye_E = ZONE_POLYGON:New("CAP_Russkoye_E", GROUP:FindByName("CAP_Russkoye_E")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
+
+BASE:E(GROUP:FindByName("A2A_Krasnodar"):GetTaskRoute())
 
 -- EWRS ------------------------------------------------------
 Mineralnye_EW_01 = SPAWN:New("RED1-EW-Mineralnye-EW-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
@@ -195,23 +192,49 @@ AWACS_Red_01 = SPAWN:New("RED2-EW-AWACS-1"):InitLimit( 1, 0 ):SpawnScheduled( 60
 Beslan_EW_01 = SPAWN:New("RED2-EW-Beslan-EW-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 Sochi_EW_01 = SPAWN:New("RED3-EW-Sochi-EW-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
 Sochi_EW_02 = SPAWN:New("RED3-EW-Sochi-EW-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_01 = SPAWN:New("Krasnodar-EWR-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_02 = SPAWN:New("Krasnodar-EWR-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_03 = SPAWN:New("Krasnodar-EWR-3"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_04 = SPAWN:New("Krasnodar-EWR-4"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_05 = SPAWN:New("Krasnodar-EWR-5"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_06 = SPAWN:New("Krasnodar-EWR-6"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_07 = SPAWN:New("Krasnodar-EWR-7"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_08 = SPAWN:New("Krasnodar-EWR-8"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Krasnodar_EW_09 = SPAWN:New("Krasnodar-EWR-9"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
 
 -- SAMS ------------------------------------------------------
+Krasnodar_SAM = SPAWN:New("Krasnodar-SAM"):InitLimit(14, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
+Krasnodar_MANTIS = MANTIS:New("Krasnodar-MANTIS", "Krasnodar-SAM", "Krasnodar-EW", nil, coalition.side.RED, false):Start()
+ZONE:New("Krasnodar"):GetCoordinate(0):CircleToAll(40000, -1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
 
 Mineralnye_SHORAD = SPAWN:New("Mineralnye-SHORAD"):InitLimit(3, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 Mineralnye_MANTIS = MANTIS:New("Mineralnye-MANTIS", "Mineralnye-SHORAD", "RED1-EW", nil, coalition.side.RED, false):Start()
+ZONE:New("Mineralnye"):GetCoordinate(0):CircleToAll(15000, -1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
 
 Nalchik_SHORAD = SPAWN:New("Nalchik-SHORAD"):InitLimit(3, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 Nalchik_MANTIS = MANTIS:New("Nalchik-MANTIS", "Nalchik-SHORAD", "RED2-EW", nil, coalition.side.RED, false):Start()
+ZONE:New("Nalchik"):GetCoordinate(0):CircleToAll(15000, -1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
 
 Beslan_SHORAD = SPAWN:New("Beslan-SHORAD"):InitLimit(3, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 Beslan_MANTIS = MANTIS:New("Beslan-IADS", "Beslan-SHORAD", "RED2-EW", nil, coalition.side.RED, false):Start()
+ZONE:New("Beslan"):GetCoordinate(0):CircleToAll(15000, -1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
 
 Mozdok_SHORAD = SPAWN:New("Mozdok-SHORAD"):InitLimit(3, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 Mozdok_MANTIS = MANTIS:New("Mozdok-IADS", "Mozdok-SHORAD", "RED2-EW", nil, coalition.side.RED, false):Start()
+ZONE:New("Mozdok"):GetCoordinate(0):CircleToAll(15000, -1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
 
 Sochi_SHORAD = SPAWN:New("Sochi-MERAD"):InitLimit(16, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 Sochi_MANTIS = MANTIS:New("Sochi-MANTIS", "Sochi-SHORAD", "RED3-EW", nil, coalition.side.RED, false):Start()
+ZONE:New("Sochi"):GetCoordinate(0):CircleToAll(50000, -1, {1,0,0}, 1.0, {1,0,0}, 0.4, 2)
+
+-- FLIGHTS ---------------------------------------------------
+BIGBIRD_1 = SPAWN:New("A2A-Target-1"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
+BIGBIRD_2 = SPAWN:New("A2A-Target-2"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
+BIGBIRD_3 = SPAWN:New("A2A-Target-3"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
+BIGBIRD_4 = SPAWN:New("A2A-Target-4"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
+BIGBIRD_5 = SPAWN:New("A2A-Target-5"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
+BIGBIRD_6 = SPAWN:New("A2A-Target-6"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
+
 
 -- DSIPATCHERS -----------------------------------------------
 
