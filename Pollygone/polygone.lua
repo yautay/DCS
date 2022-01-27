@@ -66,6 +66,7 @@ BLUE_MANTIS = MANTIS:New("BLUE_MANTIS", "BLUE-SAM", "EW-AWACS", nil, coalition.s
 
 ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0,.5,1}, 1, 4, true)
 ZONE:New("CV-2"):GetCoordinate(0):LineToAll(ZONE:New("CV-3"):GetCoordinate(0), -1, {0,.5,1}, 1, 4, true)
+ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0,.5,1}, 1, {0,.5,1}, 0.4, 2)
 
 -- S-3B Recovery Tanker spawning in air.
 tanker=RECOVERYTANKER:New("USS Stennis", "Stennis AAR")
@@ -176,14 +177,14 @@ trainer = MISSILETRAINER:New(200,"Training mode")
 A2A_Mineralnye_ZONE = ZONE_POLYGON:New("A2A_Mineralnye", GROUP:FindByName("A2A_Mineralnye")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
 A2A_Leninsky_ZONE = ZONE_POLYGON:New("A2A_Beslan", GROUP:FindByName("A2A_Beslan")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
 A2A_Krasnodar_ZONE = ZONE_POLYGON:New("A2A_Krasnodar", GROUP:FindByName("A2A_Krasnodar")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
+A2A_Sevastopol_ZONE = ZONE_POLYGON:New("A2A_Sevastopol", GROUP:FindByName("A2A_Sevastopol")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
 
 A2G_Sochi_ZONE = ZONE_AIRBASE:New(AIRBASE.Caucasus.Sochi_Adler, UTILS.NMToMeters(20)):DrawZone(-1, {0.5,0,1}, 1.0, {0.5,0,1}, 0.4, 2)
 
 CAP_Oktyabrskiy = ZONE_POLYGON:New("CAP_Oktyabrskiy", GROUP:FindByName("CAP_Oktyabrskiy")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
 CAP_Russkoye_N = ZONE_POLYGON:New("CAP_Russkoye_N", GROUP:FindByName("CAP_Russkoye_N")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
 CAP_Russkoye_E = ZONE_POLYGON:New("CAP_Russkoye_E", GROUP:FindByName("CAP_Russkoye_E")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
-
-BASE:E(GROUP:FindByName("A2A_Krasnodar"):GetTaskRoute())
+CAP_Sevastopol = ZONE_POLYGON:New("CAP_Sevastopol", GROUP:FindByName("CAP_Sevastopol")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
 
 -- EWRS ------------------------------------------------------
 Mineralnye_EW_01 = SPAWN:New("RED1-EW-Mineralnye-EW-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
@@ -202,6 +203,9 @@ Krasnodar_EW_06 = SPAWN:New("Krasnodar-EWR-6"):InitLimit(1, 0):SpawnScheduled(UT
 Krasnodar_EW_07 = SPAWN:New("Krasnodar-EWR-7"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
 Krasnodar_EW_08 = SPAWN:New("Krasnodar-EWR-8"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
 Krasnodar_EW_09 = SPAWN:New("Krasnodar-EWR-9"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Sevastopol_EW_01 = SPAWN:New("Sevastopol-EWR-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+Sevastopol_EW_02 = SPAWN:New("Sevastopol-EWR-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
+
 
 -- SAMS ------------------------------------------------------
 Krasnodar_SAM = SPAWN:New("Krasnodar-SAM"):InitLimit(14, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
@@ -269,20 +273,37 @@ A2A_Leninsky_CC:SetDefaultDamageThreshold(0.70)
 A2A_Leninsky_CC:SetEngageRadius(UTILS.NMToMeters(120))
 A2A_Leninsky_CC:SetDisengageRadius(UTILS.NMToMeters(80))
 
-A2A_Leninsky_CC:SetSquadron("201th Fighter Aviation Regiment", AIRBASE.Caucasus.Nalchik, "Nalchik_mig29")
-A2A_Leninsky_CC:SetSquadronCap("201th Fighter Aviation Regiment", CAP_Oktyabrskiy, UTILS.FeetToMeters(19000), UTILS.FeetToMeters(27000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(400), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-A2A_Leninsky_CC:SetSquadronCapInterval("201th Fighter Aviation Regiment", 1, 30, 90, 1 )
-A2A_Leninsky_CC:SetSquadronGrouping("201th Fighter Aviation Regiment", 2)
-A2A_Leninsky_CC:SetSquadronOverhead("201th Fighter Aviation Regiment", 1)
+A2A_Leninsky_CC:SetSquadron("25th Fighter Aviation Regiment", AIRBASE.Caucasus.Nalchik, "Nalchik_mig29")
+A2A_Leninsky_CC:SetSquadronCap("25th Fighter Aviation Regiment", CAP_Oktyabrskiy, UTILS.FeetToMeters(19000), UTILS.FeetToMeters(27000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(400), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
+A2A_Leninsky_CC:SetSquadronCapInterval("25th Fighter Aviation Regiment", 1, 30, 90, 1 )
+A2A_Leninsky_CC:SetSquadronGrouping("25th Fighter Aviation Regiment", 2)
+A2A_Leninsky_CC:SetSquadronOverhead("25th Fighter Aviation Regiment", 1)
 
-A2A_Leninsky_CC:SetSquadron("201th Fighter Aviation Regiment", AIRBASE.Caucasus.Nalchik, "Mozdok_su27")
-A2A_Leninsky_CC:SetSquadronCap("201th Fighter Aviation Regiment", CAP_Oktyabrskiy, UTILS.FeetToMeters(25000), UTILS.FeetToMeters(35000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(400), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-A2A_Leninsky_CC:SetSquadronCapInterval("201th Fighter Aviation Regiment", 1, 60, 90, 1 )
-A2A_Leninsky_CC:SetSquadronGrouping("201th Fighter Aviation Regiment", 2)
-A2A_Leninsky_CC:SetSquadronOverhead("201th Fighter Aviation Regiment", 1)
+A2A_Leninsky_CC:SetSquadron("207th Fighter Aviation Regiment", AIRBASE.Caucasus.Nalchik, "Mozdok_su27")
+A2A_Leninsky_CC:SetSquadronCap("207th Fighter Aviation Regiment", CAP_Oktyabrskiy, UTILS.FeetToMeters(25000), UTILS.FeetToMeters(35000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(400), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
+A2A_Leninsky_CC:SetSquadronCapInterval("207th Fighter Aviation Regiment", 1, 60, 90, 1 )
+A2A_Leninsky_CC:SetSquadronGrouping("207th Fighter Aviation Regiment", 2)
+A2A_Leninsky_CC:SetSquadronOverhead("207th Fighter Aviation Regiment", 1)
 
 --A2A_Leninsky_CC:SetSquadron("Heavy Fighter Aviation Regiment", AIRBASE.Caucasus.Mozdok, "Mozdok_mig31")
 --A2A_Leninsky_CC:SetSquadronCap("Heavy Fighter Aviation Regiment", CAP_Oktyabrskiy, UTILS.FeetToMeters(30000), UTILS.FeetToMeters(40000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(400), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
 --A2A_Leninsky_CC:SetSquadronCapInterval("Heavy Fighter Aviation Regiment", 1, 180, 600, 1 )
 --A2A_Leninsky_CC:SetSquadronGrouping("Heavy Fighter Aviation Regiment", 2)
 --A2A_Leninsky_CC:SetSquadronOverhead("Heavy Fighter Aviation Regiment", 0.5)
+
+A2A_Sevastopol_CC = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"Sevastopol-EWR"}):FilterStart(), 100000))
+A2A_Sevastopol_CC:SetBorderZone(A2A_Sevastopol_ZONE)
+A2A_Sevastopol_CC:SetDefaultTakeoffFromRunway() 
+A2A_Sevastopol_CC:SetDefaultLandingAtRunway()
+A2A_Sevastopol_CC:SetDefaultFuelThreshold(0.20)
+A2A_Sevastopol_CC:SetDefaultDamageThreshold(0.60)
+A2A_Sevastopol_CC:SetEngageRadius(UTILS.NMToMeters(100))
+A2A_Sevastopol_CC:SetDisengageRadius(UTILS.NMToMeters(140))
+
+A2A_Sevastopol_CC:SetSquadron("2nd Naval Fighter Regiment", AIRBASE.Caucasus.Anapa_Vityazevo, "Anapa_Su33")
+A2A_Sevastopol_CC:SetSquadronCap("2nd Naval Fighter Regiment", CAP_Sevastopol, UTILS.FeetToMeters(20000), UTILS.FeetToMeters(40000), UTILS.KnotsToKmph(240), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
+A2A_Sevastopol_CC:SetSquadronCapInterval("2nd Naval Fighter Regiment", 1, 20, 40, 1 )
+A2A_Sevastopol_CC:SetSquadronGrouping("2nd Naval Fighter Regiment", 1)
+A2A_Sevastopol_CC:SetSquadronOverhead("2nd Naval Fighter Regiment", 1)
+
+
