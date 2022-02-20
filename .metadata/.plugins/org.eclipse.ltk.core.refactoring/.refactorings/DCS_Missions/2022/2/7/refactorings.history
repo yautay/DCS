@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;/DCS_Missions/Pollygone&apos; to &apos;Cau-Training&apos;&#x0D;&#x0A;- Original element: &apos;Pollygone&apos;" description="Rename resource &apos;Pollygone&apos;" flags="7" id="org.eclipse.dltk.ui.rename.resource" input="Pollygone" name="Cau-Training" stamp="1644685698821" version="1.0"/>&#x0A;<refactoring comment="Rename resource &apos;/DCS_Missions/PollygoneSC&apos; to &apos;Cau-Training-SC&apos;&#x0D;&#x0A;- Original element: &apos;PollygoneSC&apos;" description="Rename resource &apos;PollygoneSC&apos;" flags="7" id="org.eclipse.dltk.ui.rename.resource" input="PollygoneSC" name="Cau-Training-SC" stamp="1644685724416" version="1.0"/>
-</session>
