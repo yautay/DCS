@@ -65,22 +65,22 @@ AirbossStennis:SetMarshalRadio(305, "AM"):SetLSORadio(264, "AM")
 
 -- Add recovery windows:
 -- Case I from 9 to 10 am.
-local window1=AirbossStennis:AddRecoveryWindow( "6:00", "6:15", 1, nil, true, 25)
-local window2=AirbossStennis:AddRecoveryWindow( "7:00", "7:15", 1, nil, true, 25)
-local window3=AirbossStennis:AddRecoveryWindow( "8:00", "8:15", 1, nil, true, 25)
-local window4=AirbossStennis:AddRecoveryWindow( "9:00", "9:15", 1, nil, true, 25)
-local window5=AirbossStennis:AddRecoveryWindow( "10:00", "10:15", 1, nil, true, 25)
-local window6=AirbossStennis:AddRecoveryWindow( "11:00", "11:15", 1, nil, true, 25)
-local window7=AirbossStennis:AddRecoveryWindow( "12:00", "12:15", 1, nil, true, 25)
-local window8=AirbossStennis:AddRecoveryWindow( "13:00", "13:15", 1, nil, true, 25)
-local window9=AirbossStennis:AddRecoveryWindow( "14:00", "14:15", 1, nil, true, 25)
-local window10=AirbossStennis:AddRecoveryWindow( "15:00", "15:15", 1, nil, true, 25)
+-- local window1=AirbossStennis:AddRecoveryWindow( "6:00", "6:15", 1, nil, true, 25)
+-- local window2=AirbossStennis:AddRecoveryWindow( "7:00", "7:15", 1, nil, true, 25)
+-- local window3=AirbossStennis:AddRecoveryWindow( "8:00", "8:15", 1, nil, true, 25)
+-- local window4=AirbossStennis:AddRecoveryWindow( "9:00", "9:15", 1, nil, true, 25)
+-- local window5=AirbossStennis:AddRecoveryWindow( "10:00", "10:15", 1, nil, true, 25)
+-- local window6=AirbossStennis:AddRecoveryWindow( "11:00", "11:15", 1, nil, true, 25)
+-- local window7=AirbossStennis:AddRecoveryWindow( "12:00", "12:15", 1, nil, true, 25)
+-- local window8=AirbossStennis:AddRecoveryWindow( "13:00", "13:15", 1, nil, true, 25)
+-- local window9=AirbossStennis:AddRecoveryWindow( "14:00", "14:15", 1, nil, true, 25)
+-- local window10=AirbossStennis:AddRecoveryWindow( "15:00", "15:15", 1, nil, true, 25)
 -- Case II with +15 degrees holding offset from 15:00 for 60 min.
 --local window2=AirbossStennis:AddRecoveryWindow("15:00", "16:00", 2,  15, true, 23)
 -- Case III with +30 degrees holding offset from 2100 to 2200.
 --local window3=AirbossStennis:AddRecoveryWindow("21:00", "22:00", 3,  30, true, 21)
 
-AirbossStennis:SetMenuSingleCarrier()
+-- AirbossStennis:SetMenuSingleCarrier()
 AirbossStennis:SetSoundfilesFolder("Airboss Soundfiles/")
 AirbossStennis:SetMenuRecovery(30, 25, false)
 AirbossStennis:SetDespawnOnEngineShutdown()
