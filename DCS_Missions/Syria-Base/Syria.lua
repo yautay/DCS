@@ -1,7 +1,15 @@
 _SETTINGS:SetPlayerMenuOff()
 
+
 --DO NOT EDIT
 function repl(dirty)
+    local text =
+        dirty:gsub("&", ""):gsub('"', ""):gsub("|", " "):gsub("'", ""):gsub("%%", ""):gsub("/", ""):gsub("\\", ""):gsub(
+        ">",
+        ""
+    )
+    local clean = text:gsub("<", "")
+    return clean
 end
 
 function BotSay(msg)
@@ -22,6 +30,13 @@ function Birth:OnEventBirth(EventData)
     BotSay(txt)
 end
 
+--SAMPLE MISSION START EVENT
+MS = EVENTHANDLER:New()
+MS:HandleEvent(EVENTS.MissionStart)
+
+function MS:OnEventMissionStart(EventData)
+    BotSay("Mission STARTED !!!")
+end
 
 --SAMPLE TAKEOFF EVENT
 TO = EVENTHANDLER:New()
