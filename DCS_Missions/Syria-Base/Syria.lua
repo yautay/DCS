@@ -1,27 +1,18 @@
 _SETTINGS:SetPlayerMenuOff()
 
 --DO NOT EDIT
-function repl(dirty) --overly visual function to remove specific special characters
-    local text =
-        dirty:gsub("&", ""):gsub('"', ""):gsub("|", " "):gsub("'", ""):gsub("%%", ""):gsub("/", ""):gsub("\\", ""):gsub(
-        ">",
-        ""
-    )
-    local clean = text:gsub("<", "")
-    return clean
+function repl(dirty)
 end
 
 function BotSay(msg)
     local message = repl(msg)
     local text =
-        'C:\\Webhook\\DiscordSendWebhook.exe -m "' ..
+        'F:\\DiscordSendWebhook.exe -m "' ..
         message ..
             '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE" '
     os.execute(text)
 end
 
---EDIT BELOW TO SUIT USING BotSay() to deliver the Message
---REQUIRES MOOSE FOR THE EVENT HANDLERS
 Birth = EVENTHANDLER:New()
 Birth:HandleEvent(EVENTS.Birth)
 
@@ -30,7 +21,7 @@ function Birth:OnEventBirth(EventData)
     local txt = playername .. " has entered slot"
     BotSay(txt)
 end
---end EH function birth
+
 
 --SAMPLE TAKEOFF EVENT
 TO = EVENTHANDLER:New()
@@ -231,6 +222,7 @@ AirbossStennis:Load()
 AirbossStennis:SetAutoSave()
 AirbossStennis:SetTrapSheet()
 AirbossStennis:Start()
+AirbossStennis:SetHandleAIOFF()
 
 --- Function called when recovery tanker is started.
 function tanker:OnAfterStart(From, Event, To)
@@ -253,19 +245,19 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
     local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
 
-    local http = require("socket.http")
-
-    local payload = [[ {"username":"NAME","avatar_url":"","content":"MESSAGE"} ]]
-
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
 
     local score = tonumber(Grade.points)
+    local gradeLso = tostring(Grade.grade)
+    local timeInGrove = tonumber(Grade.Tgroove)
+    local wire = tonumber(Grade.wire)
     local name = tostring(PlayerData.name)
 
     BotSay(string.format("Player %s scored %.1f", name, score))
-    
+    BotSay(string.format("details: wire: %d time in Grove: %d LSO grade: %s" wire, timeInGrove, gradeLso))
+
     -- Report LSO grade to dcs.log file.
     env.info(string.format("Player %s scored %.1f", name, score))
 end
