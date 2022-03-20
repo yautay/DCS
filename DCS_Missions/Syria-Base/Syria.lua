@@ -1,5 +1,134 @@
 _SETTINGS:SetPlayerMenuOff()
 
+--DO NOT EDIT
+function repl(dirty) --overly visual function to remove specific special characters
+    local text =
+        dirty:gsub("&", ""):gsub('"', ""):gsub("|", " "):gsub("'", ""):gsub("%%", ""):gsub("/", ""):gsub("\\", ""):gsub(
+        ">",
+        ""
+    )
+    local clean = text:gsub("<", "")
+    return clean
+end
+
+function BotSay(msg)
+    local message = repl(msg)
+    local text =
+        'C:\\Webhook\\DiscordSendWebhook.exe -m "' ..
+        message ..
+            '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE" '
+    os.execute(text)
+end
+
+--EDIT BELOW TO SUIT USING BotSay() to deliver the Message
+--REQUIRES MOOSE FOR THE EVENT HANDLERS
+Birth = EVENTHANDLER:New()
+Birth:HandleEvent(EVENTS.Birth)
+
+function Birth:OnEventBirth(EventData)
+    local playername = EventData.IniPlayerName
+    local txt = playername .. " has entered slot"
+    BotSay(txt)
+end
+--end EH function birth
+
+--SAMPLE TAKEOFF EVENT
+TO = EVENTHANDLER:New()
+TO:HandleEvent(EVENTS.Takeoff)
+
+function TO:OnEventTakeoff(EventData)
+    if EventData.IniPlayerName == nil then
+        -- its not a player we are going to simply exit this
+        return false
+    end
+    local who = EventData.IniPlayerName or "A player"
+    local t = EventData.IniTypeName or "a plane"
+    local where = EventData.PlaceName or "somewhere"
+    local txt = who .. " has taken off from " .. where .. " in a " .. t .. ""
+    BotSay(txt)
+end
+
+--SAMPLE LANDING EVENT
+LA = EVENTHANDLER:New()
+LA:HandleEvent(EVENTS.Land)
+
+function LA:OnEventLand(EventData)
+    if EventData.IniPlayerName == nil then
+        -- its not a player we are going to simply exit this
+        return false
+    end
+    local who = EventData.IniPlayerName or "A player"
+    local t = EventData.IniTypeName or "a plane"
+    local where = EventData.PlaceName or "somewhere"
+    local txt = who .. " has landed at " .. where .. " in a " .. t .. ""
+    BotSay(txt)
+end
+
+--SAMPLE KILL EVENT
+KILL = EVENTHANDLER:New()
+KILL:HandleEvent(EVENTS.Kill)
+
+function KILL:OnEventKill(EventData)
+    if EventData.IniPlayerName == nil then
+        -- its not a player we are going to simply exit this
+        return false
+    end
+    local who = EventData.IniPlayerName or "A player"
+    local t = EventData.IniTypeName or "a plane"
+    local tgt = EventData.TgtTypeName or "a target"
+    local wep = EventData.weapon_name or "a weapon"
+    if EventData.IniGroupName then
+        local grp = GROUP:FindByName(EventData.IniGroupName)
+        local coa = grp:GetCoalitionName()
+        local bullseye = grp:GetCoordinate():ToStringBULLS(grp:GetCoalition(), _SETTINGS:SetImperial())
+        local txt =
+            who .. " in their " .. coa .. " " .. t .. " has killed a " .. tgt .. " with a " .. wep .. " at " .. bullseye
+        BotSay(txt)
+    end
+end
+--SAMPLE CRASH EVENT
+CRASH = EVENTHANDLER:New()
+CRASH:HandleEvent(EVENTS.Crash)
+
+function CRASH:OnEventCrash(EventData)
+    if EventData.IniPlayerName == nil then
+        -- its not a player we are going to simply exit this
+        return false
+    end
+    local who = EventData.IniPlayerName or "A player"
+    local t = EventData.IniTypeName or "plane"
+    local txt = who .. " crashed their " .. t
+    BotSay(txt)
+end
+
+--SAMPLE EJECTION EVENT
+EJECT = EVENTHANDLER:New()
+EJECT:HandleEvent(EVENTS.Ejection)
+
+function EJECT:OnEventEjection(EventData)
+    if EventData.IniPlayerName == nil then
+        -- its not a player we are going to simply exit this
+        return false
+    end
+    local who = EventData.IniPlayerName or "A player"
+    local t = EventData.IniTypeName or "plane"
+    local txt = who .. " ejected from their " .. t
+
+    BotSay(txt)
+end
+
+--SAMPLE CSAR EVENT
+MAYDAY = EVENTHANDLER:New()
+MAYDAY:HandleEvent(EVENTS.LandingAfterEjection)
+
+function MAYDAY:OnEventLandingAfterEjection(EventData)
+    local place = EventData.initiator:getPoint()
+    local _coord = COORDINATE:New(place.x, place.y, place.z)
+    _coord:ToStringBULLS(2, _SETTINGS:SetImperial())
+    local txt = "MAYDAY! MAYDAY! Pilot down, Bullseye " .. _coord
+    BotSay(txt)
+end
+
 -- CONSTS
 
 -- ###########################################################
@@ -7,14 +136,29 @@ _SETTINGS:SetPlayerMenuOff()
 -- ###########################################################
 
 -- BLUE Aux. flights
-Tanker_Shell = SPAWN:New("Tanker 70Y Shell"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup(function (shell_11) shell_11:CommandSetCallsign(1,0) end):InitRepeatOnLanding()
-Tanker_Texaco = SPAWN:New("Tanker 71Y Texaco"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup(function (texaco_11) texaco_11:CommandSetCallsign(1,0) end):InitRepeatOnLanding()
-AWACS_Overlord = SPAWN:New("EW-AWACS-1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup(function (overlord_11) overlord_11:CommandSetCallsign(1,0) end):InitRepeatOnLanding()
+Tanker_Shell =
+    SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    function(shell_11)
+        shell_11:CommandSetCallsign(1, 0)
+    end
+):InitRepeatOnLanding()
+Tanker_Texaco =
+    SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    function(texaco_11)
+        texaco_11:CommandSetCallsign(1, 0)
+    end
+):InitRepeatOnLanding()
+AWACS_Overlord =
+    SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    function(overlord_11)
+        overlord_11:CommandSetCallsign(1, 0)
+    end
+):InitRepeatOnLanding()
 
 -- F10 Map Markings
-ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0,0,1}, 1, 2, true, "SHELL")
-ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0,0,1}, 1, {0,0,1}, .3, 2, true, "TEXACO")
-ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0,0,1}, 1, {0,0,1}, .3, 2, true, "TEXACO")
+ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL")
+ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO")
+ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO")
 
 -- SAMs
 --BLUE_SAM_1 = SPAWN:New("BLUE-SAM-01"):InitLimit(20, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
@@ -27,13 +171,13 @@ ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0,0,1}, 1, {0,0,1}, 
 
 -- F10 Map Markings
 
-ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0,.5,1}, 1, 4, true)
-ZONE:New("CV-2"):GetCoordinate(0):LineToAll(ZONE:New("CV-3"):GetCoordinate(0), -1, {0,.5,1}, 1, 4, true)
-ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0,.5,1}, 1, {0,.5,1}, 0.4, 2)
+ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0, .5, 1}, 1, 4, true)
+ZONE:New("CV-2"):GetCoordinate(0):LineToAll(ZONE:New("CV-3"):GetCoordinate(0), -1, {0, .5, 1}, 1, 4, true)
+ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0, .5, 1}, 1, {0, .5, 1}, 0.4, 2)
 
 -- S-3B Recovery Tanker.
 -- ARCO 250.00 1->"TRK" A6 250KIAS
-tanker=RECOVERYTANKER:New("USS Stennis", "USS Stennis AAR")
+tanker = RECOVERYTANKER:New("USS Stennis", "USS Stennis AAR")
 tanker:SetTakeoffHot()
 tanker:SetRadio(250)
 tanker:SetModex(511)
@@ -43,7 +187,7 @@ tanker:__Start(1)
 
 -- E-2D AWACS spawning on Stennis.
 -- Wizard 260.00 A20
-awacs=RECOVERYTANKER:New("USS Stennis", "USS Stennis AWACS")
+awacs = RECOVERYTANKER:New("USS Stennis", "USS Stennis AWACS")
 awacs:SetAWACS()
 awacs:SetRadio(260)
 awacs:SetAltitude(20000)
@@ -53,13 +197,12 @@ awacs:SetModex(611)
 awacs:__Start(1)
 
 -- Rescue Helo spawning on Stennis.
-rescuehelo=RESCUEHELO:New("USS Stennis", "USS Stennis SAR")
+rescuehelo = RESCUEHELO:New("USS Stennis", "USS Stennis SAR")
 rescuehelo:SetModex(42)
 rescuehelo:__Start(1)
 
-
 -- Create AIRBOSS object.
-AirbossStennis=AIRBOSS:New("USS Stennis")
+AirbossStennis = AIRBOSS:New("USS Stennis")
 AirbossStennis:SetTACAN(74, "X", "STN"):SetICLS(1, "STN")
 AirbossStennis:SetMarshalRadio(305, "AM"):SetLSORadio(264, "AM")
 
@@ -89,48 +232,71 @@ AirbossStennis:SetAutoSave()
 AirbossStennis:SetTrapSheet()
 AirbossStennis:Start()
 
-
 --- Function called when recovery tanker is started.
-function tanker:OnAfterStart(From,Event,To)
-  AirbossStennis:SetRecoveryTanker(tanker)  
-  AirbossStennis:SetRadioRelayLSO(self:GetUnitName()) 
+function tanker:OnAfterStart(From, Event, To)
+    AirbossStennis:SetRecoveryTanker(tanker)
+    AirbossStennis:SetRadioRelayLSO(self:GetUnitName())
 end
 
 --- Function called when AWACS is started.
-function awacs:OnAfterStart(From,Event,To)
-  AirbossStennis:SetAWACS(awacs)
+function awacs:OnAfterStart(From, Event, To)
+    AirbossStennis:SetAWACS(awacs)
 end
 
-
 --- Function called when rescue helo is started.
-function rescuehelo:OnAfterStart(From,Event,To)
-  AirbossStennis:SetRadioRelayMarshal(self:GetUnitName())
+function rescuehelo:OnAfterStart(From, Event, To)
+    AirbossStennis:SetRadioRelayMarshal(self:GetUnitName())
 end
 
 --- Function called when a player gets graded by the LSO.
 function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
-  local PlayerData=playerData --Ops.Airboss#AIRBOSS.PlayerData
-  local Grade=grade --Ops.Airboss#AIRBOSS.LSOgrade
+    local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
+    local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
 
-  ----------------------------------------
-  --- Interface your Discord bot here! ---
-  ----------------------------------------
-  
-  local score=tonumber(Grade.points)
-  local name=tostring(PlayerData.name)
+    local http = require("socket.http")
 
-  -- Report LSO grade to dcs.log file.
-  env.info(string.format("Player %s scored %.1f", name, score))
+    local payload = [[ {"username":"NAME","avatar_url":"","content":"MESSAGE"} ]]
+
+    ----------------------------------------
+    --- Interface your Discord bot here! ---
+    ----------------------------------------
+
+    local score = tonumber(Grade.points)
+    local name = tostring(PlayerData.name)
+
+    BotSay(string.format("Player %s scored %.1f", name, score))
+    
+    -- Report LSO grade to dcs.log file.
+    env.info(string.format("Player %s scored %.1f", name, score))
 end
 
 -- TF CAP
 
-TF_CAP_ZONE_BORDER = ZONE_UNIT:New("TF-CAP-ZONE", UNIT:FindByName("USS Stennis"), UTILS.NMToMeters(50)):DrawZone(-1, {1,.8,0}, 1.0, {1,.8,0}, 0.4, 2)
-TF_CAP_ZONE_CAP = ZONE_UNIT:New("TF-CAP-ZONE", UNIT:FindByName("USS Stennis"), UTILS.NMToMeters(20)):DrawZone(-1, {1,.8,0}, 1.0, {1,.8,0}, 0.4, 2)
+TF_CAP_ZONE_BORDER =
+    ZONE_UNIT:New("TF-CAP-ZONE", UNIT:FindByName("USS Stennis"), UTILS.NMToMeters(50)):DrawZone(
+    -1,
+    {1, .8, 0},
+    1.0,
+    {1, .8, 0},
+    0.4,
+    2
+)
+TF_CAP_ZONE_CAP =
+    ZONE_UNIT:New("TF-CAP-ZONE", UNIT:FindByName("USS Stennis"), UTILS.NMToMeters(20)):DrawZone(
+    -1,
+    {1, .8, 0},
+    1.0,
+    {1, .8, 0},
+    0.4,
+    2
+)
 
-TF_Stennis_CC = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"TF CV Stennis", "USS Stennis AWACS"}):FilterStart(), 150000))
+TF_Stennis_CC =
+    AI_A2A_DISPATCHER:New(
+    DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"TF CV Stennis", "USS Stennis AWACS"}):FilterStart(), 150000)
+)
 TF_Stennis_CC:SetBorderZone(TF_CAP_ZONE_BORDER)
-TF_Stennis_CC:SetDefaultTakeoffFromParkingHot() 
+TF_Stennis_CC:SetDefaultTakeoffFromParkingHot()
 TF_Stennis_CC:SetDefaultLandingAtRunway()
 TF_Stennis_CC:SetDefaultFuelThreshold(0.20)
 TF_Stennis_CC:SetDefaultDamageThreshold(0.90)
@@ -138,8 +304,18 @@ TF_Stennis_CC:SetEngageRadius(UTILS.NMToMeters(50))
 TF_Stennis_CC:SetDisengageRadius(UTILS.NMToMeters(50))
 
 TF_Stennis_CC:SetSquadron("VF-103", "USS Stennis", "CAP-Stennis-1")
-TF_Stennis_CC:SetSquadronCap("VF-103", TF_CAP_ZONE_CAP, UTILS.FeetToMeters(25000), UTILS.FeetToMeters(40000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-TF_Stennis_CC:SetSquadronCapInterval("VF-103", 1, 60, 180, 1 )
+TF_Stennis_CC:SetSquadronCap(
+    "VF-103",
+    TF_CAP_ZONE_CAP,
+    UTILS.FeetToMeters(25000),
+    UTILS.FeetToMeters(40000),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(320),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(900),
+    "BARO"
+)
+TF_Stennis_CC:SetSquadronCapInterval("VF-103", 1, 60, 180, 1)
 TF_Stennis_CC:SetSquadronGrouping("VF-103", 2)
 TF_Stennis_CC:SetSquadronOverhead("VF-103", 1)
 
@@ -147,18 +323,32 @@ TF_Stennis_CC:SetSquadronOverhead("VF-103", 1)
 -- ###                   KORMAKITI RANGE                   ###
 -- ###########################################################
 
-local strafepit_pits={"Target-Pit-1", "Target-Pit-2", "Target-Pit-3"}
-local strafepit_vehicles={"Strafe-Hard-1", "Strafe-Hard-2", "Strafe-Hard-3", "Strafe-Hard-4", "Strafe-Hard-5", "Strafe-Hard-6", "Strafe-Hard-7", "Strafe-Hard-8", "Strafe-Soft-1", "Strafe-Soft-2", "Strafe-Soft-3", "Strafe-Soft-4", "Strafe-Soft-5", "Strafe-Soft-6"}
-local bombtargets_circles={"Target-Circle-1", "Target-Circle-2", "Target-Circle-3"}
-local bombtargets_urban={"Circle-Urban"}
+local strafepit_pits = {"Target-Pit-1", "Target-Pit-2", "Target-Pit-3"}
+local strafepit_vehicles = {
+    "Strafe-Hard-1",
+    "Strafe-Hard-2",
+    "Strafe-Hard-3",
+    "Strafe-Hard-4",
+    "Strafe-Hard-5",
+    "Strafe-Hard-6",
+    "Strafe-Hard-7",
+    "Strafe-Hard-8",
+    "Strafe-Soft-1",
+    "Strafe-Soft-2",
+    "Strafe-Soft-3",
+    "Strafe-Soft-4",
+    "Strafe-Soft-5",
+    "Strafe-Soft-6"
+}
+local bombtargets_circles = {"Target-Circle-1", "Target-Circle-2", "Target-Circle-3"}
+local bombtargets_urban = {"Circle-Urban"}
 
-KormakitiRange=RANGE:New("Kormakiti Range")
+KormakitiRange = RANGE:New("Kormakiti Range")
 KormakitiRange:SetSoundfilesFolder("Range Soundfiles/")
 KormakitiRange:SetRangeRadius(15)
 KormakitiRange:SetInstructorRadio(235)
 KormakitiRange:SetRangeControl(235)
 KormakitiRange:SetAutosave()
-
 
 KormakitiRange:GetFoullineDistance("Target-Pit-1", "Foul Line-mark")
 
@@ -174,8 +364,7 @@ KormakitiRange:Start()
 -- ###                       OTHERS                        ###
 -- ###########################################################
 
-trainer = MISSILETRAINER:New(200,"Training mode")
-
+trainer = MISSILETRAINER:New(200, "Training mode")
 
 -- ###########################################################
 -- ###                   RED COALITION                     ###
@@ -243,7 +432,7 @@ trainer = MISSILETRAINER:New(200,"Training mode")
 -- DSIPATCHERS -----------------------------------------------
 --A2A_Mineralnye_CC = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED1-EW"}):FilterStart(), 150000))
 --A2A_Mineralnye_CC:SetBorderZone(A2A_Mineralnye_ZONE)
---A2A_Mineralnye_CC:SetDefaultTakeoffFromRunway() 
+--A2A_Mineralnye_CC:SetDefaultTakeoffFromRunway()
 --A2A_Mineralnye_CC:SetDefaultLandingAtRunway()
 --A2A_Mineralnye_CC:SetDefaultFuelThreshold(0.20)
 --A2A_Mineralnye_CC:SetDefaultDamageThreshold(0.90)
@@ -261,7 +450,7 @@ trainer = MISSILETRAINER:New(200,"Training mode")
 --A2A_Mineralnye_CC:SetSquadronOverhead("176th Fighter Aviation Regiment", 1.2)
 --A2A_Leninsky_CC = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED2-EW"}):FilterStart(), 300000))
 --A2A_Leninsky_CC:SetBorderZone(A2A_Leninsky_ZONE)
---A2A_Leninsky_CC:SetDefaultTakeoffFromRunway() 
+--A2A_Leninsky_CC:SetDefaultTakeoffFromRunway()
 --A2A_Leninsky_CC:SetDefaultLandingAtRunway()
 --A2A_Leninsky_CC:SetDefaultFuelThreshold(0.20)
 --A2A_Leninsky_CC:SetDefaultDamageThreshold(0.70)
@@ -284,7 +473,7 @@ trainer = MISSILETRAINER:New(200,"Training mode")
 --A2A_Leninsky_CC:SetSquadronOverhead("Heavy Fighter Aviation Regiment", 0.5)
 --A2A_Sevastopol_CC = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"Sevastopol-EWR"}):FilterStart(), 100000))
 --A2A_Sevastopol_CC:SetBorderZone(A2A_Sevastopol_ZONE)
---A2A_Sevastopol_CC:SetDefaultTakeoffFromRunway() 
+--A2A_Sevastopol_CC:SetDefaultTakeoffFromRunway()
 --A2A_Sevastopol_CC:SetDefaultLandingAtRunway()
 --A2A_Sevastopol_CC:SetDefaultFuelThreshold(0.20)
 --A2A_Sevastopol_CC:SetDefaultDamageThreshold(0.60)
@@ -295,5 +484,3 @@ trainer = MISSILETRAINER:New(200,"Training mode")
 --A2A_Sevastopol_CC:SetSquadronCapInterval("2nd Naval Fighter Regiment", 1, 20, 40, 1 )
 --A2A_Sevastopol_CC:SetSquadronGrouping("2nd Naval Fighter Regiment", 1)
 --A2A_Sevastopol_CC:SetSquadronOverhead("2nd Naval Fighter Regiment", 1)
-
-
