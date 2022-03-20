@@ -271,7 +271,7 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local name = tostring(PlayerData.name)
 
     BotSay(string.format("Player %s scored %.1f", name, score))
-    BotSay(string.format("details: wire: %d time in Grove: %d LSO grade: %s" wire, timeInGrove, gradeLso))
+    BotSay(string.format("details: wire: %d time in Grove: %d LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
     env.info(string.format("Player %s scored %.1f", name, score))
@@ -288,10 +288,10 @@ trainer = MISSILETRAINER:New(200, "Training mode")
 -- ###########################################################
 
 -- CONVOYS ---------------------------------------------------
-ZONE:New("col-0700"):GetCoordinate(0):CircleToAll(1000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "07:00")
-ZONE:New("col-0800"):GetCoordinate(0):CircleToAll(1000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "08:00")
-ZONE:New("col-0930"):GetCoordinate(0):CircleToAll(1000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "09:30")
-ZONE:New("col-1100"):GetCoordinate(0):CircleToAll(1000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "11:00")
+ZONE:New("col-0700"):GetCoordinate(0):CircleToAll(5000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "07:00")
+ZONE:New("col-0800"):GetCoordinate(0):CircleToAll(5000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "08:00")
+ZONE:New("col-0930"):GetCoordinate(0):CircleToAll(5000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "09:30")
+ZONE:New("col-1100"):GetCoordinate(0):CircleToAll(5000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "11:00")
 
 -- ZONES -----------------------------------------------------
 ZONE_Al_Assad = ZONE_POLYGON:New("A2A_Al_Assad_ZONE", GROUP:FindByName("Al-Assad-ZONE")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
@@ -328,7 +328,7 @@ RED_EW_Assad = SPAWN:New("RED-EW-1-Al-Assad"):InitLimit(1, 0):SpawnScheduled(UTI
 --BIGBIRD_5 = SPAWN:New("A2A-Target-5"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
 --BIGBIRD_6 = SPAWN:New("A2A-Target-6"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
 
-DSIPATCHERS -----------------------------------------------
+--DSIPATCHERS -----------------------------------------------
 A2A_Al_Assad = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED-EW-1"}):FilterStart(), 150000))
 A2A_Al_Assad:SetBorderZone(ZONE_Al_Assad)
 A2A_Al_Assad:SetDefaultTakeoffFromRunway()
