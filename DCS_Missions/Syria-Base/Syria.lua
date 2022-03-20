@@ -118,7 +118,7 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
   
   local score=tonumber(Grade.points)
   local name=tostring(PlayerData.name)
-  
+
   -- Report LSO grade to dcs.log file.
   env.info(string.format("Player %s scored %.1f", name, score))
 end
