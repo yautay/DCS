@@ -15,20 +15,12 @@ end
 function BotSay(msg)
     local message = repl(msg)
     local text =
-        'F:\\DiscordSendWebhook.exe -m "' ..
+        'C:\\DiscordSendWebhook.exe -m "' ..
         message ..
             '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE" '
     os.execute(text)
 end
 
-Birth = EVENTHANDLER:New()
-Birth:HandleEvent(EVENTS.Birth)
-
-function Birth:OnEventBirth(EventData)
-    local playername = EventData.IniPlayerName
-    local txt = playername .. " has entered slot"
-    BotSay(txt)
-end
 
 --SAMPLE MISSION START EVENT
 MS = EVENTHANDLER:New()
@@ -51,87 +43,6 @@ function TO:OnEventTakeoff(EventData)
     local t = EventData.IniTypeName or "a plane"
     local where = EventData.PlaceName or "somewhere"
     local txt = who .. " has taken off from " .. where .. " in a " .. t .. ""
-    BotSay(txt)
-end
-
---SAMPLE LANDING EVENT
-LA = EVENTHANDLER:New()
-LA:HandleEvent(EVENTS.Land)
-
-function LA:OnEventLand(EventData)
-    if EventData.IniPlayerName == nil then
-        -- its not a player we are going to simply exit this
-        return false
-    end
-    local who = EventData.IniPlayerName or "A player"
-    local t = EventData.IniTypeName or "a plane"
-    local where = EventData.PlaceName or "somewhere"
-    local txt = who .. " has landed at " .. where .. " in a " .. t .. ""
-    BotSay(txt)
-end
-
---SAMPLE KILL EVENT
-KILL = EVENTHANDLER:New()
-KILL:HandleEvent(EVENTS.Kill)
-
-function KILL:OnEventKill(EventData)
-    if EventData.IniPlayerName == nil then
-        -- its not a player we are going to simply exit this
-        return false
-    end
-    local who = EventData.IniPlayerName or "A player"
-    local t = EventData.IniTypeName or "a plane"
-    local tgt = EventData.TgtTypeName or "a target"
-    local wep = EventData.weapon_name or "a weapon"
-    if EventData.IniGroupName then
-        local grp = GROUP:FindByName(EventData.IniGroupName)
-        local coa = grp:GetCoalitionName()
-        local bullseye = grp:GetCoordinate():ToStringBULLS(grp:GetCoalition(), _SETTINGS:SetImperial())
-        local txt =
-            who .. " in their " .. coa .. " " .. t .. " has killed a " .. tgt .. " with a " .. wep .. " at " .. bullseye
-        BotSay(txt)
-    end
-end
---SAMPLE CRASH EVENT
-CRASH = EVENTHANDLER:New()
-CRASH:HandleEvent(EVENTS.Crash)
-
-function CRASH:OnEventCrash(EventData)
-    if EventData.IniPlayerName == nil then
-        -- its not a player we are going to simply exit this
-        return false
-    end
-    local who = EventData.IniPlayerName or "A player"
-    local t = EventData.IniTypeName or "plane"
-    local txt = who .. " crashed their " .. t
-    BotSay(txt)
-end
-
---SAMPLE EJECTION EVENT
-EJECT = EVENTHANDLER:New()
-EJECT:HandleEvent(EVENTS.Ejection)
-
-function EJECT:OnEventEjection(EventData)
-    if EventData.IniPlayerName == nil then
-        -- its not a player we are going to simply exit this
-        return false
-    end
-    local who = EventData.IniPlayerName or "A player"
-    local t = EventData.IniTypeName or "plane"
-    local txt = who .. " ejected from their " .. t
-
-    BotSay(txt)
-end
-
---SAMPLE CSAR EVENT
-MAYDAY = EVENTHANDLER:New()
-MAYDAY:HandleEvent(EVENTS.LandingAfterEjection)
-
-function MAYDAY:OnEventLandingAfterEjection(EventData)
-    local place = EventData.initiator:getPoint()
-    local _coord = COORDINATE:New(place.x, place.y, place.z)
-    _coord:ToStringBULLS(2, _SETTINGS:SetImperial())
-    local txt = "MAYDAY! MAYDAY! Pilot down, Bullseye " .. _coord
     BotSay(txt)
 end
 
