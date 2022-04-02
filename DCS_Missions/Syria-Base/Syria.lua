@@ -17,10 +17,9 @@ function BotSay(msg)
     local text =
         'C:\\DiscordSendWebhook.exe -m "' ..
         message ..
-            '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE" '
+            '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE"'
     os.execute(text)
 end
-
 
 --SAMPLE MISSION START EVENT
 MS = EVENTHANDLER:New()
@@ -28,22 +27,6 @@ MS:HandleEvent(EVENTS.MissionStart)
 
 function MS:OnEventMissionStart(EventData)
     BotSay("Mission STARTED !!!")
-end
-
---SAMPLE TAKEOFF EVENT
-TO = EVENTHANDLER:New()
-TO:HandleEvent(EVENTS.Takeoff)
-
-function TO:OnEventTakeoff(EventData)
-    if EventData.IniPlayerName == nil then
-        -- its not a player we are going to simply exit this
-        return false
-    end
-    local who = EventData.IniPlayerName or "A player"
-    local t = EventData.IniTypeName or "a plane"
-    local where = EventData.PlaceName or "somewhere"
-    local txt = who .. " has taken off from " .. where .. " in a " .. t .. ""
-    BotSay(txt)
 end
 
 -- CONSTS
