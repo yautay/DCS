@@ -1,5 +1,14 @@
-_SETTINGS:SetPlayerMenuOff()
+local freq_awacs = 251
+local freq_aar = 251
+local freq_lso = 264
+local freq_marshal = 305
 
+
+-- _SETTINGS:SetPlayerMenuOff()
+
+-- ###########################################################
+-- ###                  DISCORD BOT                        ###
+-- ###########################################################
 
 --DO NOT EDIT
 function repl(dirty)
@@ -25,11 +34,11 @@ end
 MS = EVENTHANDLER:New()
 MS:HandleEvent(EVENTS.MissionStart)
 
-function MS:OnEventMissionStart(EventData)
-    BotSay("Mission STARTED !!!")
+function MS:OnEventMissionStart(EventData) 
+  local txt= "Mission started " .. "\n freqs:" .. "\nAWACS: " .. freq_awacs .. "\nAAR:" .. freq_aar .. "\nMARSHAL:" .. freq_marshal .. "\nLSO:" .. freq_marshal 
+BotSay(txt)
 end
 
--- CONSTS
 
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
@@ -40,18 +49,21 @@ Tanker_Shell =
     SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
         shell_11:CommandSetCallsign(1, 0)
+        shell_11:CommandSetFrequency(freq_aar)
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
     SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(texaco_11)
         texaco_11:CommandSetCallsign(1, 0)
+        texaco_11:CommandSetFrequency(freq_aar)
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
     SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(overlord_11)
         overlord_11:CommandSetCallsign(1, 0)
+        overlord_11:CommandSetFrequency(freq_awacs)
     end
 ):InitRepeatOnLanding()
 
@@ -71,15 +83,15 @@ ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 
 
 -- F10 Map Markings
 
-ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0, .5, 1}, 1, 4, true)
-ZONE:New("CV-2"):GetCoordinate(0):LineToAll(ZONE:New("CV-3"):GetCoordinate(0), -1, {0, .5, 1}, 1, 4, true)
-ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0, .5, 1}, 1, {0, .5, 1}, 0.4, 2)
+ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 4, true)
+ZONE:New("CV-2"):GetCoordinate(0):LineToAll(ZONE:New("CV-3"):GetCoordinate(0), -1, {0, 0, 1}, 1, 4, true)
+ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0, 0, 1}, 1, {0, 0, 1}, 0.4, 2)
 
 -- S-3B Recovery Tanker.
 -- ARCO 250.00 1->"TRK" A6 250KIAS
 tanker = RECOVERYTANKER:New("USS Stennis", "USS Stennis AAR")
 tanker:SetTakeoffHot()
-tanker:SetRadio(250)
+tanker:SetRadio(freq_aar)
 tanker:SetModex(511)
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(1, "Y", "TKR")
@@ -89,7 +101,7 @@ tanker:__Start(1)
 -- Wizard 260.00 A20
 awacs = RECOVERYTANKER:New("USS Stennis", "USS Stennis AWACS")
 awacs:SetAWACS()
-awacs:SetRadio(260)
+awacs:SetRadio(freq_awacs)
 awacs:SetAltitude(20000)
 awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
 awacs:SetRacetrackDistances(15, 15)
@@ -104,7 +116,7 @@ rescuehelo:__Start(1)
 -- Create AIRBOSS object.
 AirbossStennis = AIRBOSS:New("USS Stennis")
 AirbossStennis:SetTACAN(74, "X", "STN"):SetICLS(1, "STN")
-AirbossStennis:SetMarshalRadio(305, "AM"):SetLSORadio(264, "AM")
+AirbossStennis:SetMarshalRadio(freq_marshal, "AM"):SetLSORadio(freq_lso, "AM")
 
 -- Add recovery windows:
 -- Case I from 9 to 10 am.
@@ -234,6 +246,6 @@ A2A_Al_Assad:SetDisengageRadius(UTILS.NMToMeters(40))
 
 A2A_Al_Assad:SetSquadron("Reds_29", AIRBASE.Syria.Bassel_Al_Assad, "Bassel_Al_Assad_MiG_29")
 A2A_Al_Assad:SetSquadronCap("Reds_29", CAP_Al_Assad, UTILS.FeetToMeters(10000), UTILS.FeetToMeters(30000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-A2A_Al_Assad:SetSquadronCapInterval("Reds_29", 1, 360, 999, 1 )
+A2A_Al_Assad:SetSquadronCapInterval("Reds_29", 1, 1800, 2000, 1 )
 A2A_Al_Assad:SetSquadronGrouping("Reds_29", 2)
 A2A_Al_Assad:SetSquadronOverhead("Reds_29", 1)
