@@ -1,4 +1,4 @@
-local frequencies =
+frequencies =
 {
   freq_awacs = 251,
   freq_aar = 251,

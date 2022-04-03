@@ -1,4 +1,4 @@
-local frequencies = require "frequencies"
+-- local frequencies = require "frequencies"
 
 self:E( frequencies.freq_awacs )
 self:E( frequencies.freq_aar )
