@@ -176,8 +176,8 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local wire = tonumber(Grade.wire)
     local name = tostring(PlayerData.name)
 
-    BotSay(string.format("Player %s scored %.1f", name, score))
-    BotSay(string.format("details: wire: %d time in Grove: %d LSO grade: %s", wire, timeInGrove, gradeLso))
+    BotSay(string.format("Player %s scored %.1f \n", name, score))
+    BotSay(string.format("details: \n wire: %d \ntime in Grove: %d \nLSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
     env.info(string.format("Player %s scored %.1f", name, score))
