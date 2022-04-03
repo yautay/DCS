@@ -1,7 +1,7 @@
-local freq_awacs = 251
-local freq_aar = 251
-local freq_lso = 264
-local freq_marshal = 305
+freq_awacs = 251
+freq_aar = 251
+freq_lso = 264
+freq_marshal = 305
 
 
 -- _SETTINGS:SetPlayerMenuOff()
@@ -29,16 +29,6 @@ function BotSay(msg)
             '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE"'
     os.execute(text)
 end
-
---SAMPLE MISSION START EVENT
-MS = EVENTHANDLER:New()
-MS:HandleEvent(EVENTS.MissionStart)
-
-function MS:OnEventMissionStart(EventData) 
-  local txt= "Mission started " .. "\n freqs:" .. "\nAWACS: " .. freq_awacs .. "\nAAR:" .. freq_aar .. "\nMARSHAL:" .. freq_marshal .. "\nLSO:" .. freq_marshal 
-BotSay(txt)
-end
-
 
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
