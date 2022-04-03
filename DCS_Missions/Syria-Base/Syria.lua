@@ -1,5 +1,10 @@
 require "frequencies"
 
+self:E( freq_awacs )
+self:E( freq_aar )
+self:E( freq_marshal )
+self:E( freq_lso )
+
 
 -- _SETTINGS:SetPlayerMenuOff()
 
