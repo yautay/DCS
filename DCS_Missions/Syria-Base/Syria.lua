@@ -1,9 +1,9 @@
-require "frequencies"
+local frequencies = require "frequencies"
 
-self:E( freq_awacs )
-self:E( freq_aar )
-self:E( freq_marshal )
-self:E( freq_lso )
+self:E( frequencies.freq_awacs )
+self:E( frequencies.freq_aar )
+self:E( frequencies.freq_marshal )
+self:E( frequencies.freq_lso )
 
 
 -- _SETTINGS:SetPlayerMenuOff()
@@ -41,21 +41,21 @@ Tanker_Shell =
     SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
         shell_11:CommandSetCallsign(1, 0)
-        shell_11:CommandSetFrequency(freq_aar)
+        shell_11:CommandSetFrequency(frequencies.freq_aar)
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
     SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(texaco_11)
         texaco_11:CommandSetCallsign(1, 0)
-        texaco_11:CommandSetFrequency(freq_aar)
+        texaco_11:CommandSetFrequency(frequencies.freq_aar)
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
     SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(overlord_11)
         overlord_11:CommandSetCallsign(1, 0)
-        overlord_11:CommandSetFrequency(freq_awacs)
+        overlord_11:CommandSetFrequency(frequencies.freq_awacs)
     end
 ):InitRepeatOnLanding()
 
@@ -83,7 +83,7 @@ ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1
 -- ARCO 250.00 1->"TRK" A6 250KIAS
 tanker = RECOVERYTANKER:New("USS Stennis", "USS Stennis AAR")
 tanker:SetTakeoffHot()
-tanker:SetRadio(freq_aar)
+tanker:SetRadio(frequencies.freq_aar)
 tanker:SetModex(511)
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(1, "Y", "TKR")
@@ -93,7 +93,7 @@ tanker:__Start(1)
 -- Wizard 260.00 A20
 awacs = RECOVERYTANKER:New("USS Stennis", "USS Stennis AWACS")
 awacs:SetAWACS()
-awacs:SetRadio(freq_awacs)
+awacs:SetRadio(frequencies.freq_awacs)
 awacs:SetAltitude(20000)
 awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
 awacs:SetRacetrackDistances(15, 15)
