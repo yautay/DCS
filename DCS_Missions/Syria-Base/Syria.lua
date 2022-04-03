@@ -1,36 +1,6 @@
--- local frequencies = require "frequencies"
+_SETTINGS:SetPlayerMenuOff()
 
-self:E( frequencies.freq_awacs )
-self:E( frequencies.freq_aar )
-self:E( frequencies.freq_marshal )
-self:E( frequencies.freq_lso )
-
-
--- _SETTINGS:SetPlayerMenuOff()
-
--- ###########################################################
--- ###                  DISCORD BOT                        ###
--- ###########################################################
-
---DO NOT EDIT
-function repl(dirty)
-    local text =
-        dirty:gsub("&", ""):gsub('"', ""):gsub("|", " "):gsub("'", ""):gsub("%%", ""):gsub("/", ""):gsub("\\", ""):gsub(
-        ">",
-        ""
-    )
-    local clean = text:gsub("<", "")
-    return clean
-end
-
-function BotSay(msg)
-    local message = repl(msg)
-    local text =
-        'C:\\DiscordSendWebhook.exe -m "' ..
-        message ..
-            '" -w "https://discord.com/api/webhooks/955109086117113866/6j7q16ckXUXXZ25bIqnp9-q9mAZAHiYQ8RDxjZ_7VjOkDJ0XXwTWVEzWR29hzgXhKlNE"'
-    os.execute(text)
-end
+local frequencies = frequencies()
 
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
@@ -169,7 +139,7 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local name = tostring(PlayerData.name)
 
     BotSay(string.format("Player %s scored %.1f \n", name, score))
-    BotSay(string.format("details: \n wire: %d \ntime in Grove: %d \nLSO grade: %s", wire, timeInGrove, gradeLso))
+    BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
     env.info(string.format("Player %s scored %.1f", name, score))
