@@ -10,21 +10,21 @@ local frequencies = frequencies()
 Tanker_Shell =
     SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
-        shell_11:CommandSetCallsign(1, 0)
+        shell_11:CommandSetCallsign(3, 1)
         shell_11:CommandSetFrequency(frequencies.freq_aar)
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
     SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(texaco_11)
-        texaco_11:CommandSetCallsign(1, 0)
+        texaco_11:CommandSetCallsign(1, 1)
         texaco_11:CommandSetFrequency(frequencies.freq_aar)
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
     SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(overlord_11)
-        overlord_11:CommandSetCallsign(1, 0)
+        overlord_11:CommandSetCallsign(1, 1)
         overlord_11:CommandSetFrequency(frequencies.freq_awacs)
     end
 ):InitRepeatOnLanding()
@@ -32,7 +32,7 @@ AWACS_Overlord =
 -- F10 Map Markings
 ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL")
 ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO")
-ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO")
+ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "OVERLORD")
 
 -- SAMs
 --BLUE_SAM_1 = SPAWN:New("BLUE-SAM-01"):InitLimit(20, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
@@ -77,9 +77,9 @@ AirbossStennis = AIRBOSS:New("USS Theodore Roosevelt")
 AirbossStennis:SetTACAN(74, "X", "STN"):SetICLS(1, "STN")
 AirbossStennis:SetMarshalRadio(freq_marshal, "AM"):SetLSORadio(freq_lso, "AM")
 
-local window1=AirbossStennis:AddRecoveryWindow( "6:00", "20:00", 1, nil, true, 25)
+local window1 = AirbossStennis:AddRecoveryWindow("6:00", "20:00", 1, nil, true, 25)
 --local window2=AirbossStennis:AddRecoveryWindow("15:00", "16:00", 2,  nil, true, 23)
-local window3=AirbossStennis:AddRecoveryWindow("20:00", "23:59", 3,  nil, true, 21)
+local window3 = AirbossStennis:AddRecoveryWindow("20:00", "23:59", 3, nil, true, 21)
 
 AirbossStennis:SetMenuSingleCarrier()
 AirbossStennis:SetMenuRecovery(30, 25, false)
@@ -139,16 +139,31 @@ ZONE:New("intel-03"):GetCoordinate(0):CircleToAll(5000, -1, {0, 1, 1}, 1, {0, 1,
 ZONE:New("intel-04"):GetCoordinate(0):CircleToAll(5000, -1, {0, 1, 1}, 1, {0, 1, 1}, .3, 2, true, "10:00")
 
 -- ZONES -----------------------------------------------------
-ZONE_Al_Assad = ZONE_POLYGON:New("A2A_Al_Assad_ZONE", GROUP:FindByName("Al-Assad-ZONE")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
-CAP_Al_Assad = ZONE_POLYGON:New("Al-Assad-ZONE-CAP", GROUP:FindByName("Al-Assad-ZONE-CAP")):DrawZone(-1, {0,0,0}, 1.0, {0,0,0}, 0.2, 3)
+ZONE_Al_Assad =
+    ZONE_POLYGON:New("A2A_Al_Assad_ZONE", GROUP:FindByName("Al-Assad-ZONE")):DrawZone(
+    -1,
+    {1, 1, 0},
+    1.0,
+    {1, 1, 0},
+    0.4,
+    2
+)
+CAP_Al_Assad =
+    ZONE_POLYGON:New("Al-Assad-ZONE-CAP", GROUP:FindByName("Al-Assad-ZONE-CAP")):DrawZone(
+    -1,
+    {0, 0, 0},
+    1.0,
+    {0, 0, 0},
+    0.2,
+    3
+)
 
-ZONE_Zor = ZONE_POLYGON:New("A2A_Zor_ZONE", GROUP:FindByName("red_bvr_zone")):DrawZone(-1, {1,1,0}, 1.0, {1,1,0}, 0.4, 2)
-
+ZONE_Zor =
+    ZONE_POLYGON:New("A2A_Zor_ZONE", GROUP:FindByName("red_bvr_zone")):DrawZone(-1, {1, 1, 0}, 1.0, {1, 1, 0}, 0.4, 2)
 
 -- EWRS ------------------------------------------------------
-RED_EW_Assad = SPAWN:New("RED-EW-1-Al-Assad"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
-RED_AWACS_Zor = SPAWN:New("RED-AWACS-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25 )
-
+RED_EW_Assad = SPAWN:New("RED-EW-1-Al-Assad"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
+RED_AWACS_Zor = SPAWN:New("RED-AWACS-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
 
 -- SAMS ------------------------------------------------------
 --Krasnodar_SAM = SPAWN:New("Krasnodar-SAM"):InitLimit(14, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
@@ -179,7 +194,8 @@ RED_AWACS_Zor = SPAWN:New("RED-AWACS-1"):InitLimit(1, 0):SpawnScheduled(UTILS.Cl
 --BIGBIRD_6 = SPAWN:New("A2A-Target-6"):InitLimit(3, 3):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25 )
 
 --DSIPATCHERS -----------------------------------------------
-A2A_Al_Assad = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED-EW-1"}):FilterStart(), 150000))
+A2A_Al_Assad =
+    AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED-EW-1"}):FilterStart(), 150000))
 A2A_Al_Assad:SetBorderZone(ZONE_Al_Assad)
 A2A_Al_Assad:SetDefaultTakeoffFromRunway()
 A2A_Al_Assad:SetDefaultLandingAtRunway()
@@ -189,35 +205,76 @@ A2A_Al_Assad:SetEngageRadius(UTILS.NMToMeters(40))
 A2A_Al_Assad:SetDisengageRadius(UTILS.NMToMeters(40))
 
 A2A_Al_Assad:SetSquadron("Reds_29", AIRBASE.Syria.Bassel_Al_Assad, "Bassel_Al_Assad_MiG_29")
-A2A_Al_Assad:SetSquadronCap("Reds_29", CAP_Al_Assad, UTILS.FeetToMeters(10000), UTILS.FeetToMeters(30000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-A2A_Al_Assad:SetSquadronCapInterval("Reds_29", 1, 1800, 2000, 1 )
+A2A_Al_Assad:SetSquadronCap(
+    "Reds_29",
+    CAP_Al_Assad,
+    UTILS.FeetToMeters(10000),
+    UTILS.FeetToMeters(30000),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(320),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(900),
+    "BARO"
+)
+A2A_Al_Assad:SetSquadronCapInterval("Reds_29", 1, 1800, 2000, 1)
 A2A_Al_Assad:SetSquadronGrouping("Reds_29", 2)
 A2A_Al_Assad:SetSquadronOverhead("Reds_29", 1)
 
 --DSIPATCHERS -----------------------------------------------
-A2A_Zor = AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED-AWACS"}):FilterStart(), 250000))
+A2A_Zor =
+    AI_A2A_DISPATCHER:New(DETECTION_AREAS:New(SET_GROUP:New():FilterPrefixes({"RED-AWACS"}):FilterStart(), 250000))
 A2A_Zor:SetBorderZone(ZONE_Zor)
 A2A_Zor:SetDefaultTakeoffFromRunway()
 A2A_Zor:SetDefaultLandingAtRunway()
-A2A_Zor:SetDefaultFuelThreshold(0.20)
+A2A_Zor:SetDefaultFuelThreshold(0.40)
 A2A_Zor:SetDefaultDamageThreshold(0.90)
 A2A_Zor:SetEngageRadius(UTILS.NMToMeters(100))
 A2A_Zor:SetDisengageRadius(UTILS.NMToMeters(150))
 
 A2A_Zor:SetSquadron("Reds_31", AIRBASE.Syria.Tabqa, "mig_31")
-A2A_Zor:SetSquadronCap("Reds_31", ZONE_Zor, UTILS.FeetToMeters(30000), UTILS.FeetToMeters(50000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(1200), "BARO" )
-A2A_Zor:SetSquadronCapInterval("Reds_31", 1, 1800, 2000, 1 )
+A2A_Zor:SetSquadronCap(
+    "Reds_31",
+    ZONE_Zor,
+    UTILS.FeetToMeters(30000),
+    UTILS.FeetToMeters(50000),
+    UTILS.KnotsToKmph(250),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(1200),
+    "BARO"
+)
+A2A_Zor:SetSquadronCapInterval("Reds_31", 1, 1800, 2000, 1)
 A2A_Zor:SetSquadronGrouping("Reds_31", 1)
 A2A_Zor:SetSquadronOverhead("Reds_31", 1)
 
 A2A_Zor:SetSquadron("Reds_23", AIRBASE.Syria.Tabqa, "mig_23")
-A2A_Zor:SetSquadronCap("Reds_23", ZONE_Zor, UTILS.FeetToMeters(25000), UTILS.FeetToMeters(40000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-A2A_Zor:SetSquadronCapInterval("Reds_23", 1, 1800, 2000, 1 )
+A2A_Zor:SetSquadronCap(
+    "Reds_23",
+    ZONE_Zor,
+    UTILS.FeetToMeters(25000),
+    UTILS.FeetToMeters(40000),
+    UTILS.KnotsToKmph(250),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(900),
+    "BARO"
+)
+A2A_Zor:SetSquadronCapInterval("Reds_23", 1, 1800, 2000, 1)
 A2A_Zor:SetSquadronGrouping("Reds_23", 2)
 A2A_Zor:SetSquadronOverhead("Reds_23", 1)
 
 A2A_Zor:SetSquadron("Reds_21", AIRBASE.Syria.Tabqa, "mig_21")
-A2A_Zor:SetSquadronCap("Reds_21", ZONE_Zor, UTILS.FeetToMeters(25000), UTILS.FeetToMeters(40000), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(320), UTILS.KnotsToKmph(270), UTILS.KnotsToKmph(900), "BARO" )
-A2A_Zor:SetSquadronCapInterval("Reds_21", 1, 1800, 2000, 1 )
+A2A_Zor:SetSquadronCap(
+    "Reds_21",
+    ZONE_Zor,
+    UTILS.FeetToMeters(25000),
+    UTILS.FeetToMeters(40000),
+    UTILS.KnotsToKmph(250),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(270),
+    UTILS.KnotsToKmph(900),
+    "BARO"
+)
+A2A_Zor:SetSquadronCapInterval("Reds_21", 1, 1800, 2000, 1)
 A2A_Zor:SetSquadronGrouping("Reds_21", 2)
 A2A_Zor:SetSquadronOverhead("Reds_21", 1)
