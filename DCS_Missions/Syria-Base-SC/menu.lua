@@ -1,62 +1,31 @@
-do
-  -- This demo creates a menu structure for the two clients of planes.
-  -- Each client will receive a different menu structure.
-  -- To test, join the planes, then look at the other radio menus (Option F10).
-  -- Then switch planes and check if the menu is still there.
-  -- And play with the Add and Remove menu options.
+do  
   
-  -- Note that in multi player, this will only work after the DCS clients bug is solved.
+  local presets_f14 = info_preset_f14_159() .. info_preset_f14_182()
+  local presets_f16 = info_preset_f16_164() .. info_preset_f16_222()
+  local presets_f18 = info_preset_f18_210_1() .. info_preset_f18_210_2()
 
   local F_14_CVN = CLIENT:FindByName( "C-F14-CVN71" )
   local F_18_CVN = CLIENT:FindByName( "C-F18-CVN71" )
-
   local F_16_LTAG = CLIENT:FindByName( "C-F16-LTAG" )
-  local F_18_LTAG = CLIENT:FindByName( "C-F14-LTAG" )
+  local F_18_LTAG = CLIENT:FindByName( "C-F18-LTAG" )
+  local F_16_LCPH = CLIENT:FindByName( "C-F16-LCPH" )
 
+  local clients = {{F_14_CVN, presets_f14}, {F_18_CVN, presets_f18}, {F_16_LTAG, presets_f16}, {F_18_LTAG, presets_f18}, {F_16_LCPH, presets_f16}}
 
   local MenuCoalitionBlue = MENU_COALITION:New( coalition.side.BLUE, "Scripted Menu" )
 
-  local function ShowStatus( StatusText )
-
-   F_14_CVN:Message( StatusText, 15 )
-   F_18_CVN:Message( StatusText, 15 )
-   F_16_LTAG:Message( StatusText, 15 )
-   F_18_LTAG:Message( StatusText, 15 )
- 
-
-
-
-
- end
-
-
-  local function ShowStatus( PlaneClient, StatusText, Coalition )
-
-    MESSAGE:New( Coalition, 15 ):ToAll()
+  local function ShowStatus( PlaneClient, StatusText)
     PlaneClient:Message( StatusText, 15 )
   end
+  local ClientInfoMenu = {}
 
-  local MenuStatus = {}
-
-  local function RemoveStatusMenu( MenuClient )
-    local MenuClientName = MenuClient:GetName()
-    MenuStatus[MenuClientName]:Remove()
-  end
-
-  --- @param Wrapper.Client#CLIENT MenuClient
-  local function AddStatusMenu( MenuClient )
-    local MenuClientName = MenuClient:GetName()
-    -- This would create a menu for the red coalition under the MenuCoalitionRed menu object.
-    MenuStatus[MenuClientName] = MENU_CLIENT:New( MenuClient, "Status for Planes" )
-    MENU_CLIENT_COMMAND:New( MenuClient, "Show Status", MenuStatus[MenuClientName], ShowStatus, MenuClient, "Status of planes is ok!", "Message to Red Coalition" )
-  end
 
   SCHEDULER:New(nil,
     function()
-      local Client_F14_CVN71 = CLIENT:FindByName("C-F14-CVN71")
-      if Client_F14_CVN71 and Client_F14_CVN71:IsAlive() then
-        local MenuManage = MENU_CLIENT:New( Client_F14_CVN71, "Mission Info" )
-        MENU_CLIENT_COMMAND:New( Client_F14_CVN71, "Add Status Menu Plane 1", MenuManage, AddStatusMenu, Client_F14_CVN71 )
-      end
-    end, {}, 10, 10 )
+      for index, value in ipairs(clients) do
+        if value[1] and value[1]:IsAlive() then
+          local ClientInfoMenu = MENU_CLIENT:New( value[1], "Client Info" )
+          MENU_CLIENT_COMMAND:New( value[1], "Radio Presets", ClientInfoMenu, ShowStatus, value[1], value[2])
+        end
+    end, {}, 30, 120 )
 end
