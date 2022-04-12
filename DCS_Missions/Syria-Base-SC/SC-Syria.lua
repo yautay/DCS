@@ -11,21 +11,21 @@ Tanker_Shell =
     SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
         shell_11:CommandSetCallsign(3, 1)
-        shell_11:CommandSetFrequency(frequencies.freq_aar)
+        shell_11:CommandSetFrequency(frequencies.freq_aar[1])
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
     SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(texaco_11)
         texaco_11:CommandSetCallsign(1, 1)
-        texaco_11:CommandSetFrequency(frequencies.freq_aar)
+        texaco_11:CommandSetFrequency(frequencies.freq_aar[1])
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
     SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(overlord_11)
         overlord_11:CommandSetCallsign(1, 1)
-        overlord_11:CommandSetFrequency(frequencies.freq_awacs)
+        overlord_11:CommandSetFrequency(frequencies.freq_awacs[1])
     end
 ):InitRepeatOnLanding()
 
@@ -51,7 +51,7 @@ ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1
 -- S-3B Recovery Tanker
 tanker = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AAR")
 tanker:SetTakeoffHot()
-tanker:SetRadio(frequencies.freq_aar)
+tanker:SetRadio(frequencies.freq_aar[1])
 tanker:SetModex(511)
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(1, "Y", "TKR")
@@ -60,7 +60,7 @@ tanker:__Start(1)
 -- E-2D AWACS
 awacs = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AWACS")
 awacs:SetAWACS()
-awacs:SetRadio(frequencies.freq_awacs)
+awacs:SetRadio(frequencies.freq_awacs[1])
 awacs:SetAltitude(20000)
 awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
 awacs:SetRacetrackDistances(15, 15)
