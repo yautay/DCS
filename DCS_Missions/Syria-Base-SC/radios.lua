@@ -74,8 +74,12 @@ local presets_data = {
     preset_f18_210_2 = f18_210_2
 }
 
+BASE:T(preset_data)
+
 function info_preset(preset_data, radio_name)
     -- DEBUG!!!!!
+    BASE:T(preset_data)
+    BASE:T(radio_name)
     local tmp_table = {}
     local msg = string.format("Radio %s presets: \n", radio_name)
     table.insert(tmp_table, msg)
