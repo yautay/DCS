@@ -1,6 +1,8 @@
 _SETTINGS:SetPlayerMenuOff()
 
 local frequencies = frequencies()
+local tacans = tacans()
+local icls = icls()
 
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
@@ -10,20 +12,29 @@ local frequencies = frequencies()
 Tanker_Shell =
     SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
+        shell_11:EnRouteTaskTanker()
         shell_11:CommandSetCallsign(3, 1)
         shell_11:CommandSetFrequency(frequencies.freq_aar[1])
+        shell_11_unit = UNIT:FindByName("Tanker 70Y Shell") 
+        shell_11_tacan = shell_11_unit:GetBeacon() -- Creates the beacon
+        shell_11_tacan:ActivateTACAN(tacans.tacan_shell[1], tacans.tacan_shell[2], tacans.tacan_shell[2], true)
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
     SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(texaco_11)
+        texaco_11:EnRouteTaskTanker()
         texaco_11:CommandSetCallsign(1, 1)
         texaco_11:CommandSetFrequency(frequencies.freq_aar[1])
+        texaco_11_unit = UNIT:FindByName("Tanker 71Y Texaco") 
+        texaco_11_tacan = texaco_11_unit:GetBeacon() -- Creates the beacon
+        texaco_11_tacan:ActivateTACAN(tacans.tacan_texaco[1], tacans.tacan_texaco[2], tacans.tacan_texaco[2], true)
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
     SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(overlord_11)
+        overlord_11:EnRouteTaskAWACS()
         overlord_11:CommandSetCallsign(1, 1)
         overlord_11:CommandSetFrequency(frequencies.freq_awacs[1])
     end
@@ -54,7 +65,7 @@ tanker:SetTakeoffHot()
 tanker:SetRadio(frequencies.freq_aar[1])
 tanker:SetModex(511)
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
-tanker:SetTACAN(1, "Y", "TKR")
+tanker:SetTACAN(tacans.tacan_arco[1], tacans.tacan_arco[2], tacans.tacan_arco[3])
 tanker:__Start(1)
 
 -- E-2D AWACS
@@ -74,7 +85,7 @@ rescuehelo:__Start(1)
 
 -- AIRBOSS object.
 AirbossStennis = AIRBOSS:New("USS Theodore Roosevelt")
-AirbossStennis:SetTACAN(74, "X", "STN"):SetICLS(1, "STN")
+AirbossStennis:SetTACAN(tacans.tacan_sc[1], tacans.tacan_sc[2], tacans.tacan_sc[3]):SetICLS(icls.icls_sc[1], icls.icls_sc[2])
 AirbossStennis:SetMarshalRadio(freq_marshal, "AM"):SetLSORadio(freq_lso, "AM")
 
 local window1 = AirbossStennis:AddRecoveryWindow("6:00", "20:00", 1, nil, true, 25)
