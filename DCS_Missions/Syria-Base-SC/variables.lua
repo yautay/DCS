@@ -43,8 +43,7 @@ function icls()
         icls_paphos290 = {108.90, "n/a", "ILS Paphos rwy 290"},
         icls_incirlik050 = {109.30, "n/a", "ILS Incirlik rwy 050"},
         icls_incirlik230 = {111.70, "n/a", "ILS Incirlik rwy 230"},
-        icls_ramat_david323 = {111.10, "n/a", "ILS Incirlik rwy 323"},
-
+        icls_ramat_david323 = {111.10, "n/a", "ILS Incirlik rwy 323"}
     }
     return icls_data
 end
@@ -73,7 +72,7 @@ function tacans()
         tacan_paphos = {79, "X", "n/a", "Paphos Air Base"},
         tacan_akrotiri = {107, "X", "n/a", "Akrotiri Air Base"},
         tacan_ramat_david = {84, "X", "n/a", "Ramat David Air Base"}
-    } 
+    }
     return tacans_data
 end
 
@@ -91,4 +90,16 @@ function manual_ordered_tacans()
         tcs.tacan_ramat_david
     }
     return ordered_tcs
+end
+
+function air_routes()
+    local routes_data = {
+        {"BE", 108, 68, "Al-Assad"},
+        {"Incirlik", 167, 100, "Al-Assad"},
+        {"Paphos", 79, 176, "Al-Assad"},
+        {"Paphos", 113, 132, "Beirut"},
+        {"Akrotiri", 74, 155, "Al-Assad"},
+        {"Ramat David", 15, 169, "Al-Assad"}
+    }
+    return routes_data
 end

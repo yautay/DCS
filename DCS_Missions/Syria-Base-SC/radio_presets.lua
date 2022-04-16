@@ -88,25 +88,25 @@ function info_preset(preset_data, radio_name)
 end
 
 function info_preset_f14_159()
-    return info_preset(presets_data.preset_f14_159,"AN/ARC-159")
+    return info_preset(presets_data.preset_f14_159, "AN/ARC-159")
 end
 
 function info_preset_f14_182()
-    return info_preset(presets_data.preset_f14_182,"AN/ARC-182")
+    return info_preset(presets_data.preset_f14_182, "AN/ARC-182")
 end
 
 function info_preset_f16_164()
-    return info_preset(presets_data.preset_f16_164,"AN/ARC-164")
+    return info_preset(presets_data.preset_f16_164, "AN/ARC-164")
 end
 
 function info_preset_f16_222()
-    return info_preset(presets_data.preset_f16_222,"AN/ARC-222")
+    return info_preset(presets_data.preset_f16_222, "AN/ARC-222")
 end
 
 function info_preset_f18_210_1()
-    return info_preset(presets_data.preset_f18_210_1,"ARC-210-1")
+    return info_preset(presets_data.preset_f18_210_1, "ARC-210-1")
 end
 
 function info_preset_f18_210_2()
-    return info_preset(presets_data.preset_f18_210_2,"ARC-210-2")
+    return info_preset(presets_data.preset_f18_210_2, "ARC-210-2")
 end
