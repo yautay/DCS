@@ -65,8 +65,8 @@ function tacans()
     local tacans_data = {
         tacan_sc = {74, "X", "CVN", "CVN-71"},
         tacan_arco = {1, "Y", "TA", "Recovery Tanker CVN-71"},
-        tacan_shell = {70, "Y", "TS", "Tanker Shell - SE of CYP"},
-        tacan_texaco = {71, "Y", "TT", "Tanker Texaco - off Iskenderun Bay"},
+        tacan_shell = {70, "Y", "SHL", "Tanker Shell - SE of CYP"},
+        tacan_texaco = {71, "Y", "TEX", "Tanker Texaco - off Iskenderun Bay"},
         tacan_be = {13, "X", "BE", "Cape Apostolos"},
         tacan_incirlik = {21, "X", "DAN", "Incirlik Air Base"},
         tacan_paphos = {79, "X", "n/a", "Paphos Air Base"},

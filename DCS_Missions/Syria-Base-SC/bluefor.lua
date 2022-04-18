@@ -15,9 +15,6 @@ Tanker_Shell =
         shell_11:EnRouteTaskTanker()
         shell_11:CommandSetCallsign(3, 1)
         shell_11:CommandSetFrequency(frequencies.freq_aar[1])
-        shell_11_unit = UNIT:FindByName("Tanker 70Y Shell")
-        shell_11_tacan = shell_11_unit:GetBeacon() -- Creates the beacon
-        shell_11_tacan:ActivateTACAN(tacans.tacan_shell[1], tacans.tacan_shell[2], tacans.tacan_shell[2], true)
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
@@ -26,9 +23,6 @@ Tanker_Texaco =
         texaco_11:EnRouteTaskTanker()
         texaco_11:CommandSetCallsign(1, 1)
         texaco_11:CommandSetFrequency(frequencies.freq_aar[1])
-        texaco_11_unit = UNIT:FindByName("Tanker 71Y Texaco")
-        texaco_11_tacan = texaco_11_unit:GetBeacon() -- Creates the beacon
-        texaco_11_tacan:ActivateTACAN(tacans.tacan_texaco[1], tacans.tacan_texaco[2], tacans.tacan_texaco[2], true)
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
