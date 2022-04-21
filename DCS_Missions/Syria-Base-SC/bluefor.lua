@@ -39,6 +39,7 @@ ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate
 ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO")
 ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "OVERLORD")
 
+ZONE_POLYGON:New("AG GROUND", GROUP:FindByName("helper_ag_cyp")):DrawZone(-1, {0.8, 0.5, 0.8}, 1, {0.8, 0.5, 0.8}, 0.4, 2)
 -- SAMs
 --BLUE_SAM_1 = SPAWN:New("BLUE-SAM-01"):InitLimit(20, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )
 --BLUE_SAM_SUKHUMI = SPAWN:New("Sukhumi-SAM"):InitLimit(13, 0):SpawnScheduled(UTILS.ClockToSeconds("01:00:00"), .25 )

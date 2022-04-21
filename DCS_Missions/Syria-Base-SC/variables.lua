@@ -67,7 +67,6 @@ function tacans()
         tacan_arco = {1, "Y", "TA", "Recovery Tanker CVN-71"},
         tacan_shell = {70, "Y", "SHL", "Tanker Shell - SE of CYP"},
         tacan_texaco = {71, "Y", "TEX", "Tanker Texaco - off Iskenderun Bay"},
-        tacan_be = {13, "X", "BE", "Cape Apostolos"},
         tacan_incirlik = {21, "X", "DAN", "Incirlik Air Base"},
         tacan_paphos = {79, "X", "n/a", "Paphos Air Base"},
         tacan_akrotiri = {107, "X", "n/a", "Akrotiri Air Base"},
@@ -83,7 +82,6 @@ function manual_ordered_tacans()
         tcs.tacan_arco,
         tcs.tacan_shell,
         tcs.tacan_texaco,
-        tcs.tacan_be,
         tcs.tacan_paphos,
         tcs.tacan_akrotiri,
         tcs.tacan_incirlik,
@@ -94,7 +92,6 @@ end
 
 function air_routes()
     local routes_data = {
-        {"BE", 108, 68, "Al-Assad"},
         {"Incirlik", 167, 100, "Al-Assad"},
         {"Paphos", 79, 176, "Al-Assad"},
         {"Paphos", 113, 132, "Beirut"},
