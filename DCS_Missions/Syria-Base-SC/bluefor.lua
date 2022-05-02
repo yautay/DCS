@@ -13,8 +13,16 @@ Tanker_Shell =
     SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
         shell_11:EnRouteTaskTanker()
-        shell_11:CommandSetCallsign(3, 1)
+        shell_11:CommandSetCallsign(1, 1)
         shell_11:CommandSetFrequency(frequencies.freq_aar[1])
+    end
+):InitRepeatOnLanding()
+Tanker_Shell_boom =
+    SPAWN:New("Tanker 73Y Shell-2"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    function(shell_21)
+        shell_21:EnRouteTaskTanker()
+        shell_21:CommandSetCallsign(2, 1)
+        shell_21:CommandSetFrequency(frequencies.freq_aar[1])
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
@@ -35,9 +43,10 @@ AWACS_Overlord =
 ):InitRepeatOnLanding()
 
 -- F10 Map Markings
-ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL")
-ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO")
-ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "OVERLORD")
+ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL-1")
+ZONE:New("TKR-2-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-2-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL-2")
+ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO-1")
+ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "OVERLORD-1")
 
 ZONE_POLYGON:New("AG GROUND", GROUP:FindByName("helper_ag_cyp")):DrawZone(-1, {0.8, 0.5, 0.8}, 1, {0.8, 0.5, 0.8}, 0.4, 2)
 -- SAMs
