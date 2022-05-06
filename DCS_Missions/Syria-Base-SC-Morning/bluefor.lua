@@ -25,14 +25,6 @@ Tanker_Shell_boom =
         shell_21:CommandSetFrequency(frequencies.freq_aar[1])
     end
 ):InitRepeatOnLanding()
-Tanker_Texaco =
-    SPAWN:New("Tanker 71Y Texaco"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
-    function(texaco_11)
-        texaco_11:EnRouteTaskTanker()
-        texaco_11:CommandSetCallsign(1, 1)
-        texaco_11:CommandSetFrequency(frequencies.freq_aar[1])
-    end
-):InitRepeatOnLanding()
 AWACS_Overlord =
     SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(overlord_11)
@@ -45,7 +37,6 @@ AWACS_Overlord =
 -- F10 Map Markings
 ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL-1")
 ZONE:New("TKR-2-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-2-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL-2")
-ZONE:New("TKR-2"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "TEXACO-1")
 ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "OVERLORD-1")
 
 -- ###########################################################
