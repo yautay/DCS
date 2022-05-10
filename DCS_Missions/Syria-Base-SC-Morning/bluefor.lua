@@ -49,28 +49,26 @@ ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -
 ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0, 0, 1}, 1, {0, 0, 1}, 0.4, 2)
 
 -- S-3B Recovery Tanker
-tanker = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AAR")
-tanker:SetTakeoffHot()
+local tanker = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AAR")
+tanker:SetTakeoffAir()
 tanker:SetRadio(frequencies.freq_aar[1])
-tanker:SetModex(511)
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(tacans.tacan_arco[1], tacans.tacan_arco[2], tacans.tacan_arco[3])
-tanker:__Start(1)
-
+tanker:Start()
 -- E-2D AWACS
-awacs = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AWACS")
+local awacs = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AWACS")
+awacs:SetTakeoffAir()
 awacs:SetAWACS()
 awacs:SetRadio(frequencies.freq_awacs[1])
-awacs:SetAltitude(20000)
+awacs:SetAltitude(25000)
 awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
 awacs:SetRacetrackDistances(15, 15)
-awacs:SetModex(611)
-awacs:__Start(1)
+awacs:Start()
 
 -- Rescue Helo
-rescuehelo = RESCUEHELO:New("USS Theodore Roosevelt", "USS Theodore Roosevelt SAR")
-rescuehelo:SetModex(42)
-rescuehelo:__Start(1)
+local rescuehelo = RESCUEHELO:New("USS Theodore Roosevelt", "USS Theodore Roosevelt SAR")
+rescuehelo:SetTakeoffAir()
+rescuehelo:Start()
 
 -- AIRBOSS object.
 AirbossStennis = AIRBOSS:New("USS Theodore Roosevelt")
