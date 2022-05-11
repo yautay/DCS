@@ -19,14 +19,14 @@ local TARGET_HARD_6 = STATIC:FindByName("AG TARGET HARD-6")
 local TARGET_HARD_7 = STATIC:FindByName("AG TARGET HARD-7")
 local TARGET_HARD_8 = STATIC:FindByName("AG TARGET HARD-8")
 
-local TG_1_POS = {TARGET_HARD_1:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_1:GetCoordinate():GetLandHeight()}
-local TG_2_POS = {TARGET_HARD_2:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_2:GetCoordinate():GetLandHeight()}
-local TG_3_POS = {TARGET_HARD_3:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_3:GetCoordinate():GetLandHeight()}
-local TG_4_POS = {TARGET_HARD_4:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_4:GetCoordinate():GetLandHeight()}
-local TG_5_POS = {TARGET_HARD_5:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_5:GetCoordinate():GetLandHeight()}
-local TG_6_POS = {TARGET_HARD_6:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_6:GetCoordinate():GetLandHeight()}
-local TG_7_POS = {TARGET_HARD_7:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_7:GetCoordinate():GetLandHeight()}
-local TG_8_POS = {TARGET_HARD_8:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_8:GetCoordinate():GetLandHeight()}
+local TG_1_POS = {TARGET_HARD_1:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_1:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_1:GetCoordinate():GetLandHeight()}
+local TG_2_POS = {TARGET_HARD_2:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_2:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_2:GetCoordinate():GetLandHeight()}
+local TG_3_POS = {TARGET_HARD_3:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_3:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_3:GetCoordinate():GetLandHeight()}
+local TG_4_POS = {TARGET_HARD_4:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_4:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_4:GetCoordinate():GetLandHeight()}
+local TG_5_POS = {TARGET_HARD_5:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_5:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_5:GetCoordinate():GetLandHeight()}
+local TG_6_POS = {TARGET_HARD_6:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_6:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_6:GetCoordinate():GetLandHeight()}
+local TG_7_POS = {TARGET_HARD_7:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_7:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_7:GetCoordinate():GetLandHeight()}
+local TG_8_POS = {TARGET_HARD_8:GetCoordinate():ToStringLLDMS(nil), TARGET_HARD_8:GetCoordinate():ToStringLLDDM(nil), TARGET_HARD_8:GetCoordinate():GetLandHeight()}
 
 local targets = {TG_1_POS, 
 TG_2_POS,
@@ -48,7 +48,7 @@ local function hard_targets_text(targets)
     local msg = string.format("Hard Targets Coordinates: \n")
     table.insert(tmp_table, msg)
     for i, v in ipairs(targets) do
-        local tmp_string = string.format("T%d -> %s / %d mtrs \n",i , v[1], v[2])
+        local tmp_string = string.format("T%d -> DMS %s\n       DDM %s\n       h= %d mtrs \n",i , v[1], v[2], v[3])
         table.insert(tmp_table, tmp_string)
     end
     local final_msg = table.concat(tmp_table)
