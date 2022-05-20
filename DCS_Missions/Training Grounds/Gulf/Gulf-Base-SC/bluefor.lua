@@ -18,7 +18,7 @@ Tanker_Shell =
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
-    SPAWN:New("EW-AWACS"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    SPAWN:New("blue-ew-a"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(darkstar_11)
         darkstar_11:EnRouteTaskAWACS()
         darkstar_11:CommandSetCallsign(CALLSIGN.AWACS.Darkstar, 1, 1)
@@ -26,27 +26,6 @@ AWACS_Overlord =
     end
 ):InitRepeatOnLanding()
 
-
--- BLUE RWRs
-function spawn_rwrs()
-    EW_RWR_1 = SPAWN:New("EW-RWR-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25)
-    EW_RWR_2 = SPAWN:New("EW-RWR-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25)
-    return {EW_RWR_1, EW_RWR_2}
-end
-
--- BLUE SAMs
-function spawn_sams()
-    SAM_khasab = SPAWN:New("SAM-khasab"):InitLimit(11, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
-    SAM_dubai = SPAWN:New("SAM-dubai"):InitLimit(14, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
-    return {SAM_khasab, SAM_dubai}
-end
-
--- F10 Map Markings
-ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL")
-ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "DARKSTAR")
-
-spawn_rwrs()
-spawn_sams()
 
 -- ###########################################################
 -- ###                      BLUE CV                        ###
