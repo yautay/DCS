@@ -1,8 +1,8 @@
 _SETTINGS:SetPlayerMenuOff()
 
-local frequencies = frequencies()
-local tacans = tacans()
-local icls = icls()
+local bluefor_frequencies = frequencies()
+local bluefor_tacans = tacans()
+local bluefor_icls = icls()
 
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
@@ -10,34 +10,43 @@ local icls = icls()
 
 -- BLUE Aux. flights
 Tanker_Shell =
-    SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    SPAWN:New("Tanker 70X Shell"):InitLimit(1, 0):SpawnScheduled(5, .1):OnSpawnGroup(
     function(shell_11)
         shell_11:EnRouteTaskTanker()
-        shell_11:CommandSetCallsign(1, 1)
-        shell_11:CommandSetFrequency(frequencies.freq_aar[1])
-    end
-):InitRepeatOnLanding()
-Tanker_Shell_boom =
-    SPAWN:New("Tanker 73Y Shell-2"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
-    function(shell_21)
-        shell_21:EnRouteTaskTanker()
-        shell_21:CommandSetCallsign(2, 1)
-        shell_21:CommandSetFrequency(frequencies.freq_aar[1])
+        shell_11:CommandSetCallsign(CALLSIGN.Tanker.Shell, 1, 1)
+        shell_11:CommandSetFrequency(bluefor_frequencies.freq_aar[1])
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
-    SPAWN:New("EW-AWACS-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
-    function(overlord_11)
-        overlord_11:EnRouteTaskAWACS()
-        overlord_11:CommandSetCallsign(1, 1)
-        overlord_11:CommandSetFrequency(frequencies.freq_awacs[1])
+    SPAWN:New("EW-AWACS"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    function(darkstar_11)
+        darkstar_11:EnRouteTaskAWACS()
+        darkstar_11:CommandSetCallsign(CALLSIGN.AWACS.Darkstar, 1, 1)
+        darkstar_11:CommandSetFrequency(bluefor_frequencies.freq_awacs[1])
     end
 ):InitRepeatOnLanding()
 
+
+-- BLUE RWRs
+function spawn_rwrs()
+    EW_RWR_1 = SPAWN:New("EW-RWR-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25)
+    EW_RWR_2 = SPAWN:New("EW-RWR-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25)
+    return {EW_RWR_1, EW_RWR_2}
+end
+
+-- BLUE SAMs
+function spawn_sams()
+    SAM_khasab = SPAWN:New("SAM-khasab"):InitLimit(11, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
+    SAM_dubai = SPAWN:New("SAM-dubai"):InitLimit(14, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
+    return {SAM_khasab, SAM_dubai}
+end
+
 -- F10 Map Markings
-ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL-1")
-ZONE:New("TKR-2-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-2-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL-2")
-ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "OVERLORD-1")
+ZONE:New("TKR-1-1"):GetCoordinate(0):LineToAll(ZONE:New("TKR-1-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 2, true, "SHELL")
+ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 1}, .3, 2, true, "DARKSTAR")
+
+spawn_rwrs()
+spawn_sams()
 
 -- ###########################################################
 -- ###                      BLUE CV                        ###
@@ -46,39 +55,39 @@ ZONE:New("AWACS-1"):GetCoordinate(0):CircleToAll(7500, -1, {0, 0, 1}, 1, {0, 0, 
 -- F10 Map Markings
 
 ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 4, true)
-ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0, 0, 1}, 1, {0, 0, 1}, 0.4, 2)
 
 -- S-3B Recovery Tanker
-local tanker = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AAR")
+local tanker = RECOVERYTANKER:New(UNIT:FindByName("USS Theodore Roosevelt"), "USS Theodore Roosevelt AAR")
 tanker:SetTakeoffAir()
-tanker:SetRadio(frequencies.freq_aar[1])
+tanker:SetRadio(bluefor_frequencies.freq_aar[1])
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
-tanker:SetTACAN(tacans.tacan_arco[1], tacans.tacan_arco[2], tacans.tacan_arco[3])
+tanker:SetTACAN(bluefor_tacans.tacan_arco[1], bluefor_tacans.tacan_arco[3])
 tanker:Start()
+
 -- E-2D AWACS
 local awacs = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AWACS")
 awacs:SetTakeoffAir()
 awacs:SetAWACS()
-awacs:SetRadio(frequencies.freq_awacs[1])
+awacs:SetRadio(bluefor_frequencies.freq_awacs[1])
 awacs:SetAltitude(25000)
 awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
 awacs:SetRacetrackDistances(15, 15)
 awacs:Start()
 
 -- Rescue Helo
-local rescuehelo = RESCUEHELO:New("USS Theodore Roosevelt", "USS Theodore Roosevelt SAR")
+local rescuehelo = RESCUEHELO:New(UNIT:FindByName("USS Theodore Roosevelt"), "USS Theodore Roosevelt SAR")
 rescuehelo:SetTakeoffAir()
 rescuehelo:Start()
 
 -- AIRBOSS object.
 AirbossStennis = AIRBOSS:New("USS Theodore Roosevelt")
-AirbossStennis:SetTACAN(tacans.tacan_sc[1], tacans.tacan_sc[2], tacans.tacan_sc[3]):SetICLS(
-    icls.icls_sc[1],
-    icls.icls_sc[2]
+AirbossStennis:SetTACAN(bluefor_tacans.tacan_sc[1], bluefor_tacans.tacan_sc[2], bluefor_tacans.tacan_sc[3]):SetICLS(
+    bluefor_icls.icls_sc[1],
+    bluefor_icls.icls_sc[2]
 )
 AirbossStennis:SetMarshalRadio(freq_marshal, "AM"):SetLSORadio(freq_lso, "AM")
 
-local window1 = AirbossStennis:AddRecoveryWindow("6:00", "19:00", 1, nil, true, 25)
+local window1 = AirbossStennis:AddRecoveryWindow("5:00", "19:00", 1, nil, true, 25)
 local window2 = AirbossStennis:AddRecoveryWindow("19:00", "20:00", 2, nil, true, 25)
 local window3 = AirbossStennis:AddRecoveryWindow("20:00", "06:00+1", 3, nil, true, 25)
 
