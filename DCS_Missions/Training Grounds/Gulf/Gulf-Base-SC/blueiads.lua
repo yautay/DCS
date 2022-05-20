@@ -3,19 +3,19 @@ blueIADS:addSAMSitesByPrefix('blue-sam')
 blueIADS:addEarlyWarningRadarsByPrefix('blue-ew')
 blueIADS:activate()
 
-local iadsDebug = blueIADS:getDebugSettings()  
+-- local iadsDebug = blueIADS:getDebugSettings()  
 
-iadsDebug.IADSStatus = true
-iadsDebug.contacts = true
-iadsDebug.jammerProbability = true
+-- iadsDebug.IADSStatus = true
+-- iadsDebug.contacts = true
+-- iadsDebug.jammerProbability = true
 
-iadsDebug.addedEWRadar = true
-iadsDebug.addedSAMSite = true
-iadsDebug.warnings = true
-iadsDebug.radarWentLive = true
-iadsDebug.radarWentDark = true
-iadsDebug.harmDefence = true
+-- iadsDebug.addedEWRadar = true
+-- iadsDebug.addedSAMSite = true
+-- iadsDebug.warnings = true
+-- iadsDebug.radarWentLive = true
+-- iadsDebug.radarWentDark = true
+-- iadsDebug.harmDefence = true
 
-iadsDebug.samSiteStatusEnvOutput = true
-iadsDebug.earlyWarningRadarStatusEnvOutput = true
-iadsDebug.commandCenterStatusEnvOutput = true
+-- iadsDebug.samSiteStatusEnvOutput = true
+-- iadsDebug.earlyWarningRadarStatusEnvOutput = true
+-- iadsDebug.commandCenterStatusEnvOutput = true
