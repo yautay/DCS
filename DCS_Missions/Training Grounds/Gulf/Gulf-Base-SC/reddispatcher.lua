@@ -20,13 +20,8 @@ Detection = DETECTION_AREAS:New( DetectionSetGroup, 30000 )
 
 -- Setup the A2A dispatcher, and initialize it.
 A2A_Al_Kerman = AI_A2A_DISPATCHER:New( Detection )
-
--- Set 100km as the radius to engage any target by airborne friendlies.
 A2A_Al_Kerman:SetEngageRadius(150000) -- 100000 is the default value.
-
--- Set 200km as the radius to ground control intercept.
 A2A_Al_Kerman:SetGciRadius(200000) -- 200000 is the default value.
-
 A2A_Al_Kerman:SetBorderZone(ZONE_Iran)
 A2A_Al_Kerman:SetDefaultTakeoffFromRunway()
 A2A_Al_Kerman:SetDefaultLandingAtRunway()
@@ -63,29 +58,12 @@ end
 spawnF14()
 spawnM29()
 
-
 math.randomseed = os.clock()*100000000000
 
 
 local cap_random = math.random(0, 100)
 env.info("SEED RANDOMIZED")
 env.info(cap_random)
-
--- if cap_random < 25 then
---     spawnCAP21() 
---     env.info("CAP21")
--- elseif cap_random >= 25 and cap_random < 50 then
---     spawnCAP23()
---     env.info("CAP23")
--- elseif cap_random >= 50 and cap_random < 90 then
---     spawnCAP29()
---     env.info("CAP29")
--- else
---     spawnCAP31()
---     env.info("CAP31")
--- end
-
-
 
 -- MenuSeler = menu_seler()
 -- local AIMenu = MENU_MISSION:New("REDFOR", MenuSeler)

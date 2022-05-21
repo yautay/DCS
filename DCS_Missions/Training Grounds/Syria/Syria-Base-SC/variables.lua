@@ -2,7 +2,8 @@ function frequencies()
     local frequencies_data = {
         freq_flight = {242.00, "FLIGHTS"},
         freq_awacs = {247.50, "AWACS"},
-        freq_aar = {243.25, "TANKERS"},
+        freq_aar = {243.25, "TANKERS BASKET"},
+        freq_aar_boom = {243.50, "TANKERS BOOM"},
         freq_lso = {270.00, "Airbos LSO"},
         freq_marshal = {305.00, "Airbos Marshal"},
         freq_incirlik_1 = {122.10, "Incirlik Tower"},
@@ -21,6 +22,7 @@ function manual_ordered_frequencies()
     local ordered_frequencies_data = {
         freqs.freq_flight,
         freqs.freq_aar,
+        freqs.freq_aar_boom,
         freqs.freq_awacs,
         freqs.freq_sc,
         freqs.freq_paphos_1,
@@ -64,10 +66,9 @@ end
 function tacans()
     local tacans_data = {
         tacan_sc = {74, "X", "CVN", "CVN-71"},
-        tacan_arco = {1, "Y", "TA", "Recovery Tanker CVN-71"},
-        tacan_shell = {70, "Y", "SHL", "Tanker Shell - SE of CYP"},
-        tacan_shell_boom = {73, "Y", "SHL", "Tanker Shell-boom - E of CYP"},
-        tacan_texaco = {71, "Y", "TEX", "Tanker Texaco - off Iskenderun Bay"},
+        tacan_arco = {1, "X", "RTK", "Recovery Tanker CVN-71"},
+        tacan_shell = {70, "X", "SHN", "Tanker Shell Basket"},
+        tacan_shell_boom = {73, "X", "SHA", "Tanker Shell Boom"},
         tacan_incirlik = {21, "X", "DAN", "Incirlik Air Base"},
         tacan_paphos = {79, "X", "n/a", "Paphos Air Base"},
         tacan_akrotiri = {107, "X", "n/a", "Akrotiri Air Base"},
@@ -83,7 +84,6 @@ function manual_ordered_tacans()
         tcs.tacan_arco,
         tcs.tacan_shell,
         tcs.tacan_shell_boom,
-        -- tcs.tacan_texaco,
         tcs.tacan_paphos,
         tcs.tacan_akrotiri,
         tcs.tacan_incirlik,

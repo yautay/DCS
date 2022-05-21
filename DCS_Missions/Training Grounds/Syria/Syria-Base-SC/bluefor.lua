@@ -10,19 +10,19 @@ local icls = icls()
 
 -- BLUE Aux. flights
 Tanker_Shell =
-    SPAWN:New("Tanker 70Y Shell"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    SPAWN:New("Shell-1"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_11)
         shell_11:EnRouteTaskTanker()
-        shell_11:CommandSetCallsign(1, 1)
+        shell_11:CommandSetCallsign(CALLSIGN.Tanker.Shell, 1, 1)
         shell_11:CommandSetFrequency(frequencies.freq_aar[1])
     end
 ):InitRepeatOnLanding()
 Tanker_Shell_boom =
-    SPAWN:New("Tanker 73Y Shell-2"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    SPAWN:New("Shell-2"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(shell_21)
         shell_21:EnRouteTaskTanker()
-        shell_21:CommandSetCallsign(2, 1)
-        shell_21:CommandSetFrequency(frequencies.freq_aar[1])
+        shell_21:CommandSetCallsign(CALLSIGN.Tanker.Shell, 2, 1)
+        shell_21:CommandSetFrequency(frequencies.freq_aar_boom[1])
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
@@ -30,6 +30,7 @@ AWACS_Overlord =
     function(overlord_11)
         overlord_11:EnRouteTaskAWACS()
         overlord_11:CommandSetCallsign(1, 1)
+        overlord_11:CommandSetCallsign(CALLSIGN.AWACS.Darkstar, 1, 1)
         overlord_11:CommandSetFrequency(frequencies.freq_awacs[1])
     end
 ):InitRepeatOnLanding()
@@ -49,12 +50,13 @@ ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -
 ZONE_POLYGON:New("CV-1-Area", GROUP:FindByName("helper_cv_stennis")):DrawZone(-1, {0, 0, 1}, 1, {0, 0, 1}, 0.4, 2)
 
 -- S-3B Recovery Tanker
-local tanker = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AAR")
+local tanker = RECOVERYTANKER:New(UNIT:FindByName("USS Theodore Roosevelt"), "USS Theodore Roosevelt AAR")
 tanker:SetTakeoffAir()
 tanker:SetRadio(frequencies.freq_aar[1])
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
-tanker:SetTACAN(tacans.tacan_arco[1], tacans.tacan_arco[2], tacans.tacan_arco[3])
+tanker:SetTACAN(tacans.tacan_arco[1], tacans.tacan_arco[3])
 tanker:Start()
+
 -- E-2D AWACS
 local awacs = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AWACS")
 awacs:SetTakeoffAir()
@@ -66,7 +68,7 @@ awacs:SetRacetrackDistances(15, 15)
 awacs:Start()
 
 -- Rescue Helo
-local rescuehelo = RESCUEHELO:New("USS Theodore Roosevelt", "USS Theodore Roosevelt SAR")
+local rescuehelo = RESCUEHELO:New(UNIT:FindByName("USS Theodore Roosevelt"), "USS Theodore Roosevelt SAR")
 rescuehelo:SetTakeoffAir()
 rescuehelo:Start()
 

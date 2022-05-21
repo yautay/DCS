@@ -8,6 +8,7 @@ local ZONE_TG_AG =
     0.4,
     2
 )
+
 local TARGET_TANKS = SPAWN:New("TARGET-AG-TANKS"):InitLimit(10, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
 
 local TARGET_HARD_1 = STATIC:FindByName("AG TARGET HARD-1")
