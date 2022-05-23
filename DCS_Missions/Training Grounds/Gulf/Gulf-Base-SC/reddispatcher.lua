@@ -26,7 +26,7 @@ A2A_Al_Kerman:SetBorderZone(ZONE_Iran)
 A2A_Al_Kerman:SetDefaultTakeoffFromRunway()
 A2A_Al_Kerman:SetDefaultLandingAtRunway()
 A2A_Al_Kerman:SetSquadronGci( "IRAN29", 900, 1200 )
-A2A_Al_Kerman:SetTacticalDisplay(true)
+-- A2A_Al_Kerman:SetTacticalDisplay(true)
 A2A_Al_Kerman:Start()
 
 -- A2A_Al_Kerman:SetDisengageRadius(UTILS.NMToMeters(80))
