@@ -9,11 +9,12 @@ ZONE_Iran = ZONE_POLYGON:New("ZONE-Iran", GROUP:FindByName("iran")):DrawZone(
 )
 ZONE_cap = ZONE_POLYGON:New("ZONE-cap", GROUP:FindByName("ZONE-cap"))
 
-awacs = SPAWN:New("red-awacs"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:10:00"), .25)  
+awacs_1 = SPAWN:New("red-awacs-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
+awacs_2 = SPAWN:New("red-awacs-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)  
 -- START MOOSE CODE:
 -- Define a SET_GROUP object that builds a collection of groups that define the EWR network.
 DetectionSetGroup = SET_GROUP:New()
-DetectionSetGroup:AddGroupsByName("red-awacs")
+DetectionSetGroup:AddGroupsByName("red-awacs-1", "red-awacs-2")
 
 -- Setup the detection and group targets to a 30km range!
 Detection = DETECTION_AREAS:New( DetectionSetGroup, 30000 )
