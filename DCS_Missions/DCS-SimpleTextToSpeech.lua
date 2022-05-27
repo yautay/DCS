@@ -65,9 +65,9 @@ STTS.PlayMP3("C:\\Users\\Ciaran\\Downloads\\PR-Music.mp3","255,31","AM,FM","0.5"
 
 STTS = {}
 -- FULL Path to the FOLDER containing DCS-SR-ExternalAudio.exe - EDIT TO CORRECT FOLDER
-STTS.DIRECTORY = "C:\\Users\\Ciaran\\Dropbox\\Dev\\DCS\\DCS-SRS\\install-build"
+STTS.DIRECTORY = "C:\\DCS-SimpleRadio-Standalone"
 STTS.SRS_PORT = 5002 -- LOCAL SRS PORT - DEFAULT IS 5002
-STTS.GOOGLE_CREDENTIALS = "C:\\Users\\Ciaran\\Downloads\\googletts.json"
+STTS.GOOGLE_CREDENTIALS = "none"
 
 -- DONT CHANGE THIS UNLESS YOU KNOW WHAT YOU'RE DOING
 STTS.EXECUTABLE = "DCS-SR-ExternalAudio.exe"
