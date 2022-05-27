@@ -56,6 +56,7 @@ local f16_164 = {
 --     {"13", radio_frequencies.freq_paphos_1},
 --     {"15", radio_frequencies.freq_larnaca_1}
 -- }
+
 local f18_210_1 = {
     {"1", radio_frequencies.freq_marshal},
     {"2", radio_frequencies.freq_lso},
@@ -64,7 +65,7 @@ local f18_210_1 = {
     {"5", radio_frequencies.freq_elint_hi},
     {"6", radio_frequencies.freq_atis_hi},
     {"7", radio_frequencies.freq_flight},
-    {"8", radio_frequencies.freq_flight_fm}
+    {"8", radio_frequencies.freq_flight_fm},
     {"10", radio_frequencies.freq_sc},
     {"11", radio_frequencies.freq_al_minhad},
     {"12", radio_frequencies.freq_khasab},
@@ -110,6 +111,7 @@ function info_preset(preset_data, radio_name)
 end
 
 function info_preset_f14_159()
+    env.info(info_preset(presets_data.preset_f14_159, "AN/ARC-159"))
     return info_preset(presets_data.preset_f14_159, "AN/ARC-159")
 end
 

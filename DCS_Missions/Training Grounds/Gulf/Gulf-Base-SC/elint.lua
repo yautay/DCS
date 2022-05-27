@@ -17,9 +17,9 @@ local atis_args = {
     freq = "256.500,122.750",
     modulation = "AM,AM"
 }
-local guard = {
-    243.000AM and 121.500AM
-}
+-- local guard = {
+--     243.000AM and 121.500AM
+-- }
 HoundBlue:enableController("Hormuz",controller_args)
 HoundBlue:enableAtis("Hormuz",atis_args)
 HoundBlue:enableNotifier("default")

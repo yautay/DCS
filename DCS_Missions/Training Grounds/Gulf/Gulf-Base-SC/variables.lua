@@ -18,7 +18,9 @@ function frequencies()
         freq_atis_hi = {256.50, "ATIS Hi"},
         freq_atis_lo = {122.75, "ATIS Lo"},
         freq_heli_flights_ru = {128.50, "RU Heli"},
-        freq_sc = {127.50, "CVN71 Tower"}
+        freq_sc = {127.50, "CVN71 Tower"},
+        guard_hi = {243.00, "Guard Freq Hi"},
+        guard_lo = {121.5, "Guard Freq Lo"}
 
     }
     return frequencies_data
@@ -41,7 +43,9 @@ function manual_ordered_frequencies()
         freqs.freq_atis_lo,
         freqs.freq_elint_hi,
         freqs.freq_elint_lo,
-        freqs.freq_elint_fm
+        freqs.freq_elint_fm,
+        freqs.guard_hi,
+        freqs.guard_lo
     }
     return ordered_frequencies_data
 end
