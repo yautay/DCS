@@ -1,13 +1,25 @@
 function frequencies()
     local frequencies_data = {
-        freq_flight = {242.00, "FLIGHTS"},
+        freq_flight = {242.00, "FLIGHTS Hi AM"},
+        freq_flight_lo = {128.5, "FLIGHTS Lo AM"},
+        freq_flight_fm = {41.9, "FLIGHTS FM"},
         freq_awacs = {247.50, "AWACS"},
         freq_aar = {243.25, "TANKERS"},
         freq_lso = {270.00, "Airbos LSO"},
         freq_marshal = {305.00, "Airbos Marshal"},
         freq_al_minhad = {250.10, "Al Minhad Tower"},
+        freq_al_minhad_lo = {118.55, "Al Minhad Tower"},
+        freq_al_minhad_fm = {38.5, "Al Minhad Tower"},
         freq_khasab = {250.00, "Khasab Tower"},
+        freq_sc = {127.50, "CVN71 Tower"},
+        freq_elint_hi = {255.50, "ELINT Hi"},
+        freq_elint_lo = {121.75, "ELINT Lo"},
+        freq_elint_fm = {35.00, "ELINT Fm"},
+        freq_atis_hi = {256.50, "ATIS Hi"},
+        freq_atis_lo = {122.75, "ATIS Lo"},
+        freq_heli_flights_ru = {128.50, "RU Heli"},
         freq_sc = {127.50, "CVN71 Tower"}
+
     }
     return frequencies_data
 end
@@ -16,13 +28,20 @@ function manual_ordered_frequencies()
     local freqs = frequencies()
     local ordered_frequencies_data = {
         freqs.freq_flight,
+        freqs.freq_flight_lo,
+        freqs.freq_flight_fm,
         freqs.freq_aar,
         freqs.freq_awacs,
         freqs.freq_sc,
         freqs.freq_al_minhad,
         freqs.freq_khasab,
         freqs.freq_lso,
-        freqs.freq_marshal
+        freqs.freq_marshal,
+        freqs.freq_atis_hi,
+        freqs.freq_atis_lo,
+        freqs.freq_elint_hi,
+        freqs.freq_elint_lo,
+        freqs.freq_elint_fm
     }
     return ordered_frequencies_data
 end

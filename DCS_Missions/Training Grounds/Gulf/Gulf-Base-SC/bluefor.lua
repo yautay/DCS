@@ -18,14 +18,15 @@ Tanker_Shell =
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
-    SPAWN:New("blue-ew-a"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
+    SPAWN:New("AWACS Hormuz"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
     function(darkstar_11)
         darkstar_11:EnRouteTaskAWACS()
         darkstar_11:CommandSetCallsign(CALLSIGN.AWACS.Darkstar, 1, 1)
         darkstar_11:CommandSetFrequency(bluefor_frequencies.freq_awacs[1])
     end
 ):InitRepeatOnLanding()
-
+    
+Elint_south = SPAWN:New("ELINT South"):InitLimit(1, 0):SpawnScheduled(60, .1)
 
 -- ###########################################################
 -- ###                      BLUE CV                        ###

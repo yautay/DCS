@@ -5,10 +5,17 @@ local general_icls = manual_ordered_icls()
 
 local info_preset_f14_159 = info_preset_f14_159()
 local info_preset_f14_182 = info_preset_f14_182()
+
 local info_preset_f16_164 = info_preset_f16_164()
 -- local info_preset_f16_222 = info_preset_f16_222()
+
 local info_preset_f18_210_1 = info_preset_f18_210_1()
 local info_preset_f18_210_2 = info_preset_f18_210_2()
+
+local info_preset_mig21_832 = info_preset_mig21_832()
+
+local info_preset_ru_heli_828 = info_preset_ru_heli_828()
+local info_preset_ru_heli_863 = info_preset_ru_heli_863()
 
 local function Msg(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
@@ -76,9 +83,20 @@ local icls_info = icls_text(general_icls)
 -- local routes_info = routes_text(general_routing)
 
 local presets_f14 = info_preset_f14_159 .. info_preset_f14_182
+
 local presets_f16 = info_preset_f16_164
+
 -- local presets_f16 = info_preset_f16_164 .. info_preset_f16_222
+
 local presets_f18 = info_preset_f18_210_1 .. info_preset_f18_210_2
+
+local presets_mig21 = info_preset_mig21_832
+
+local presets_ka50 = info_preset_ru_heli_828
+
+local presets_mi24 = info_preset_ru_heli_828 .. info_preset_ru_heli_863
+
+local presets_mi8 = info_preset_ru_heli_828 .. info_preset_ru_heli_863
 
 MenuSeler = MENU_MISSION:New("Seler Menu") --Główny kontener
 local FrequenciesInfo = MENU_MISSION_COMMAND:New("Radio Frequiencies", MenuSeler, Msg, {freqs_info, 10})
@@ -89,10 +107,18 @@ local PresetsInfo = MENU_MISSION:New("Presets", MenuSeler)
 local PresetsInfoF14 = MENU_MISSION_COMMAND:New("Presets F-14", PresetsInfo, Msg, {presets_f14, 10})
 local PresetsInfoF16 = MENU_MISSION_COMMAND:New("Presets F-16", PresetsInfo, Msg, {presets_f16, 10})
 local PresetsInfoF18 = MENU_MISSION_COMMAND:New("Presets F-18", PresetsInfo, Msg, {presets_f18, 10})
+local PresetsInfoMig21 = MENU_MISSION_COMMAND:New("Presets MiG-21", PresetsInfo, Msg, {presets_mig21, 10})
+local PresetsInfoKa50 = MENU_MISSION_COMMAND:New("Presets Ka-50", PresetsInfo, Msg, {presets_ka50, 10})
+local PresetsInfoMi24 = MENU_MISSION_COMMAND:New("Presets Mi-24", PresetsInfo, Msg, {presets_mi24, 10})
+local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", PresetsInfo, Msg, {presets_mi8, 10})
 
 env.info(presets_f14)
 env.info(presets_f16)
 env.info(presets_f18)
+env.info(presets_mig21)
+env.info(presets_ka50)
+env.info(presets_mi24)
+env.info(presets_mi8)
 env.info(freqs_info)
 env.info(tacan_info)
 env.info(icls_info)

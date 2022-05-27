@@ -1,6 +1,6 @@
 blueIADS = SkynetIADS:create('uae_iads')
 blueIADS:addSAMSitesByPrefix('blue-sam')
-blueIADS:addEarlyWarningRadarsByPrefix('blue-ew')
+blueIADS:addEarlyWarningRadarsByPrefix('AWACS Hormuz')
 blueIADS:activate()
 
 -- local iadsDebug = blueIADS:getDebugSettings()  
