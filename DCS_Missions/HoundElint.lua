@@ -1,7 +1,7 @@
 
 do
     if STTS ~= nil then
-        STTS.DIRECTORY = "C:\\Program Files\\DCS-SimpleRadio-Standalone"
+        STTS.DIRECTORY = "C:\\DCS-SimpleRadio-Standalone"
     end
 end
 

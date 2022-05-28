@@ -3,6 +3,7 @@ local radio_frequencies = frequencies()
 local ru_heli_828 = {
     {"1", radio_frequencies.freq_al_minhad_fm},
     {"2", radio_frequencies.freq_elint_fm},
+    {"3", radio_frequencies.freq_atis_fm},
     {"7", radio_frequencies.freq_flight_fm}
 }
 local ru_heli_863 = {
