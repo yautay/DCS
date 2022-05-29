@@ -59,17 +59,16 @@ HoundBlue:preBriefedContact("red-sa5-1-tr")
 HoundBlue:systemOn()
 
 HoundBlue:setTimerInterval("scan",5)
-HoundBlue:setTimerInterval("process",5)
-HoundBlue:setTimerInterval("menus",5)
-HoundBlue:setTimerInterval("markers",5)
-HoundBlue:setTimerInterval("display",5)
+HoundBlue:setTimerInterval("process",15)
+HoundBlue:setTimerInterval("menus",15)
+HoundBlue:setTimerInterval("markers",30)
+HoundBlue:setTimerInterval("display",30)
 -- DEBUG
 
 function dump(o)
     if type(o) == 'table' then
         local s = '{ '
         for i, v in pairs(o) do
-            env.info(v)
             s = s .. v .. ", "
         end
         return s .. '}'
@@ -79,18 +78,18 @@ function dump(o)
 end
 
 function instance_data(table)
-    local tmp_data = "{"
+    local tmp_data = string.format("\n\nELINT CONTACTS ---> %f\n", timer.getTime())  
     for i, v in pairs(table) do
         local name = v.typeName
         local dcs_name = v.DCSunitName
         local max_wpn_range = v.maxWeaponsRange
         local last_seen = v.last_seen
         local detected_by_table = v.detected_by
-        local detected_by = dump(detected_by_table)    
-        local info = string.format("name: %s last seen: %s detected by: %s \n", name[1], last_seen[1] , detected_by)
+        local detected_by = dump(detected_by_table)     
+        local info = string.format("name: %s last seen: %f detected by: %s \n", name, last_seen , detected_by)
         tmp_data = tmp_data .. info
     end
-    return tmp_data .. "}"
+    return tmp_data .. "<--- ELINT CONTACTS\n"
 end
 
 function debug_hound() 
@@ -108,4 +107,4 @@ function debug_hound()
     env.info("==================HOUND END DEBUG==================")
 end
 
-mist.scheduleFunction(debug_hound ,{} ,timer.getTime() + 10, 10, timer.getTime() + 3600)
+mist.scheduleFunction(debug_hound ,{} ,timer.getTime(), 15, timer.getTime() + 36000)
