@@ -8,8 +8,11 @@ redIADS = SkynetIADS:create('iran_iads')
 redIADS:addSAMSitesByPrefix('red-sa')
 
 redIADS:addCommandCenter(red_cc):addConnectionNode(con_cc)
-redIADS:getSAMSitesByPrefix('red-sa20-1'):addConnectionNode(con_bandar)
-redIADS:getSAMSitesByPrefix('red-sa5-1'):addConnectionNode(con_kish)
+redIADS:getSAMSitesByPrefix('red-sa20-1')
+-- :addConnectionNode(con_bandar)
+redIADS:getSAMSitesByPrefix('red-sa5-1')
+-- :addConnectionNode(con_kish)
+redIADS:getSAMSitesByPrefix('red-sa2-1')
 
 redIADS:addEarlyWarningRadarsByPrefix('red-ew')
 redIADS:activate()
