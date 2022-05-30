@@ -26,9 +26,6 @@ AWACS_Overlord =
     end
 ):InitRepeatOnLanding()
     
-Elint_south = SPAWN:New("ELINT South"):InitLimit(1, 0):SpawnScheduled(60, .1)
-Elint_west = SPAWN:New("ELINT West"):InitLimit(1, 0):SpawnScheduled(60, .1)
-Elint_east = SPAWN:New("ELINT East"):InitLimit(1, 0):SpawnScheduled(60, .1)
 
 -- ###########################################################
 -- ###                      BLUE CV                        ###

@@ -1,12 +1,26 @@
+me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
+
+debug_elint_elements = {}
+
 HoundBlue = HoundElint:create(coalition.side.BLUE)
+
+function init_elint_elements(templates_table)
+    for i, v in pairs(templates_table) do
+        SPAWN:New(v):InitKeepUnitNames():InitLimit(1, 0):SpawnScheduled(5, .1):OnSpawnGroup(
+            function(element_spawned)
+                local unit_name = element_spawned:GetFirstUnitAlive():GetName()
+                env.info(string.format("SPAWNED %s\n", unit_name))
+                table.insert(debug_elint_elements, unit_name)
+                HoundBlue:addPlatform(unit_name)
+            end
+        ):InitRepeatOnLanding()
+    end
+end
+
+init_elint_elements(me_elint_templates)
 
 -- PLATFORMS
 HoundBlue:addPlatform("ELINT Hormuz") -- Ground Station
--- HoundBlue:addPlatform("AWACS Hormuz") -- E-3
--- HoundBlue:addPlatform("USS Theodore Roosevelt AWACS") -- E-2D
-HoundBlue:addPlatform("ELINT South") -- C17
-HoundBlue:addPlatform("ELINT West") -- C17
-HoundBlue:addPlatform("ELINT East") -- C17
 
 -- SECTORS
 HoundBlue:addSector("Hormuz")
@@ -34,35 +48,38 @@ HoundBlue:setTransmitter("Hormuz","AWACS Hormuz")
 HoundBlue:enableController("Hormuz",controller_args)
 HoundBlue:enableAlerts("Hormuz")
 HOUND.setMgrsPresicion(3)
--- HOUND.showExtendedInfo(false)
+HOUND.showExtendedInfo(false)
 
 -- ATIS
 HoundBlue:enableAtis("Hormuz",atis_args)
 HoundBlue:reportEWR("all",true)
--- HoundBlue:reportEWR("Hormuz",true)
+HoundBlue:reportEWR("Hormuz",true)
 HoundBlue:setAtisUpdateInterval(1*60)
 
 -- NOTIFIER
 HoundBlue:enableNotifier("Hormuz", notifier_args)
 
 -- FUNCTIONAL CONFIG
-HoundBlue:setMarkerType(HOUND.MARKER.DIAMOND)
+HoundBlue:setMarkerType(HOUND.MARKER.OCTAGON)
 HoundBlue:enableMarkers()
 HoundBlue:enableBDA()
 HoundBlue:enableText("all")
 
 -- PRE BRIEFED
+
 HoundBlue:preBriefedContact("red-sa5-1-sr")
 HoundBlue:preBriefedContact("red-sa5-1-tr")
+HoundBlue:preBriefedContact("red-sa2-1-tr")
+HoundBlue:preBriefedContact("red-sa2-1-sr")
 
 -- ON
 HoundBlue:systemOn()
 
 HoundBlue:setTimerInterval("scan",5)
-HoundBlue:setTimerInterval("process",15)
-HoundBlue:setTimerInterval("menus",15)
-HoundBlue:setTimerInterval("markers",30)
-HoundBlue:setTimerInterval("display",30)
+HoundBlue:setTimerInterval("process",10)
+HoundBlue:setTimerInterval("menus",10)
+HoundBlue:setTimerInterval("markers",10)
+HoundBlue:setTimerInterval("display",10)
 -- DEBUG
 
 function dump(o)
@@ -94,6 +111,7 @@ end
 
 function debug_hound() 
     env.info("==================HOUND START DEBUG==================")
+    env.info(dump(debug_elint_elements))
     local contacts = HoundBlue:getContacts()
     local contacts_ewr_no = contacts.ewr.count
     local contacts_sam_no = contacts.sam.count
