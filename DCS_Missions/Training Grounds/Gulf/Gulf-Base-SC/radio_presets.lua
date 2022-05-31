@@ -107,12 +107,10 @@ function info_preset(preset_data, radio_name)
         table.insert(tmp_table, tmp_string)
     end
     local final_msg = table.concat(tmp_table)
-    env.info(final_msg)
     return final_msg .. "\n"
 end
 
 function info_preset_f14_159()
-    env.info(info_preset(presets_data.preset_f14_159, "AN/ARC-159"))
     return info_preset(presets_data.preset_f14_159, "AN/ARC-159")
 end
 

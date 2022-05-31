@@ -1,3 +1,5 @@
+local debug_menu = false
+
 local general_freqs = manual_ordered_frequencies()
 local general_tacans = manual_ordered_tacans()
 local general_icls = manual_ordered_icls()
@@ -112,18 +114,20 @@ local PresetsInfoKa50 = MENU_MISSION_COMMAND:New("Presets Ka-50", PresetsInfo, M
 local PresetsInfoMi24 = MENU_MISSION_COMMAND:New("Presets Mi-24", PresetsInfo, Msg, {presets_mi24, 10})
 local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", PresetsInfo, Msg, {presets_mi8, 10})
 
-env.info(presets_f14)
-env.info(presets_f16)
-env.info(presets_f18)
-env.info(presets_mig21)
-env.info(presets_ka50)
-env.info(presets_mi24)
-env.info(presets_mi8)
-env.info(freqs_info)
-env.info(tacan_info)
-env.info(icls_info)
--- env.info(routes_info)
-
 function menu_seler()
   return MenuSeler
+end
+
+if (debug_menu == true) then
+    env.info(presets_f14)
+    env.info(presets_f16)
+    env.info(presets_f18)
+    env.info(presets_mig21)
+    env.info(presets_ka50)
+    env.info(presets_mi24)
+    env.info(presets_mi8)
+    env.info(freqs_info)
+    env.info(tacan_info)
+    env.info(icls_info)
+    -- env.info(routes_info)
 end

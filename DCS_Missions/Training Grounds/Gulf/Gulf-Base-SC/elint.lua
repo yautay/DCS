@@ -1,3 +1,5 @@
+local debug_elint = false
+
 me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
 
 debug_elint_elements = {}
@@ -125,4 +127,6 @@ function debug_hound()
     env.info("==================HOUND END DEBUG==================")
 end
 
-mist.scheduleFunction(debug_hound ,{} ,timer.getTime(), 15, timer.getTime() + 36000)
+if (debug_elint) then
+    mist.scheduleFunction(debug_hound ,{} ,timer.getTime(), 15, timer.getTime() + 36000)
+end
