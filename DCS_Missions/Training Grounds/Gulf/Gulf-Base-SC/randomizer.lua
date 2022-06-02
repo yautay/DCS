@@ -8,5 +8,5 @@ env.info("SAMS SEED RANDOMIZED")
 env.info(s300zone)
 env.info(s200zone)
 
-mist.teleportInZone('red-sa20-1', s300zone, true, 1500)
+mist.teleportInZone('red-sa20b-1', s300zone, true, 1500)
 mist.teleportInZone('red-sa5-1', s200zone, true, 1500)

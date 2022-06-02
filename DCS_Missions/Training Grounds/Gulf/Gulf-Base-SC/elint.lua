@@ -1,6 +1,38 @@
-local debug_elint = false
+local debug_elint = true
 
 me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
+
+-- TTS SETTINGS
+local controler_args = {
+    hormuz = {
+        freq = "255.500,121.750,35.000",
+        modulation = "AM,AM,FM",
+        gender = "male"},
+    kish = {
+        freq = "255.750,122.000,35.250",
+        modulation = "AM,AM,FM",
+        gender = "female"},
+
+}
+local atis_args = { 
+    hormuz = {
+        freq = "256.500,122.750,34.500",
+        modulation = "AM,AM,FM"},
+    kish = {
+        freq = "256.750,123.000,34.750",
+        modulation = "AM,AM,FM"},
+}
+
+local notifier_args = {
+    freq = "242.000,254.000,128.500",
+    modulation = "AM,AM,AM",
+    gender = "female"
+}
+
+sector_templates = {
+    {"Hormuz", "Sector Hormuz", "AWACS Hormuz", controler_args.hormuz, atis_args.kish},
+    {"Kish", "Sector Kish", "AWACS Hormuz", controler_args.kish, atis_args.kish}
+}
 
 debug_elint_elements = {}
 
@@ -19,30 +51,18 @@ function init_elint_elements(templates_table)
     end
 end
 
-init_elint_elements(me_elint_templates)
+function setup_sector(template_sectors)
+    for i, v in pairs(template_sectors) do
 
--- PLATFORMS
-HoundBlue:addPlatform("ELINT Hormuz") -- Ground Station
+
+init_elint_elements(me_elint_templates)
 
 -- SECTORS
 HoundBlue:addSector("Hormuz")
+HoundBlue:addSector("Kish")
 HoundBlue:setZone("Hormuz","Sector Hormuz")
+HoundBlue:setZone("Kish","Sector Kish")
 
--- TTS SETTINGS
-local controller_args = {
-    freq = "255.500,121.750,35.000",
-    modulation = "AM,AM,FM",
-    gender = "male"
-}
-local atis_args = {
-    freq = "256.500,122.750,34.500",
-    modulation = "AM,AM,FM"
-}
-local notifier_args = {
-    freq = "242.000,254.000,128.500",
-    modulation = "AM,AM,AM",
-    gender = "female"
-}
 
 HoundBlue:setTransmitter("Hormuz","AWACS Hormuz")
 

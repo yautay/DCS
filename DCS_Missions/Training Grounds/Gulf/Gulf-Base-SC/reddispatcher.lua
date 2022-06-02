@@ -1,4 +1,4 @@
-local debug_reddispatcher = false
+local debug_reddispatcher = true
 
 -- ZONES -----------------------------------------------------
 ZONE_border_1 =
