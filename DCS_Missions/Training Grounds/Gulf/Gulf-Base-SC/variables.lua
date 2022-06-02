@@ -1,27 +1,26 @@
 function frequencies()
     local frequencies_data = {
-        freq_flight = {242.00, "FLIGHTS Hi AM"},
-        freq_flight_lo = {128.5, "FLIGHTS Lo AM"},
-        freq_flight_fm = {41.9, "FLIGHTS FM"},
-        freq_awacs = {247.50, "AWACS"},
-        freq_aar = {243.25, "TANKERS"},
-        freq_lso = {270.00, "Airbos LSO"},
-        freq_marshal = {305.00, "Airbos Marshal"},
-        freq_al_minhad = {250.10, "Al Minhad Tower Hi AM"},
-        freq_al_minhad_lo = {118.55, "Al Minhad Tower Lo AM"},
-        freq_al_minhad_fm = {38.5, "Al Minhad Tower FM"},
-        freq_khasab = {250.00, "Khasab Tower"},
-        freq_sc = {127.50, "CVN71 Tower"},
-        freq_elint_hi = {255.50, "ELINT Hi AM"},
-        freq_elint_lo = {121.75, "ELINT Lo AM"},
-        freq_elint_fm = {35.00, "ELINT FM"},
-        freq_atis_hi = {256.50, "ATIS Hi AM"},
-        freq_atis_lo = {122.75, "ATIS Lo AM"},
-        freq_atis_fm = {34.50, "ATIS FM"},
-        freq_heli_flights_ru = {128.50, "RU Heli"},
-        freq_sc = {127.50, "CVN71 Tower"},
-        guard_hi = {243.00, "Guard Freq Hi"},
-        guard_lo = {121.5, "Guard Freq Lo"}
+        freq_flight = {242.00, "FLIGHTS Hi", "AM"},
+        freq_flight_lo = {128.5, "FLIGHTS Lo", "AM"},
+        freq_flight_fm = {41.9, "FLIGHTS", " FM"},
+        freq_awacs = {247.50, "AWACS", "AM"},
+        freq_aar = {243.25, "TANKERS", "AM"},
+        freq_lso = {270.00, "Airbos LSO", "AM"},
+        freq_marshal = {305.00, "Airbos Marshal", "AM"},
+        freq_al_minhad = {250.10, "Al Minhad Tower Hi", "AM"},
+        freq_al_minhad_lo = {118.55, "Al Minhad Tower Lo", "AM"},
+        freq_al_minhad_fm = {38.5, "Al Minhad Tower", "FM"},
+        freq_khasab = {250.00, "Khasab Tower", "AM"},
+        freq_sc = {127.50, "CVN71 Tower", "AM"},
+        freq_elint_hormuz_hi = {255.50, "ELINT Hi AM", "AM"},
+        freq_elint_hormuz_lo = {121.75, "ELINT Lo AM", "AM"},
+        freq_elint_hormuz_fm = {35.00, "ELINT FM", "FM"},
+        freq_atis_elint_hormuz_hi = {256.50, "ATIS Hi", "AM"},
+        freq_atis_elint_hormuz_lo = {122.75, "ATIS Lo", "AM"},
+        freq_atis_elint_hormuz_fm = {34.50, "ATIS FM", "FM"},
+        freq_sc = {127.50, "CVN71 Tower", "AM"},
+        guard_hi = {243.00, "Guard Freq Hi", "AM"},
+        guard_lo = {121.5, "Guard Freq Lo", "AM"}
 
     }
     return frequencies_data
@@ -104,3 +103,5 @@ function air_routes()
     }
     return routes_data
 end
+
+radio_frequencies = frequencies()
