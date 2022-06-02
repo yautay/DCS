@@ -1,40 +1,45 @@
 local debug_elint = true
 
-me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
+local me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
 
 -- TTS SETTINGS
+local hormuz_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.hormuz_hi[1],FREQUENCIES.ELINT.hormuz_lo[1],FREQUENCIES.ELINT.hormuz_fm[1])
+local atis_hormuz_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.atis_hormuz_hi[1],FREQUENCIES.ELINT.atis_hormuz_lo[1],FREQUENCIES.ELINT.atis_hormuz_fm[1])
+local kish_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.kish_hi[1],FREQUENCIES.ELINT.kish_lo[1],FREQUENCIES.ELINT.kish_fm[1])
+local atis_kish_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.atis_kish_hi[1],FREQUENCIES.ELINT.atis_kish_lo[1],FREQUENCIES.ELINT.atis_kish_fm[1])
+local hormuz_modulation = string.format("%s,%s,%s",FREQUENCIES.ELINT.hormuz_hi[3],FREQUENCIES.ELINT.hormuz_lo[3],FREQUENCIES.ELINT.hormuz_fm[3])
+local kish_modulation = string.format("%s,%s,%s",FREQUENCIES.ELINT.hormuz_hi[3],FREQUENCIES.ELINT.hormuz_lo[3],FREQUENCIES.ELINT.hormuz_fm[3])
+
 local controler_args = {
     hormuz = {
-        freq = "255.500,121.750,35.000",
-        modulation = "AM,AM,FM",
+        freq = hormuz_freq,
+        modulation = hormuz_modulation,
         gender = "male"},
     kish = {
-        freq = "255.750,122.000,35.250",
-        modulation = "AM,AM,FM",
-        gender = "female"},
+        freq = kish_freq,
+        modulation = kish_modulation,
+        gender = "male"},
 
 }
 local atis_args = { 
     hormuz = {
-        freq = "256.500,122.750,34.500",
-        modulation = "AM,AM,FM"},
+        freq = atis_hormuz_freq,
+        modulation = hormuz_modulation},
     kish = {
-        freq = "256.750,123.000,34.750",
-        modulation = "AM,AM,FM"},
+        freq = atis_kish_freq,
+        modulation = kish_modulation},
 }
 
 local notifier_args = {
-    freq = "242.000,254.000,128.500",
+    freq = "242.000,243.000,128.500",
     modulation = "AM,AM,AM",
-    gender = "female"
+    gender = "male"
 }
 
-sector_templates = {
+local sector_templates = {
     {"Hormuz", "Sector Hormuz", "AWACS Hormuz", controler_args.hormuz, atis_args.kish},
     {"Kish", "Sector Kish", "AWACS Hormuz", controler_args.kish, atis_args.kish}
 }
-
-debug_elint_elements = {}
 
 HoundBlue = HoundElint:create(coalition.side.BLUE)
 
@@ -44,42 +49,41 @@ function init_elint_elements(templates_table)
             function(element_spawned)
                 local unit_name = element_spawned:GetFirstUnitAlive():GetName()
                 env.info(string.format("SPAWNED %s\n", unit_name))
-                table.insert(debug_elint_elements, unit_name)
                 HoundBlue:addPlatform(unit_name)
             end
         ):InitRepeatOnLanding()
     end
 end
 
-function setup_sector(template_sectors)
+function setup_sectors(template_sectors)
     for i, v in pairs(template_sectors) do
-
+        HoundBlue:addSector(v[1])
+        HoundBlue:setZone(v[1],v[2])
+        HoundBlue:setTransmitter(v[1],v[3])
+        HoundBlue:enableController(v[1],v[4])
+        HoundBlue:enableAlerts(v[1])
+        HoundBlue:enableAtis(v[1],v[5])
+        HoundBlue:reportEWR(v[1],true)
+    end
+end
 
 init_elint_elements(me_elint_templates)
+setup_sectors(sector_templates)
 
--- SECTORS
-HoundBlue:addSector("Hormuz")
-HoundBlue:addSector("Kish")
-HoundBlue:setZone("Hormuz","Sector Hormuz")
-HoundBlue:setZone("Kish","Sector Kish")
-
-
-HoundBlue:setTransmitter("Hormuz","AWACS Hormuz")
-
--- SAM CONTROLER
-HoundBlue:enableController("Hormuz",controller_args)
-HoundBlue:enableAlerts("Hormuz")
+-- MISC
 HOUND.setMgrsPresicion(3)
 HOUND.showExtendedInfo(false)
+HoundBlue:setTimerInterval("scan",5)
+HoundBlue:setTimerInterval("process",10)
+HoundBlue:setTimerInterval("menus",10)
+HoundBlue:setTimerInterval("markers",10)
+HoundBlue:setTimerInterval("display",10)
 
 -- ATIS
-HoundBlue:enableAtis("Hormuz",atis_args)
-HoundBlue:reportEWR("all",true)
-HoundBlue:reportEWR("Hormuz",true)
 HoundBlue:setAtisUpdateInterval(1*60)
 
 -- NOTIFIER
-HoundBlue:enableNotifier("Hormuz", notifier_args)
+HoundBlue:enableNotifier()
 
 -- FUNCTIONAL CONFIG
 HoundBlue:setMarkerType(HOUND.MARKER.OCTAGON)
@@ -89,21 +93,15 @@ HoundBlue:enableText("all")
 
 -- PRE BRIEFED
 
-HoundBlue:preBriefedContact("red-sa5-1-sr")
-HoundBlue:preBriefedContact("red-sa5-1-tr")
-HoundBlue:preBriefedContact("red-sa2-1-tr")
-HoundBlue:preBriefedContact("red-sa2-1-sr")
+-- HoundBlue:preBriefedContact("red-sa5-1-sr")
+-- HoundBlue:preBriefedContact("red-sa5-1-tr")
+-- HoundBlue:preBriefedContact("red-sa2-1-tr")
+-- HoundBlue:preBriefedContact("red-sa2-1-sr")
 
 -- ON
 HoundBlue:systemOn()
 
-HoundBlue:setTimerInterval("scan",5)
-HoundBlue:setTimerInterval("process",10)
-HoundBlue:setTimerInterval("menus",10)
-HoundBlue:setTimerInterval("markers",10)
-HoundBlue:setTimerInterval("display",10)
 -- DEBUG
-
 function dump(o)
     if type(o) == 'table' then
         local s = '{ '
@@ -148,5 +146,6 @@ function debug_hound()
 end
 
 if (debug_elint) then
+    BASE:E(HoundBlue)
     mist.scheduleFunction(debug_hound ,{} ,timer.getTime(), 15, timer.getTime() + 36000)
 end

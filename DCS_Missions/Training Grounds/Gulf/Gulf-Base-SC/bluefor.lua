@@ -1,9 +1,5 @@
 _SETTINGS:SetPlayerMenuOff()
 
-local bluefor_frequencies = frequencies()
-local bluefor_tacans = tacans()
-local bluefor_icls = icls()
-
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
 -- ###########################################################
@@ -14,7 +10,7 @@ Tanker_Shell =
     function(shell_11)
         shell_11:EnRouteTaskTanker()
         shell_11:CommandSetCallsign(CALLSIGN.Tanker.Shell, 1, 1)
-        shell_11:CommandSetFrequency(bluefor_frequencies.freq_aar[1])
+        shell_11:CommandSetFrequency(FREQUENCIES.AAR.shell[1])
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =
@@ -22,10 +18,9 @@ AWACS_Overlord =
     function(darkstar_11)
         darkstar_11:EnRouteTaskAWACS()
         darkstar_11:CommandSetCallsign(CALLSIGN.AWACS.Darkstar, 1, 1)
-        darkstar_11:CommandSetFrequency(bluefor_frequencies.freq_awacs[1])
+        darkstar_11:CommandSetFrequency(FREQUENCIES.AWACS.darkstar[1])
     end
 ):InitRepeatOnLanding()
-    
 
 -- ###########################################################
 -- ###                      BLUE CV                        ###
@@ -38,16 +33,16 @@ ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -
 -- S-3B Recovery Tanker
 local tanker = RECOVERYTANKER:New(UNIT:FindByName("USS Theodore Roosevelt"), "USS Theodore Roosevelt AAR")
 tanker:SetTakeoffAir()
-tanker:SetRadio(bluefor_frequencies.freq_aar[1])
+tanker:SetRadio(FREQUENCIES.AAR.arco[1])
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
-tanker:SetTACAN(bluefor_tacans.tacan_arco[1], bluefor_tacans.tacan_arco[3])
+tanker:SetTACAN(TACAN.arco[1], TACAN.arco[3])
 tanker:Start()
 
 -- E-2D AWACS
 local awacs = RECOVERYTANKER:New("USS Theodore Roosevelt", "USS Theodore Roosevelt AWACS")
 awacs:SetTakeoffAir()
 awacs:SetAWACS()
-awacs:SetRadio(bluefor_frequencies.freq_awacs[1])
+awacs:SetRadio(FREQUENCIES.AWACS.wizard[1])
 awacs:SetAltitude(25000)
 awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
 awacs:SetRacetrackDistances(15, 15)
@@ -60,11 +55,11 @@ rescuehelo:Start()
 
 -- AIRBOSS object.
 AirbossStennis = AIRBOSS:New("USS Theodore Roosevelt")
-AirbossStennis:SetTACAN(bluefor_tacans.tacan_sc[1], bluefor_tacans.tacan_sc[2], bluefor_tacans.tacan_sc[3]):SetICLS(
-    bluefor_icls.icls_sc[1],
-    bluefor_icls.icls_sc[2]
+AirbossStennis:SetTACAN(TACAN.sc[1], TACAN.sc[2], TACAN.sc[3]):SetICLS(ICLS.sc[1], ICLS.sc[2])
+AirbossStennis:SetMarshalRadio(FREQUENCIES.CV.marshal[1], FREQUENCIES.CV.marshal[3]):SetLSORadio(
+    FREQUENCIES.CV.lso[3],
+    FREQUENCIES.CV.lso[3]
 )
-AirbossStennis:SetMarshalRadio(freq_marshal, "AM"):SetLSORadio(freq_lso, "AM")
 
 local window1 = AirbossStennis:AddRecoveryWindow("5:00", "19:00", 1, nil, true, 25)
 local window2 = AirbossStennis:AddRecoveryWindow("19:00", "20:00", 2, nil, true, 25)

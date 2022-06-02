@@ -1,96 +1,130 @@
-local radio_frequencies = frequencies()
-
+-- FM only 20,0/59,9
 local ru_heli_828 = {
-    {"1", radio_frequencies.freq_al_minhad_fm},
-    {"2", radio_frequencies.freq_elint_fm},
-    {"3", radio_frequencies.freq_atis_fm},
-    {"7", radio_frequencies.freq_flight_fm}
+    {"1", FREQUENCIES.GROUND.al_minhad_fm},
+    {"2", FREQUENCIES.FLIGHTS.flight_fm},
+    {"5", FREQUENCIES.ELINT.hormuz_fm},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_fm},
+    {"7", FREQUENCIES.ELINT.kish_fm},
+    {"8", FREQUENCIES.ELINT.atis_kish_fm}
 }
+-- 100/399,9
 local ru_heli_863 = {
-    {"3", radio_frequencies.freq_awacs},
-    {"5", radio_frequencies.freq_elint_hi},
-    {"6", radio_frequencies.freq_atis_hi},
-    {"7", radio_frequencies.freq_flight},
-    {"11", radio_frequencies.freq_al_minhad},
-    {"12", radio_frequencies.freq_khasab}
+    {"0", FREQUENCIES.SPECIAL.guard_hi},
+    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi}
 }
+-- 118/390
 local mig21_832 = {
-    {"0", radio_frequencies.freq_flight_lo},
-    {"3", radio_frequencies.freq_awacs},
-    {"5", radio_frequencies.freq_elint_hi},
-    {"6", radio_frequencies.freq_atis_hi},
-    {"7", radio_frequencies.freq_flight},
-    {"11", radio_frequencies.freq_al_minhad},
-    {"12", radio_frequencies.freq_khasab}
+    {"0", FREQUENCIES.SPECIAL.guard_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi}
 }
+-- 225/399,97
 local f14_159 = {
-    {"1", radio_frequencies.freq_marshal},
-    {"2", radio_frequencies.freq_lso},
-    {"3", radio_frequencies.freq_awacs},
-    {"4", radio_frequencies.freq_aar},
-    {"5", radio_frequencies.freq_elint_hi},
-    {"6", radio_frequencies.freq_atis_hi},
-    {"7", radio_frequencies.freq_flight}
-}
-local f14_182 = {
-    {"1", radio_frequencies.freq_marshal},
-    {"2", radio_frequencies.freq_lso},
-    {"3", radio_frequencies.freq_awacs},
-    {"4", radio_frequencies.freq_aar},
-    {"5", radio_frequencies.freq_elint_hi},
-    {"6", radio_frequencies.freq_atis_hi},
-    {"7", radio_frequencies.freq_flight},
-    {"10", radio_frequencies.freq_sc},
-    {"11", radio_frequencies.freq_al_minhad},
-    {"12", radio_frequencies.freq_khasab},
-    {"20", radio_frequencies.freq_flight_lo}
-}
-local f16_164 = {
-    {"3", radio_frequencies.freq_awacs},
-    {"4", radio_frequencies.freq_aar},
-    {"7", radio_frequencies.freq_flight},
-    {"11", radio_frequencies.freq_al_minhad},
-    {"12", radio_frequencies.freq_khasab}
-}
--- local f16_222 = {
---     {"11", radio_frequencies.freq_incirlik_1},
---     {"13", radio_frequencies.freq_paphos_1},
---     {"15", radio_frequencies.freq_larnaca_1}
--- }
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
 
-local f18_210_1 = {
-    {"1", radio_frequencies.freq_marshal},
-    {"2", radio_frequencies.freq_lso},
-    {"3", radio_frequencies.freq_awacs},
-    {"4", radio_frequencies.freq_aar},
-    {"5", radio_frequencies.freq_elint_hi},
-    {"6", radio_frequencies.freq_atis_hi},
-    {"7", radio_frequencies.freq_flight},
-    {"8", radio_frequencies.freq_flight_fm},
-    {"10", radio_frequencies.freq_sc},
-    {"11", radio_frequencies.freq_al_minhad},
-    {"12", radio_frequencies.freq_khasab},
-    {"20", radio_frequencies.freq_flight_lo}
 }
+-- 30/399,97
+local f14_182 = {
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
+}
+-- 255/399,97
+local f16_164 = {
+    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
+}
+-- 30/155,97
+local f16_222 = {
+    {"2", FREQUENCIES.FLIGHTS.flight_lo},
+    {"5", FREQUENCIES.ELINT.hormuz_lo},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_lo},
+    {"7", FREQUENCIES.ELINT.kish_lo},
+    {"8", FREQUENCIES.ELINT.atis_kish_lo},
+    {"11", FREQUENCIES.GROUND.al_minhad_lo},
+    {"20", FREQUENCIES.SPECIAL.guard_lo},
+}
+-- 30/399,97
+local f18_210_1 = {
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
+}
+-- 30/399,97
 local f18_210_2 = {
-    {"1", radio_frequencies.freq_marshal},
-    {"2", radio_frequencies.freq_lso},
-    {"3", radio_frequencies.freq_awacs},
-    {"4", radio_frequencies.freq_aar},
-    {"5", radio_frequencies.freq_elint_hi},
-    {"6", radio_frequencies.freq_atis_hi},
-    {"7", radio_frequencies.freq_flight},
-    {"8", radio_frequencies.freq_flight_fm},
-    {"10", radio_frequencies.freq_sc},
-    {"11", radio_frequencies.freq_al_minhad},
-    {"12", radio_frequencies.freq_khasab},
-    {"20", radio_frequencies.freq_flight_lo}
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.hormuz_hi},
+    {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+    {"7", FREQUENCIES.ELINT.kish_hi},
+    {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"11", FREQUENCIES.GROUND.al_minhad_hi},
+    {"12", FREQUENCIES.GROUND.khasab_hi},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
 }
 local presets_data = {
     preset_f14_159 = f14_159,
     preset_f14_182 = f14_182,
     preset_f16_164 = f16_164,
-    -- preset_f16_222 = f16_222,
+    preset_f16_222 = f16_222,
     preset_f18_210_1 = f18_210_1,
     preset_f18_210_2 = f18_210_2,
     preset_mig21_832 = mig21_832,
@@ -122,9 +156,9 @@ function info_preset_f16_164()
     return info_preset(presets_data.preset_f16_164, "AN/ARC-164")
 end
 
--- function info_preset_f16_222()
---     return info_preset(presets_data.preset_f16_222, "AN/ARC-222")
--- end
+function info_preset_f16_222()
+    return info_preset(presets_data.preset_f16_222, "AN/ARC-222")
+end
 
 function info_preset_f18_210_1()
     return info_preset(presets_data.preset_f18_210_1, "ARC-210-1")

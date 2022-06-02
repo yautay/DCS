@@ -1,37 +1,26 @@
 local debug_reddispatcher = true
 
 -- ZONES -----------------------------------------------------
-ZONE_border_1 =
-    ZONE_POLYGON:New("red_border_1", GROUP:FindByName("red_border_1")):DrawZone(
-    -1,
-    {.8, 0, 0},
-    1.0,
-    {.8, 0, 0},
-    .4,
-    2
-)
-ZONE_cap_1 =ZONE_POLYGON:New("red_cap_1", GROUP:FindByName("red_cap_1"))
+ZONE_border_1 = ZONE_POLYGON:New("red_border_1", GROUP:FindByName("red_border_1"))
+ZONE_cap_1 = ZONE_POLYGON:New("red_cap_1", GROUP:FindByName("red_cap_1"))
 -- AWACS -----------------------------------------------------
 awacs_1 = SPAWN:New("red-awacs-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
-awacs_2 = SPAWN:New("red-awacs-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)  
+awacs_2 = SPAWN:New("red-awacs-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
 
 DetectionSetGroup = SET_GROUP:New()
 DetectionSetGroup:AddGroupsByName("red-awacs-1", "red-awacs-2")
-Detection = DETECTION_AREAS:New( DetectionSetGroup, 30000 )
+Detection = DETECTION_AREAS:New(DetectionSetGroup, 30000)
 
 -- DISPATCHER -----------------------------------------------------
 
-A2A_Al_Kerman = AI_A2A_DISPATCHER:New( Detection )
+A2A_Al_Kerman = AI_A2A_DISPATCHER:New(Detection)
 A2A_Al_Kerman:SetEngageRadius(UTILS.NMToMeters(75)) -- 100000 is the default value.
 -- A2A_Al_Kerman:SetDisengageRadius(UTILS.NMToMeters(80))
 A2A_Al_Kerman:SetGciRadius(UTILS.NMToMeters(120)) -- 200000 is the default value.
 A2A_Al_Kerman:SetBorderZone(ZONE_border_1)
 A2A_Al_Kerman:SetDefaultTakeoffFromRunway()
 A2A_Al_Kerman:SetDefaultLandingAtRunway()
-A2A_Al_Kerman:SetSquadronGci( "IRAN29", 900, 1200 )
-
 A2A_Al_Kerman:Start()
-
 
 function spawnCAP(template_name, palnes, grouping, overhead)
     A2A_Al_Kerman:SetSquadron("IRAN_CAP", AIRBASE.PersianGulf.Lar_Airbase, template_name, planes)
@@ -52,9 +41,10 @@ function spawnCAP(template_name, palnes, grouping, overhead)
 end
 
 function spawnCGI(template_name, palnes, grouping, overhead)
-    A2A_Al_Kerman:SetSquadron("IRAN_CGI", AIRBASE.PersianGulf.Lar_Airbase, template_name, planes)  
+    A2A_Al_Kerman:SetSquadron("IRAN_CGI", AIRBASE.PersianGulf.Lar_Airbase, template_name, planes)
     A2A_Al_Kerman:SetSquadronGrouping("IRAN_CGI", grouping)
     A2A_Al_Kerman:SetSquadronOverhead("IRAN_CGI", overhead)
+    A2A_Al_Kerman:SetSquadronGci("IRAN_CGI", 900, 1200)
 end
 
 -- SQUADRONS /template/planes/grouping/overhead-----------------------------------------------------
@@ -64,10 +54,10 @@ local squadrons = {
     m2k = {"red-mirage2000", 10, 2, 1},
     m23 = {"red-mig23", 25, 2, 1},
     m29 = {"red-mig29", 20, 2, 1},
-    m21 = {"red-mig21", 35, 2, 1.2},
+    m21 = {"red-mig21", 35, 2, 1.2}
 }
 
-math.randomseed = os.clock()*100000000000
+math.randomseed = os.clock() * 100000000000
 
 local cap_random = math.random(0, 100)
 local gci_random = math.random(0, 100)
