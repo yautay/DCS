@@ -1,4 +1,5 @@
 local debug_menu = false
+local dump_to_file = false
 
 local ordered_flight_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
@@ -166,4 +167,12 @@ if (debug_menu == true) then
     env.info(freqs_info)
     env.info(tacan_info)
     env.info(icls_info)
+end
+
+if (dump_to_file) then
+    local file = io.open("freqs_presets.txt",'w')
+    if file then
+        file:write(string.format("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", presets_f14, presets_f16, presets_f18, presets_mig21, presets_ka50, presets_mi24, presets_mi8, freqs_info, tacan_info, icls_info))
+        file:close()
+    end
 end

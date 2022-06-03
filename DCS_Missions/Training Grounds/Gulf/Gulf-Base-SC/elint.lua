@@ -3,12 +3,19 @@ local debug_elint = false
 local me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
 
 -- TTS SETTINGS
-local hormuz_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.hormuz_hi[1],FREQUENCIES.ELINT.hormuz_lo[1],FREQUENCIES.ELINT.hormuz_fm[1])
-local atis_hormuz_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.atis_hormuz_hi[1],FREQUENCIES.ELINT.atis_hormuz_lo[1],FREQUENCIES.ELINT.atis_hormuz_fm[1])
-local kish_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.kish_hi[1],FREQUENCIES.ELINT.kish_lo[1],FREQUENCIES.ELINT.kish_fm[1])
-local atis_kish_freq = string.format("%f,%f,%f",FREQUENCIES.ELINT.atis_kish_hi[1],FREQUENCIES.ELINT.atis_kish_lo[1],FREQUENCIES.ELINT.atis_kish_fm[1])
+local hormuz_freq = string.format("%2f,%2f,%2f",FREQUENCIES.ELINT.hormuz_hi[1],FREQUENCIES.ELINT.hormuz_lo[1],FREQUENCIES.ELINT.hormuz_fm[1])
+local atis_hormuz_freq = string.format("%2f,%2f,%2f",FREQUENCIES.ELINT.atis_hormuz_hi[1],FREQUENCIES.ELINT.atis_hormuz_lo[1],FREQUENCIES.ELINT.atis_hormuz_fm[1])
+local kish_freq = string.format("%2f,%2f,%2f",FREQUENCIES.ELINT.kish_hi[1],FREQUENCIES.ELINT.kish_lo[1],FREQUENCIES.ELINT.kish_fm[1])
+local atis_kish_freq = string.format("%2f,%2f,%2f",FREQUENCIES.ELINT.atis_kish_hi[1],FREQUENCIES.ELINT.atis_kish_lo[1],FREQUENCIES.ELINT.atis_kish_fm[1])
 local hormuz_modulation = string.format("%s,%s,%s",FREQUENCIES.ELINT.hormuz_hi[3],FREQUENCIES.ELINT.hormuz_lo[3],FREQUENCIES.ELINT.hormuz_fm[3])
 local kish_modulation = string.format("%s,%s,%s",FREQUENCIES.ELINT.hormuz_hi[3],FREQUENCIES.ELINT.hormuz_lo[3],FREQUENCIES.ELINT.hormuz_fm[3])
+
+env.info(hormuz_freq)
+env.info(atis_hormuz_freq)
+env.info(kish_freq)
+env.info(atis_kish_freq)
+env.info(hormuz_modulation)
+env.info(kish_modulation)
 
 local controler_args = {
     hormuz = {
@@ -37,7 +44,7 @@ local notifier_args = {
 }
 
 local sector_templates = {
-    {"Hormuz", "Sector Hormuz", "AWACS Hormuz", controler_args.hormuz, atis_args.kish},
+    {"Hormuz", "Sector Hormuz", "AWACS Hormuz", controler_args.hormuz, atis_args.hormuz},
     {"Kish", "Sector Kish", "AWACS Hormuz", controler_args.kish, atis_args.kish}
 }
 
