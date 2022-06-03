@@ -1,14 +1,22 @@
-local debug_reddispatcher = true
+local debug_reddispatcher = false
 
 -- ZONES -----------------------------------------------------
 ZONE_border_1 = ZONE_POLYGON:New("red_border_1", GROUP:FindByName("red_border_1"))
 ZONE_cap_1 = ZONE_POLYGON:New("red_cap_1", GROUP:FindByName("red_cap_1"))
--- AWACS -----------------------------------------------------
-awacs_1 = SPAWN:New("red-awacs-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
-awacs_2 = SPAWN:New("red-awacs-2"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
+
+-- DETECTION -----------------------------------------------------
 
 DetectionSetGroup = SET_GROUP:New()
-DetectionSetGroup:AddGroupsByName("red-awacs-1", "red-awacs-2")
+
+function addDetectionGroups(template_detection_groups)
+    for k, v in pairs(template_detection_groups) do
+        DetectionSetGroup:AddGroupsByName(GROUP:FindByName(v))
+    end
+end
+
+addDetectionGroups(ewr_groups)
+addDetectionGroups(awacs_groups)
+
 Detection = DETECTION_AREAS:New(DetectionSetGroup, 30000)
 
 -- DISPATCHER -----------------------------------------------------
@@ -54,7 +62,8 @@ local squadrons = {
     m2k = {"red-mirage2000", 10, 2, 1},
     m23 = {"red-mig23", 25, 2, 1},
     m29 = {"red-mig29", 20, 2, 1},
-    m21 = {"red-mig21", 35, 2, 1.2}
+    m21 = {"red-mig21", 35, 2, 1.05},
+    f5 = {"red-f5", 20, 2, 1}
 }
 
 math.randomseed = os.clock() * 100000000000
@@ -74,10 +83,12 @@ else
 end
 
 local gci_squadron = {}
-if (gci_random >= 0) and (gci_random <= 30) then
+if (gci_random >= 0) and (gci_random <= 25) then
     gci_squadron = squadrons.m29
-elseif (gci_random >= 31) and (gci_random <= 70) then
+elseif (gci_random >= 26) and (gci_random <= 50) then
     gci_squadron = squadrons.m21
+elseif (gci_random >= 51) and (gci_random <= 75) then
+    gci_squadron = squadrons.f5
 else
     gci_squadron = squadrons.m23
 end
@@ -87,4 +98,5 @@ spawnCGI(gci_squadron[1], gci_squadron[2], gci_squadron[3], gci_squadron[4])
 
 if (debug_reddispatcher == true) then
     A2A_Al_Kerman:SetTacticalDisplay(true)
+    env.info(string.format("DETECTION SET: %s", DetectionSetGroup:GetObjectNames()))
 end

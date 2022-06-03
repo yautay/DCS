@@ -1,4 +1,4 @@
-local debug_elint = true
+local debug_elint = false
 
 local me_elint_templates = {"ELINT South", "ELINT West", "ELINT East"}
 
