@@ -11,6 +11,8 @@ Tanker_Shell =
         shell_11:EnRouteTaskTanker()
         shell_11:CommandSetCallsign(CALLSIGN.Tanker.Shell, 1, 1)
         shell_11:CommandSetFrequency(FREQUENCIES.AAR.shell[1])
+        local beacon = shell_11:GetBeacon()
+        beacon:ActivateTACAN(TACAN.shell[1], TACAN.shell[2], TACAN.shell[3], true)
     end
 ):InitRepeatOnLanding()
 AWACS_Overlord =

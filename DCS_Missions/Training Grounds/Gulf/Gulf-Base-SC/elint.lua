@@ -48,6 +48,10 @@ local sector_templates = {
     {"Kish", "Sector Kish", "AWACS Hormuz", controler_args.kish, atis_args.kish}
 }
 
+local zone_hormuz = ZONE_POLYGON:New("Sector Hormuz", GROUP:FindByName("Sector Hormuz")):DrawZone(2, {1,0.7,0.1}, 1, {1,0.7,0.1}, 0.2, 0, true)
+local zone_kish = ZONE_POLYGON:New("Sector Kish", GROUP:FindByName("Sector Kish")):DrawZone(2, {1,0,0}, 1, {1,0,0}, 0.2, 0, true)
+
+
 HoundBlue = HoundElint:create(coalition.side.BLUE)
 
 function init_elint_elements(templates_table)

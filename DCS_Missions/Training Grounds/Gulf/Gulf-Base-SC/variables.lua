@@ -53,7 +53,7 @@ ICLS = {
 }
 TACAN = {
     sc = {74, "X", "CVN", "CVN-71"},
-    arco = {1, "X", "RCV", "Recovery Tanker CVN-71"},
-    shell = {70, "X", "SHL", "Tanker Shell"},
+    arco = {1, "Y", "RCV", "Recovery Tanker CVN-71"},
+    shell = {70, "Y", "SHL", "Tanker Shell"},
     al_minhad = {99, "X", "MIN", "Al Minhad AFB"}
 }

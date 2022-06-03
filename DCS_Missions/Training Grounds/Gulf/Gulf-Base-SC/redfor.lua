@@ -53,6 +53,11 @@ local templates_awacs = {
 -- ###########################################################
 -- ###                   RED SAMS                          ###
 -- ###########################################################
+
+-- lorad 1-3
+-- merad 1-8
+-- shorad 1-3
+-- 
 function spawn_sam(template)
     local data = {}
     for k, v in pairs(template) do
@@ -66,34 +71,23 @@ function spawn_sam(template)
     return data
 end
 
--- randomize sam positions
-local s300_random = math.random(1, 8)
-local s200_random = math.random(1, 7)
-local s125_random = math.random(1, 10)
-local s75_random = math.random(1, 10)
-
-local s300zone = string.format("s300-%d", s300_random)
-local s200zone = string.format("s200-%d", s200_random)
-local s125zone = string.format("s125-%d", s125_random)
-local s75zone = string.format("s75-%d", s75_random)
-
-local s300_type_random = math.random(1, 100)
-
-local templates_sam = {
-    sa2 = {"te-red-sa2", s75zone},
-    sa3 = {"te-red-sa3", s125zone},
-    sa5 = {"te-red-sa5", s200zone},
+local templates_sam_1 = {
+    sa10b_3 = {"te-red-sa10b", "lorad-3"},
+    sa20b_2 = {"te-red-sa20b", "lorad-2"},
+    sa5_1 = {"te-red-sa5", "lorad-1"},
+    sa2_1 = {"te-red-sa2", "merad-1"},
+    sa2_2 = {"te-red-sa2", "merad-2"},
+    sa2_3 = {"te-red-sa2", "merad-3"},
+    sa11_8 = {"te-red-sa11", "merad-4"},
+    sa2_5 = {"te-red-sa2", "merad-5"},
+    sa2_6 = {"te-red-sa2", "merad-6"},
+    sa2_7 = {"te-red-sa2", "merad-7"},
+    sa2_8 = {"te-red-sa2", "merad-8"},
+    sa3_1 = {"te-red-sa3", "shorad-1"},
+    sa3_2 = {"te-red-sa3", "shorad-2"},
+    sa3_3 = {"te-red-sa3", "shorad-3"},
     sa9 = {"te-red-sa9", "sirri-sa9"}
 }
-
--- randomise s300 type
-if (s300_type_random >= 75) then
-    templates_sam["sa20b"] = {"te-red-sa20b", s300zone}
-else
-    templates_sam["sa11"] = {"te-red-sa11", s300zone}
-end
-
-env.info(string.format("SAMS SEED RANDOMIZED %s %s %s %s",s75zone, s125zone, s200zone, s300zone))
 
 -- ###########################################################
 -- ###                   RED SPAWNING                      ###
@@ -135,7 +129,7 @@ spawn_siri_base()
 
 ewrs = spawn_ewr(templates_ewr)
 awacs = spawn_awacs(templates_awacs)
-sams = spawn_sam(templates_sam)
+sams = spawn_sam(templates_sam_1)
 
 local ewrs_structure = get_detection_structure(ewrs)
 local awacs_structure = get_detection_structure(awacs)
