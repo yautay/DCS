@@ -6,16 +6,16 @@ FREQUENCIES = {
         atis_hormuz_hi = {256.50, "Sector Hormuz ATIS Hi", "AM"},
         atis_hormuz_lo = {122.75, "Sector Hormuz ATIS Lo", "AM"},
         atis_hormuz_fm = {36.00, "Sector Hormuz ATIS FM", "FM"},
-        kish_hi = {257.50, "Sector Kish Hi", "AM"},
-        kish_lo = {123.75, "Sector Kish Lo", "AM"},
+        kish_hi = {255.50, "Sector Kish Hi", "AM"},
+        kish_lo = {122.10, "Sector Kish Lo", "AM"},
         kish_fm = {37.00, "Sector Kish FM", "FM"},
-        atis_kish_hi = {258.50, "Sector Kish ATIS Hi", "AM"},
-        atis_kish_lo = {124.75, "Sector Kish ATIS Lo", "AM"},
+        atis_kish_hi = {256.90, "Sector Kish ATIS Hi", "AM"},
+        atis_kish_lo = {122.40, "Sector Kish ATIS Lo", "AM"},
         atis_kish_fm = {38.00, "Sector Kish ATIS FM", "FM"}
     },
     AWACS = {
         darkstar = {247.50, "AWACS Darkstar", "AM"},
-        wizard = {247.75, "AWACS Wizard", "AM"}
+        wizard = {247.70, "AWACS Wizard", "AM"}
     },
     AAR = {
         shell = {243.25, "TANKER Shell", "AM"},
@@ -23,16 +23,16 @@ FREQUENCIES = {
     },
     FLIGHTS = {
         flight_hi = {242.00, "FLIGHTS Hi", "AM"},
-        flight_lo = {128.5, "FLIGHTS Lo", "AM"},
+        flight_lo = {121.0, "FLIGHTS Lo", "AM"},
         flight_fm = {41.9, "FLIGHTS FM", " FM"},
         HORNET = {
             keep = nil        
         }
     },
     CV = {
-        lso = {270.00, "Airbos LSO", "AM"},
-        marshal = {305.00, "Airbos Marshal", "AM"},
-        sc = {301.50, "CVN71 Tower", "AM"}
+        lso = {260.00, "Airbos LSO", "AM"},
+        marshal = {260.50, "Airbos Marshal", "AM"},
+        sc = {123.80, "CVN71 Tower", "AM"}
     },
     GROUND = {
         al_minhad_hi = {250.10, "Al Minhad Tower Hi", "AM"},
