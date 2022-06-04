@@ -1,5 +1,5 @@
 local debug_menu = false
-local dump_to_file = false
+local dump_to_file = true
 
 local ordered_flight_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
@@ -34,6 +34,7 @@ local ordered_ground_freq = {
     FREQUENCIES.GROUND.al_minhad_hi,
     FREQUENCIES.GROUND.al_minhad_lo,
     FREQUENCIES.GROUND.al_minhad_fm,
+    FREQUENCIES.GROUND.al_minhad_atis,
     FREQUENCIES.GROUND.khasab_hi  
 }
 local ordered_tacan_data = {

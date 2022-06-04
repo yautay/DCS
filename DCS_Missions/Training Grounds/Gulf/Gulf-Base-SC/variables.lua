@@ -39,6 +39,7 @@ FREQUENCIES = {
         al_minhad_hi = {250.10, "Al Minhad Tower Hi", "AM"},
         al_minhad_lo = {118.55, "Al Minhad Tower Lo", "AM"},
         al_minhad_fm = {38.5, "Al Minhad Tower", "FM"},
+        al_minhad_atis = {127.7, "Al Minhad ATIS", "AM"},
         khasab_hi = {250.00, "Khasab Tower", "AM"}
     },
     SPECIAL = {

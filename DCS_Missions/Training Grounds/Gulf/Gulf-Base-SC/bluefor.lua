@@ -16,14 +16,14 @@ Tanker_Shell =
     end
 ):InitRepeatOnLanding()
 Tanker_Texaco =
-SPAWN:New("Tanker Texaco"):InitLimit(1, 0):SpawnScheduled(5, .1):OnSpawnGroup(
-function(texaco_11)
-    texaco_11:EnRouteTaskTanker()
-    texaco_11:CommandSetCallsign(CALLSIGN.Tanker.Texaco, 1, 1)
-    texaco_11:CommandSetFrequency(FREQUENCIES.AAR.common[1])
-    local beacon = texaco_11:GetBeacon()
-    beacon:ActivateTACAN(TACAN.texaco[1], TACAN.texaco[2], TACAN.texaco[3], true)
-end
+    SPAWN:New("Tanker Texaco"):InitLimit(1, 0):SpawnScheduled(5, .1):OnSpawnGroup(
+    function(texaco_11)
+        texaco_11:EnRouteTaskTanker()
+        texaco_11:CommandSetCallsign(CALLSIGN.Tanker.Texaco, 1, 1)
+        texaco_11:CommandSetFrequency(FREQUENCIES.AAR.common[1])
+        local beacon = texaco_11:GetBeacon()
+        beacon:ActivateTACAN(TACAN.texaco[1], TACAN.texaco[2], TACAN.texaco[3], true)
+    end
 ):InitRepeatOnLanding()
 AWACS_Darkstar =
     SPAWN:New("AWACS Kish"):InitLimit(1, 0):SpawnScheduled(60, .1):OnSpawnGroup(
@@ -131,3 +131,24 @@ function AirbossStennis:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- Report LSO grade to dcs.log file.
     env.info(string.format("Player %s scored %.1f", name, score))
 end
+
+-- ###########################################################
+-- ###                      CHROME                         ###
+-- ###########################################################
+
+atisDubai=ATIS:New(AIRBASE.PersianGulf.Dubai_Intl, 131.7)
+atisDubai:SetRadioRelayUnitName("ELINT South")
+atisDubai:SetMetricUnits()
+atisDubai:SetActiveRunway("R")
+
+atisDubai:Start()
+
+atisMinhad=ATIS:New(AIRBASE.PersianGulf.Al_Minhad_AB, FREQUENCIES.GROUND.al_minhad_atis[1])
+atisMinhad:SetRadioRelayUnitName("ELINT South")
+atisMinhad:SetTACAN(99)
+atisMinhad:SetTowerFrequencies({FREQUENCIES.GROUND.al_minhad_hi[1], FREQUENCIES.GROUND.al_minhad_lo[1]})
+atisMinhad:AddILS(110.70, "09")
+atisMinhad:AddILS(110.75, "27")
+atisMinhad:SetSRS("C:\\DCS-SimpleRadio-Standalone", "female", "en-US")
+atisMinhad:SetMapMarks()
+atisMinhad:Start()
