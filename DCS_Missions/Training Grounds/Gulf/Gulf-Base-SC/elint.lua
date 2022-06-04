@@ -10,13 +10,6 @@ local atis_kish_freq = string.format("%2f,%2f,%2f",FREQUENCIES.ELINT.atis_kish_h
 local hormuz_modulation = string.format("%s,%s,%s",FREQUENCIES.ELINT.hormuz_hi[3],FREQUENCIES.ELINT.hormuz_lo[3],FREQUENCIES.ELINT.hormuz_fm[3])
 local kish_modulation = string.format("%s,%s,%s",FREQUENCIES.ELINT.hormuz_hi[3],FREQUENCIES.ELINT.hormuz_lo[3],FREQUENCIES.ELINT.hormuz_fm[3])
 
-env.info(hormuz_freq)
-env.info(atis_hormuz_freq)
-env.info(kish_freq)
-env.info(atis_kish_freq)
-env.info(hormuz_modulation)
-env.info(kish_modulation)
-
 local controler_args = {
     hormuz = {
         freq = hormuz_freq,
@@ -45,7 +38,7 @@ local notifier_args = {
 
 local sector_templates = {
     {"Hormuz", "Sector Hormuz", "AWACS Hormuz", controler_args.hormuz, atis_args.hormuz},
-    {"Kish", "Sector Kish", "AWACS Hormuz", controler_args.kish, atis_args.kish}
+    {"Kish", "Sector Kish", "AWACS Kish", controler_args.kish, atis_args.kish}
 }
 
 local zone_hormuz = ZONE_POLYGON:New("Sector Hormuz", GROUP:FindByName("Sector Hormuz")):DrawZone(2, {1,0.7,0.1}, 1, {1,0.7,0.1}, 0.2, 0, true)

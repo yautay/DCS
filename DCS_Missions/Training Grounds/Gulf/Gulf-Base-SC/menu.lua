@@ -8,8 +8,9 @@ local ordered_flight_freq = {
     FREQUENCIES.FLIGHTS.flight_lo,
     FREQUENCIES.FLIGHTS.flight_fm,
     FREQUENCIES.AWACS.darkstar,
+    FREQUENCIES.AWACS.overlord,
     FREQUENCIES.AWACS.wizard,
-    FREQUENCIES.AAR.shell,
+    FREQUENCIES.AAR.common,
     FREQUENCIES.AAR.arco
 }
 local ordered_elint_freq = {
@@ -39,6 +40,7 @@ local ordered_tacan_data = {
     TACAN.sc,
     TACAN.arco,
     TACAN.shell,
+    TACAN.texaco,
     TACAN.al_minhad
 }
 local ordered_icls_data = {
@@ -95,7 +97,7 @@ local function icls_text(general_icls)
     local msg = string.format("ICLS/ILS in use: \n")
     table.insert(tmp_table, msg)
     for i, v in ipairs(general_icls) do
-        local tmp_string = string.format("Ch %d Code: %s -> %s \n", v[1], v[2], v[3])
+        local tmp_string = string.format("Ch %s Code: %s -> %s \n", v[1], v[2], v[3])
         table.insert(tmp_table, tmp_string)
     end
     local final_msg = table.concat(tmp_table)
@@ -156,23 +158,16 @@ local PresetsInfoKa50 = MENU_MISSION_COMMAND:New("Presets Ka-50", MenuPresets, M
 local PresetsInfoMi24 = MENU_MISSION_COMMAND:New("Presets Mi-24", MenuPresets, Msg, {presets_mi24, 10})
 local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", MenuPresets, Msg, {presets_mi8, 10})
 
-if (debug_menu == true) then
-    env.info(presets_f14)
-    env.info(presets_f16)
-    env.info(presets_f18)
-    env.info(presets_mig21)
-    env.info(presets_ka50)
-    env.info(presets_mi24)
-    env.info(presets_mi8)
-    env.info(freqs_info)
-    env.info(tacan_info)
-    env.info(icls_info)
-end
 
 if (dump_to_file) then
-    local file = io.open("freqs_presets.txt",'w')
-    if file then
-        file:write(string.format("%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", presets_f14, presets_f16, presets_f18, presets_mig21, presets_ka50, presets_mi24, presets_mi8, freqs_info, tacan_info, icls_info))
-        file:close()
-    end
+    save_to_file("presets_f14", presets_f14)
+    save_to_file("presets_f16", presets_f16)
+    save_to_file("presets_f18", presets_f18)
+    save_to_file("presets_mig21", presets_mig21)
+    save_to_file("presets_ka50", presets_ka50)
+    save_to_file("presets_mi24", presets_mi24)
+    save_to_file("presets_mi8", presets_mi8)
+    save_to_file("freqs_info", freqs_info)
+    save_to_file("tacan_info", tacan_info)
+    save_to_file("icls_info", icls_info)
 end

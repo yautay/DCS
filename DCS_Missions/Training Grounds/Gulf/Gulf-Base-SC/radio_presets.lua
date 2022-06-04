@@ -10,7 +10,8 @@ local ru_heli_828 = {
 -- 100/399,9
 local ru_heli_863 = {
     {"0", FREQUENCIES.SPECIAL.guard_hi},
-    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"1", FREQUENCIES.FLIGHTS.flight_hi},
+    {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.darkstar},
     {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
@@ -23,6 +24,8 @@ local ru_heli_863 = {
 -- 118/390
 local mig21_832 = {
     {"0", FREQUENCIES.SPECIAL.guard_hi},
+    {"1", FREQUENCIES.FLIGHTS.flight_hi},
+    {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.darkstar},
     {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
@@ -34,17 +37,17 @@ local mig21_832 = {
 }
 -- 225/399,97
 local f14_159 = {
-    {"1", FREQUENCIES.CV.sc},
-    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.darkstar},
     {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
     {"7", FREQUENCIES.ELINT.kish_hi},
     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
     {"11", FREQUENCIES.GROUND.al_minhad_hi},
     {"12", FREQUENCIES.GROUND.khasab_hi},
-    {"16", FREQUENCIES.AAR.shell},
+    {"16", FREQUENCIES.AAR.common},
     {"17", FREQUENCIES.AAR.arco},
     {"18", FREQUENCIES.CV.marshal},
     {"19", FREQUENCIES.CV.lso},
@@ -54,33 +57,33 @@ local f14_159 = {
 -- 30/399,97
 local f14_182 = {
     {"1", FREQUENCIES.CV.sc},
-    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.darkstar},
     {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
     {"7", FREQUENCIES.ELINT.kish_hi},
     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
     {"11", FREQUENCIES.GROUND.al_minhad_hi},
     {"12", FREQUENCIES.GROUND.khasab_hi},
-    {"16", FREQUENCIES.AAR.shell},
+    {"16", FREQUENCIES.AAR.common},
     {"17", FREQUENCIES.AAR.arco},
     {"18", FREQUENCIES.CV.marshal},
     {"19", FREQUENCIES.CV.lso},
     {"20", FREQUENCIES.SPECIAL.guard_hi},
+    {"21", FREQUENCIES.SPECIAL.guard_lo},
+    {"29", FREQUENCIES.FLIGHTS.flight_lo},
+    {"30", FREQUENCIES.FLIGHTS.flight_fm},
 }
 -- 255/399,97
 local f16_164 = {
-    {"2", FREQUENCIES.FLIGHTS.flight_hi},
-    {"3", FREQUENCIES.AWACS.darkstar},
-    {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
     {"7", FREQUENCIES.ELINT.kish_hi},
     {"8", FREQUENCIES.ELINT.atis_kish_hi},
     {"11", FREQUENCIES.GROUND.al_minhad_hi},
     {"12", FREQUENCIES.GROUND.khasab_hi},
-    {"20", FREQUENCIES.SPECIAL.guard_hi},
 }
 -- 30/155,97
 local f16_222 = {
@@ -95,16 +98,17 @@ local f16_222 = {
 -- 30/399,97
 local f18_210_1 = {
     {"1", FREQUENCIES.CV.sc},
-    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.darkstar},
     {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
     {"7", FREQUENCIES.ELINT.kish_hi},
     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
     {"11", FREQUENCIES.GROUND.al_minhad_hi},
     {"12", FREQUENCIES.GROUND.khasab_hi},
-    {"16", FREQUENCIES.AAR.shell},
+    {"16", FREQUENCIES.AAR.common},
     {"17", FREQUENCIES.AAR.arco},
     {"18", FREQUENCIES.CV.marshal},
     {"19", FREQUENCIES.CV.lso},
@@ -113,16 +117,17 @@ local f18_210_1 = {
 -- 30/399,97
 local f18_210_2 = {
     {"1", FREQUENCIES.CV.sc},
-    {"2", FREQUENCIES.FLIGHTS.flight_hi},
+    {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.darkstar},
     {"4", FREQUENCIES.AWACS.wizard},
     {"5", FREQUENCIES.ELINT.hormuz_hi},
     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
     {"7", FREQUENCIES.ELINT.kish_hi},
     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
     {"11", FREQUENCIES.GROUND.al_minhad_hi},
     {"12", FREQUENCIES.GROUND.khasab_hi},
-    {"16", FREQUENCIES.AAR.shell},
+    {"16", FREQUENCIES.AAR.common},
     {"17", FREQUENCIES.AAR.arco},
     {"18", FREQUENCIES.CV.marshal},
     {"19", FREQUENCIES.CV.lso},

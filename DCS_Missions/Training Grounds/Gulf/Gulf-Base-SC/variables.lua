@@ -15,10 +15,11 @@ FREQUENCIES = {
     },
     AWACS = {
         darkstar = {247.50, "AWACS Darkstar", "AM"},
+        overlord = {247.90, "AWACS Overlord", "AM"},
         wizard = {247.70, "AWACS Wizard", "AM"}
     },
     AAR = {
-        shell = {243.25, "TANKER Shell", "AM"},
+        common = {243.25, "TANKERS BIG BIRDS", "AM"},
         arco = {243.50, "TANKER Arco", "AM"}
     },
     FLIGHTS = {
@@ -55,5 +56,6 @@ TACAN = {
     sc = {74, "X", "CVN", "CVN-71"},
     arco = {1, "Y", "RCV", "Recovery Tanker CVN-71"},
     shell = {70, "Y", "SHL", "Tanker Shell"},
+    texaco = {72, "Y", "TEX", "Tanker Texaco"},
     al_minhad = {99, "X", "MIN", "Al Minhad AFB"}
 }

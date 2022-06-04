@@ -44,7 +44,8 @@ local templates_ewr = {
     e1 = {"te-red-ewr-wd", "ewr-1"},
     e2 = {"te-red-ewr-nd", "ewr-2"},
     e3 = {"te-red-ewr-wd", "ewr-3"},
-    e4 = {"te-red-ewr-nd", "ewr-4"}
+    e4 = {"te-red-ewr-nd", "ewr-4"},
+    e5 = {"te-red-ewr-nd", "ewr-5"}
 }
 local templates_awacs = {
     a1 = {"te-red-awacs-1"}
