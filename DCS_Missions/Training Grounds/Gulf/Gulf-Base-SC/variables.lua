@@ -48,7 +48,7 @@ FREQUENCIES = {
     }
 }
 ICLS = {
-    sc = {1, "CVN", "ICLS CVN-71"},
+    sc = {1, "CV", "ICLS CVN-71"},
     al_minhad090 = {110.70, "n/a", "ILS Al Minhad rwy 09"},
     al_minhad270 = {110.75, "n/a", "ILS Al Minhad rwy 27"},
     khasab194 = {110.75, "n/a", "ILS Khasab rwy 19"}
