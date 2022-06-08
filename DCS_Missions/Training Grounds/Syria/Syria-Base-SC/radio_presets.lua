@@ -1,77 +1,141 @@
-local frequencies = frequencies()
-
+-- -- FM only 20,0/59,9
+-- local ru_heli_828 = {
+--     {"1", FREQUENCIES.GROUND.al_minhad_fm},
+--     {"2", FREQUENCIES.FLIGHTS.flight_fm},
+--     {"5", FREQUENCIES.ELINT.hormuz_fm},
+--     {"6", FREQUENCIES.ELINT.atis_hormuz_fm},
+--     {"7", FREQUENCIES.ELINT.kish_fm},
+--     {"8", FREQUENCIES.ELINT.atis_kish_fm}
+-- }
+-- -- 100/399,9
+-- local ru_heli_863 = {
+--     {"0", FREQUENCIES.SPECIAL.guard_hi},
+--     {"1", FREQUENCIES.FLIGHTS.flight_hi},
+--     {"2", FREQUENCIES.AWACS.overlord},
+--     {"3", FREQUENCIES.AWACS.darkstar},
+--     {"4", FREQUENCIES.AWACS.wizard},
+--     {"5", FREQUENCIES.ELINT.hormuz_hi},
+--     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+--     {"7", FREQUENCIES.ELINT.kish_hi},
+--     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+--     {"11", FREQUENCIES.GROUND.al_minhad_hi},
+--     {"12", FREQUENCIES.GROUND.khasab_hi}
+-- }
+-- -- 118/390
+-- local mig21_832 = {
+--     {"0", FREQUENCIES.SPECIAL.guard_hi},
+--     {"1", FREQUENCIES.FLIGHTS.flight_hi},
+--     {"2", FREQUENCIES.AWACS.overlord},
+--     {"3", FREQUENCIES.AWACS.darkstar},
+--     {"4", FREQUENCIES.AWACS.wizard},
+--     {"5", FREQUENCIES.ELINT.hormuz_hi},
+--     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+--     {"7", FREQUENCIES.ELINT.kish_hi},
+--     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+--     {"11", FREQUENCIES.GROUND.al_minhad_hi},
+--     {"12", FREQUENCIES.GROUND.khasab_hi}
+-- }
+-- -- 225/399,97
 local f14_159 = {
-    {"1", frequencies.freq_marshal},
-    {"2", frequencies.freq_lso},
-    {"3", frequencies.freq_awacs},
-    {"4", frequencies.freq_aar},
-    {"7", frequencies.freq_flight},
-    {"12", frequencies.freq_incirlik_2},
-    {"14", frequencies.freq_paphos_2},
-    {"16", frequencies.freq_larnaca_2}
+    {"2", FREQUENCIES.AWACS.overlord},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.allepo_hi},
+    {"6", FREQUENCIES.ELINT.atis_allepo_hi},
+    {"7", FREQUENCIES.ELINT.beirut_hi},
+    {"8", FREQUENCIES.ELINT.atis_beirut_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
+    {"16", FREQUENCIES.AAR.common},
+    {"17", FREQUENCIES.AAR.arco},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
+
 }
+-- -- 30/399,97
 local f14_182 = {
-    {"1", frequencies.freq_marshal},
-    {"2", frequencies.freq_lso},
-    {"3", frequencies.freq_awacs},
-    {"4", frequencies.freq_aar},
-    {"7", frequencies.freq_flight},
-    {"10", frequencies.freq_sc},
-    {"11", frequencies.freq_incirlik_1},
-    {"12", frequencies.freq_incirlik_2},
-    {"13", frequencies.freq_paphos_1},
-    {"14", frequencies.freq_paphos_2},
-    {"15", frequencies.freq_larnaca_1},
-    {"16", frequencies.freq_larnaca_2}
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.AWACS.overlord},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.allepo_hi},
+    {"6", FREQUENCIES.ELINT.atis_allepo_hi},
+    {"7", FREQUENCIES.ELINT.beirut_hi},
+    {"8", FREQUENCIES.ELINT.atis_beirut_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
+    {"11", FREQUENCIES.GROUND.atis_ramat_david},
+    {"16", FREQUENCIES.AAR.common},
+    {"17", FREQUENCIES.AAR.arco},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
+    {"20", FREQUENCIES.SPECIAL.guard_hi},
+    {"21", FREQUENCIES.SPECIAL.guard_lo},
+    {"29", FREQUENCIES.FLIGHTS.flight_lo},
+    {"30", FREQUENCIES.FLIGHTS.flight_fm},
 }
-local f16_164 = {
-    {"3", frequencies.freq_awacs},
-    {"4", frequencies.freq_aar},
-    {"7", frequencies.freq_flight},
-    {"12", frequencies.freq_incirlik_2},
-    {"14", frequencies.freq_paphos_2},
-    {"16", frequencies.freq_larnaca_2}
-}
-local f16_222 = {
-    {"11", frequencies.freq_incirlik_1},
-    {"13", frequencies.freq_paphos_1},
-    {"15", frequencies.freq_larnaca_1}
-}
+-- -- 255/399,97
+-- local f16_164 = {
+--     {"5", FREQUENCIES.ELINT.hormuz_hi},
+--     {"6", FREQUENCIES.ELINT.atis_hormuz_hi},
+--     {"7", FREQUENCIES.ELINT.kish_hi},
+--     {"8", FREQUENCIES.ELINT.atis_kish_hi},
+--     {"11", FREQUENCIES.GROUND.al_minhad_hi},
+--     {"12", FREQUENCIES.GROUND.khasab_hi},
+-- }
+-- -- 30/155,97
+-- local f16_222 = {
+--     {"2", FREQUENCIES.FLIGHTS.flight_lo},
+--     {"5", FREQUENCIES.ELINT.hormuz_lo},
+--     {"6", FREQUENCIES.ELINT.atis_hormuz_lo},
+--     {"7", FREQUENCIES.ELINT.kish_lo},
+--     {"8", FREQUENCIES.ELINT.atis_kish_lo},
+--     {"11", FREQUENCIES.GROUND.al_minhad_lo},
+--     {"20", FREQUENCIES.SPECIAL.guard_lo},
+-- }
+-- -- 30/399,97
 local f18_210_1 = {
-    {"1", frequencies.freq_marshal},
-    {"2", frequencies.freq_lso},
-    {"3", frequencies.freq_awacs},
-    {"4", frequencies.freq_aar},
-    {"7", frequencies.freq_flight},
-    {"10", frequencies.freq_sc},
-    {"11", frequencies.freq_incirlik_1},
-    {"12", frequencies.freq_incirlik_2},
-    {"13", frequencies.freq_paphos_1},
-    {"14", frequencies.freq_paphos_2},
-    {"15", frequencies.freq_larnaca_1},
-    {"16", frequencies.freq_larnaca_2}
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.AWACS.overlord},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.allepo_hi},
+    {"6", FREQUENCIES.ELINT.atis_allepo_hi},
+    {"7", FREQUENCIES.ELINT.beirut_hi},
+    {"8", FREQUENCIES.ELINT.atis_beirut_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
+    {"11", FREQUENCIES.GROUND.atis_ramat_david},
+    {"16", FREQUENCIES.AAR.common},
+    {"17", FREQUENCIES.AAR.arco},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
 }
+-- -- 30/399,97
 local f18_210_2 = {
-    {"1", frequencies.freq_marshal},
-    {"2", frequencies.freq_lso},
-    {"3", frequencies.freq_awacs},
-    {"4", frequencies.freq_aar},
-    {"7", frequencies.freq_flight},
-    {"10", frequencies.freq_sc},
-    {"11", frequencies.freq_incirlik_1},
-    {"12", frequencies.freq_incirlik_2},
-    {"13", frequencies.freq_paphos_1},
-    {"14", frequencies.freq_paphos_2},
-    {"15", frequencies.freq_larnaca_1},
-    {"16", frequencies.freq_larnaca_2}
+    {"1", FREQUENCIES.CV.sc},
+    {"2", FREQUENCIES.AWACS.overlord},
+    {"3", FREQUENCIES.AWACS.darkstar},
+    {"4", FREQUENCIES.AWACS.wizard},
+    {"5", FREQUENCIES.ELINT.allepo_hi},
+    {"6", FREQUENCIES.ELINT.atis_allepo_hi},
+    {"7", FREQUENCIES.ELINT.beirut_hi},
+    {"8", FREQUENCIES.ELINT.atis_beirut_hi},
+    {"9", FREQUENCIES.FLIGHTS.flight_hi},
+    {"11", FREQUENCIES.GROUND.atis_ramat_david},
+    {"16", FREQUENCIES.AAR.common},
+    {"17", FREQUENCIES.AAR.arco},
+    {"18", FREQUENCIES.CV.marshal},
+    {"19", FREQUENCIES.CV.lso},
 }
 local presets_data = {
     preset_f14_159 = f14_159,
     preset_f14_182 = f14_182,
-    preset_f16_164 = f16_164,
-    preset_f16_222 = f16_222,
+    -- preset_f16_164 = f16_164,
+    -- preset_f16_222 = f16_222,
     preset_f18_210_1 = f18_210_1,
-    preset_f18_210_2 = f18_210_2
+    preset_f18_210_2 = f18_210_2,
+    -- preset_mig21_832 = mig21_832,
+    -- preset_ru_heli_282 = ru_heli_828,
+    -- preset_ru_heli_863 = ru_heli_863,
 }
 
 function info_preset(preset_data, radio_name)
@@ -83,7 +147,6 @@ function info_preset(preset_data, radio_name)
         table.insert(tmp_table, tmp_string)
     end
     local final_msg = table.concat(tmp_table)
-    env.info(final_msg)
     return final_msg .. "\n"
 end
 
@@ -95,13 +158,13 @@ function info_preset_f14_182()
     return info_preset(presets_data.preset_f14_182, "AN/ARC-182")
 end
 
-function info_preset_f16_164()
-    return info_preset(presets_data.preset_f16_164, "AN/ARC-164")
-end
+-- function info_preset_f16_164()
+--     return info_preset(presets_data.preset_f16_164, "AN/ARC-164")
+-- end
 
-function info_preset_f16_222()
-    return info_preset(presets_data.preset_f16_222, "AN/ARC-222")
-end
+-- function info_preset_f16_222()
+--     return info_preset(presets_data.preset_f16_222, "AN/ARC-222")
+-- end
 
 function info_preset_f18_210_1()
     return info_preset(presets_data.preset_f18_210_1, "ARC-210-1")
@@ -110,3 +173,15 @@ end
 function info_preset_f18_210_2()
     return info_preset(presets_data.preset_f18_210_2, "ARC-210-2")
 end
+
+-- function info_preset_mig21_832()
+--     return info_preset(presets_data.preset_mig21_832, "R-832")
+-- end
+
+-- function info_preset_ru_heli_828()
+--     return info_preset(presets_data.preset_ru_heli_282, "R-828")
+-- end
+
+-- function info_preset_ru_heli_863()
+--     return info_preset(presets_data.preset_ru_heli_863, "R-863")
+-- end

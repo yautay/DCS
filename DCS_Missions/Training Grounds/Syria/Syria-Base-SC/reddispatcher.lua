@@ -1,105 +1,102 @@
--- ZONES -----------------------------------------------------
-ZONE_Assad =
-    ZONE_POLYGON:New("ZONE Assad", GROUP:FindByName("ZONE Assad")):DrawZone(
-    -1,
-    {1, 1, 0},
-    1.0,
-    {1, 1, 0},
-    0.4,
-    2
-)
-ZONE_border =ZONE_POLYGON:New("red_border", GROUP:FindByName("red_border"))
+local debug_reddispatcher = false
 
--- EWRS ------------------------------------------------------
-RED_EWR_AWACS = SPAWN:New("Red AWACS-1"):InitLimit(1, 0):SpawnScheduled(UTILS.ClockToSeconds("00:30:00"), .25)
+-- ZONES -----------------------------------------------------
+ZONE_border_1 = ZONE_POLYGON:New("red_border_1", GROUP:FindByName("red_border_1"))
+ZONE_cap_1 = ZONE_POLYGON:New("red_cap_1", GROUP:FindByName("red_cap_1"))
+
+-- DETECTION -----------------------------------------------------
 
 DetectionSetGroup = SET_GROUP:New()
-DetectionSetGroup:AddGroupsByName("Red AWACS-1", "Red EWR Assad-1", "Red EWR Assad-2")
 
-Detection = DETECTION_AREAS:New( DetectionSetGroup, 30000 )
-
-A2A_Al_Assad = AI_A2A_DISPATCHER:New( Detection )
-A2A_Al_Assad:SetEngageRadius(150000) -- 100000 is the default value.
-A2A_Al_Assad:SetGciRadius(200000) -- 200000 is the default value.
-A2A_Al_Assad:SetBorderZone(ZONE_border)
-A2A_Al_Assad:SetDefaultTakeoffFromRunway()
-A2A_Al_Assad:SetDefaultLandingAtRunway()
-A2A_Al_Assad:SetDefaultFuelThreshold( 0.3 )
--- A2A_Al_Assad:SetTacticalDisplay(true)
-
-
-math.randomseed = os.clock()*100000000000
-red_fighters_random = math.random(0, 100)
-env.info("SEED RANDOMIZED")
-env.info(red_fighters_random)
-
-function spawnGCI21()
-    A2A_Al_Assad:SetSquadron("Reds_21", AIRBASE.Syria.Bassel_Al_Assad, "mig_21")
-    A2A_Al_Assad:SetSquadronGrouping("Reds_21", 2)
-    A2A_Al_Assad:SetSquadronOverhead("Reds_21", 1.2)
+function addDetectionGroups(template_detection_groups)
+    for k, v in pairs(template_detection_groups) do
+        DetectionSetGroup:AddGroupsByName(GROUP:FindByName(v))
+    end
 end
-function spawnGCI31()
-    A2A_Al_Assad:SetSquadron("Reds_31", AIRBASE.Syria.Tabqa, "mig_31")
-    A2A_Al_Assad:SetSquadronGrouping("Reds_31", 2)
-    A2A_Al_Assad:SetSquadronOverhead("Reds_31", 1) 
-end
-function spawnCAP23()
-    A2A_Al_Assad:SetSquadron("Reds_23", AIRBASE.Syria.Bassel_Al_Assad, "mig_23")
-    A2A_Al_Assad:SetSquadronCap(
-        "Reds_23",
-        ZONE_Assad,
-        UTILS.FeetToMeters(25000),
-        UTILS.FeetToMeters(40000),
-        UTILS.KnotsToKmph(200),
-        UTILS.KnotsToKmph(250),
-        UTILS.KnotsToKmph(250),
-        UTILS.KnotsToKmph(900),
-        "BARO"
-    )
-    A2A_Al_Assad:SetSquadronCapInterval("Reds_23", 2, 600, 1200, 1)
-    A2A_Al_Assad:SetSquadronGrouping("Reds_23", 2)
-    A2A_Al_Assad:SetSquadronOverhead("Reds_23", 1)
-end
-function spawnCAP29()
-    A2A_Al_Assad:SetSquadron("Reds_29", AIRBASE.Syria.Bassel_Al_Assad, "mig_29")
-    A2A_Al_Assad:SetSquadronCap(
-        "Reds_29",
-        ZONE_Assad,
-        UTILS.FeetToMeters(10000),
+
+addDetectionGroups(ewr_groups)
+addDetectionGroups(awacs_groups)
+
+Detection = DETECTION_AREAS:New(DetectionSetGroup, 30000)
+
+-- DISPATCHER -----------------------------------------------------
+
+A2A_Al_Kerman = AI_A2A_DISPATCHER:New(Detection)
+A2A_Al_Kerman:SetEngageRadius(UTILS.NMToMeters(75)) -- 100000 is the default value.
+-- A2A_Al_Kerman:SetDisengageRadius(UTILS.NMToMeters(80))
+A2A_Al_Kerman:SetGciRadius(UTILS.NMToMeters(120)) -- 200000 is the default value.
+A2A_Al_Kerman:SetBorderZone(ZONE_border_1)
+A2A_Al_Kerman:SetDefaultTakeoffFromRunway()
+A2A_Al_Kerman:SetDefaultLandingAtRunway()
+A2A_Al_Kerman:Start()
+
+function spawnCAP(template_name, palnes, grouping, overhead)
+    A2A_Al_Kerman:SetSquadron("IRAN_CAP", AIRBASE.PersianGulf.Lar_Airbase, template_name, planes)
+    A2A_Al_Kerman:SetSquadronCap(
+        "IRAN_CAP",
+        ZONE_cap_1,
+        UTILS.FeetToMeters(35000),
         UTILS.FeetToMeters(30000),
-        UTILS.KnotsToKmph(200),
-        UTILS.KnotsToKmph(250),
+        UTILS.KnotsToKmph(350),
+        UTILS.KnotsToKmph(350),
         UTILS.KnotsToKmph(250),
         UTILS.KnotsToKmph(900),
         "BARO"
     )
-    A2A_Al_Assad:SetSquadronCapInterval("Reds_29", 2, 600, 1200, 1)
-    A2A_Al_Assad:SetSquadronGrouping("Reds_29", 2)
-    A2A_Al_Assad:SetSquadronOverhead("Reds_29", 1)
+    -- A2A_Al_Kerman:SetSquadronCapInterval("IRAN_CAP", 2, 1800, 2000, 1)
+    A2A_Al_Kerman:SetSquadronGrouping("IRAN_CAP", grouping)
+    A2A_Al_Kerman:SetSquadronOverhead("IRAN_CAP", overhead)
 end
 
-if red_fighters_random < 60 then
-    spawnCAP23() 
-    env.info("CAP23")
-else 
-    spawnCAP29()
-    env.info("CAP29")
+function spawnCGI(template_name, palnes, grouping, overhead)
+    A2A_Al_Kerman:SetSquadron("IRAN_CGI", AIRBASE.PersianGulf.Lar_Airbase, template_name, planes)
+    A2A_Al_Kerman:SetSquadronGrouping("IRAN_CGI", grouping)
+    A2A_Al_Kerman:SetSquadronOverhead("IRAN_CGI", overhead)
+    A2A_Al_Kerman:SetSquadronGci("IRAN_CGI", 900, 1200)
 end
 
-if red_fighters_random < 80 then
-    spawnGCI21() 
-    env.info("GCI21")
-    A2A_Al_Assad:SetSquadronGci( "Reds_21", 600, 2500 )
-else 
-    spawnGCI31() 
-    env.info("GCI31")
-    A2A_Al_Assad:SetSquadronGci( "Reds_31", 600, 2500 )
+-- SQUADRONS /template/planes/grouping/overhead-----------------------------------------------------
+
+local squadrons = {
+    f14 = {"red-f14", 8, 2, 1},
+    m2k = {"red-mirage2000", 10, 2, 1},
+    m23 = {"red-mig23", 25, 2, 1},
+    m29 = {"red-mig29", 20, 2, 1},
+    m21 = {"red-mig21", 35, 2, 1.05},
+    f5 = {"red-f5", 20, 2, 1}
+}
+
+math.randomseed = os.clock() * 100000000000
+
+local cap_random = math.random(0, 100)
+local gci_random = math.random(0, 100)
+env.info(string.format("CAP SEED RANDOMIZED -> %d", cap_random))
+env.info(string.format("GCI SEED RANDOMIZED -> %d", gci_random))
+
+local cap_squadron = {}
+if (cap_random >= 0) and (cap_random <= 30) then
+    cap_squadron = squadrons.f14
+elseif (cap_random >= 31) and (cap_random <= 70) then
+    cap_squadron = squadrons.m23
+else
+    cap_squadron = squadrons.m2k
 end
 
--- MenuSeler = menu_seler()
--- local AIMenu = MENU_MISSION:New("REDFOR", MenuSeler)
--- local Spawn31 = MENU_MISSION_COMMAND:New("Spawn CAP MiG-31", AIMenu, spawnCAP31)
--- local Spawn29 = MENU_MISSION_COMMAND:New("Spawn CAP MiG-23", AIMenu, spawnCAP23)
--- local Spawn23 = MENU_MISSION_COMMAND:New("Spawn CAP MiG-29", AIMenu, spawnCAP29)
+local gci_squadron = {}
+if (gci_random >= 0) and (gci_random <= 25) then
+    gci_squadron = squadrons.m29
+elseif (gci_random >= 26) and (gci_random <= 50) then
+    gci_squadron = squadrons.m21
+elseif (gci_random >= 51) and (gci_random <= 75) then
+    gci_squadron = squadrons.f5
+else
+    gci_squadron = squadrons.m23
+end
 
-A2A_Al_Assad:Start()
+spawnCAP(cap_squadron[1], cap_squadron[2], cap_squadron[3], cap_squadron[4])
+spawnCGI(gci_squadron[1], gci_squadron[2], gci_squadron[3], gci_squadron[4])
+
+if (debug_reddispatcher == true) then
+    A2A_Al_Kerman:SetTacticalDisplay(true)
+    env.info(string.format("DETECTION SET: %s", DetectionSetGroup:GetObjectNames()))
+end

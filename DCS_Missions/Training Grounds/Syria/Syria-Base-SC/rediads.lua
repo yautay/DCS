@@ -1,25 +1,41 @@
-redIADS = SkynetIADS:create('assad_iads')
-redIADS:addSAMSitesByPrefix('Red SAM')
+local debug_rediads = false
 
-redIADS:addEarlyWarningRadarsByPrefix('Red EWR')
-redIADS:activate()
+function add_sam_sites(iads, sam_units)
+    for k, v in pairs(sam_units) do
+        iads:addSAMSite(v)
+    end
+end
 
-sa15 = redIADS:getSAMSiteByGroupName('Red SAM SA15 Latika')
-sam1 = redIADS:getSAMSiteByGroupName('Red SAM SA2 Latika')
+function add_ewr_sites(iads, template)
+    for k, v in pairs(template) do
+        iads:addEarlyWarningRadar(v)
+    end
+end        
 
--- local iadsDebug = redIADS:getDebugSettings()  
+-- local con_cc = StaticObject.getByName("con-cc")
+-- local red_cc = StaticObject.getByName("red-cc")
 
--- iadsDebug.IADSStatus = true
--- iadsDebug.contacts = true
--- iadsDebug.jammerProbability = true
+Iads = SkynetIADS:create("MERAD_iads")
 
--- iadsDebug.addedEWRadar = true
--- iadsDebug.addedSAMSite = true
--- iadsDebug.warnings = true
--- iadsDebug.radarWentLive = true
--- iadsDebug.radarWentDark = true
--- iadsDebug.harmDefence = true
+add_ewr_sites(Iads, ewr_units)
+add_ewr_sites(Iads, awacs_units)
+add_sam_sites(Iads, sam_groups)
 
--- iadsDebug.samSiteStatusEnvOutput = true
--- iadsDebug.earlyWarningRadarStatusEnvOutput = true
--- iadsDebug.commandCenterStatusEnvOutput = true
+Iads:activate()
+
+
+if (debug_rediads) then
+    local Debug = Iads:getDebugSettings()
+    Debug.IADSStatus = true
+    Debug.contacts = false
+    Debug.jammerProbability = true
+    Debug.addedEWRadar = true
+    Debug.addedSAMSite = true
+    Debug.warnings = true
+    Debug.radarWentLive = true
+    Debug.radarWentDark = true
+    Debug.harmDefence = true
+    Debug.samSiteStatusEnvOutput = true
+    Debug.earlyWarningRadarStatusEnvOutput = true
+    Debug.commandCenterStatusEnvOutput = true
+end
