@@ -1,35 +1,41 @@
-local con_bandar = StaticObject.getByName("con-bandar") 
-local con_siri = StaticObject.getByName("con-bandar") 
-local con_kish = StaticObject.getByName("con-bandar") 
-local con_cc = StaticObject.getByName("con-cc") 
-local red_cc = StaticObject.getByName("red-cc")
+local debug_rediads = false
 
-redIADS = SkynetIADS:create('iran_iads')
-redIADS:addSAMSitesByPrefix('red-sa')
+function add_sam_sites(iads, sam_units)
+    for k, v in pairs(sam_units) do
+        iads:addSAMSite(v)
+    end
+end
 
-redIADS:addCommandCenter(red_cc):addConnectionNode(con_cc)
-redIADS:getSAMSitesByPrefix('red-sa20-1')
--- :addConnectionNode(con_bandar)
-redIADS:getSAMSitesByPrefix('red-sa5-1')
--- :addConnectionNode(con_kish)
-redIADS:getSAMSitesByPrefix('red-sa2-1')
+function add_ewr_sites(iads, template)
+    for k, v in pairs(template) do
+        iads:addEarlyWarningRadar(v)
+    end
+end        
 
-redIADS:addEarlyWarningRadarsByPrefix('red-ew')
-redIADS:activate()
+-- local con_cc = StaticObject.getByName("con-cc")
+-- local red_cc = StaticObject.getByName("red-cc")
 
--- local iadsDebug = redIADS:getDebugSettings()  
+Iads = SkynetIADS:create("MERAD_iads")
 
--- iadsDebug.IADSStatus = true
--- iadsDebug.contacts = true
--- iadsDebug.jammerProbability = true
+add_ewr_sites(Iads, ewr_units)
+add_ewr_sites(Iads, awacs_units)
+add_sam_sites(Iads, sam_groups)
 
--- iadsDebug.addedEWRadar = true
--- iadsDebug.addedSAMSite = true
--- iadsDebug.warnings = true
--- iadsDebug.radarWentLive = true
--- iadsDebug.radarWentDark = true
--- iadsDebug.harmDefence = true
+Iads:activate()
 
--- iadsDebug.samSiteStatusEnvOutput = true
--- iadsDebug.earlyWarningRadarStatusEnvOutput = true
--- iadsDebug.commandCenterStatusEnvOutput = true
+
+if (debug_rediads) then
+    local Debug = Iads:getDebugSettings()
+    Debug.IADSStatus = true
+    Debug.contacts = false
+    Debug.jammerProbability = true
+    Debug.addedEWRadar = true
+    Debug.addedSAMSite = true
+    Debug.warnings = true
+    Debug.radarWentLive = true
+    Debug.radarWentDark = true
+    Debug.harmDefence = true
+    Debug.samSiteStatusEnvOutput = true
+    Debug.earlyWarningRadarStatusEnvOutput = true
+    Debug.commandCenterStatusEnvOutput = true
+end

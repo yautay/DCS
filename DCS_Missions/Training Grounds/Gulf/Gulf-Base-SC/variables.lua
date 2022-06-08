@@ -1,106 +1,62 @@
-function frequencies()
-    local frequencies_data = {
-        freq_flight = {242.00, "FLIGHTS Hi AM"},
-        freq_flight_lo = {128.5, "FLIGHTS Lo AM"},
-        freq_flight_fm = {41.9, "FLIGHTS FM"},
-        freq_awacs = {247.50, "AWACS"},
-        freq_aar = {243.25, "TANKERS"},
-        freq_lso = {270.00, "Airbos LSO"},
-        freq_marshal = {305.00, "Airbos Marshal"},
-        freq_al_minhad = {250.10, "Al Minhad Tower Hi AM"},
-        freq_al_minhad_lo = {118.55, "Al Minhad Tower Lo AM"},
-        freq_al_minhad_fm = {38.5, "Al Minhad Tower FM"},
-        freq_khasab = {250.00, "Khasab Tower"},
-        freq_sc = {127.50, "CVN71 Tower"},
-        freq_elint_hi = {255.50, "ELINT Hi AM"},
-        freq_elint_lo = {121.75, "ELINT Lo AM"},
-        freq_elint_fm = {35.00, "ELINT FM"},
-        freq_atis_hi = {256.50, "ATIS Hi AM"},
-        freq_atis_lo = {122.75, "ATIS Lo AM"},
-        freq_atis_fm = {34.50, "ATIS FM"},
-        freq_heli_flights_ru = {128.50, "RU Heli"},
-        freq_sc = {127.50, "CVN71 Tower"},
-        guard_hi = {243.00, "Guard Freq Hi"},
-        guard_lo = {121.5, "Guard Freq Lo"}
-
+FREQUENCIES = {
+    ELINT = {
+        hormuz_hi = {255.50, "Sector Hormuz Hi", "AM"},
+        hormuz_lo = {121.75, "Sector Hormuz Lo", "AM"},
+        hormuz_fm = {35.00, "Sector Hormuz FM", "FM"},
+        atis_hormuz_hi = {256.50, "Sector Hormuz ATIS Hi", "AM"},
+        atis_hormuz_lo = {122.75, "Sector Hormuz ATIS Lo", "AM"},
+        atis_hormuz_fm = {36.00, "Sector Hormuz ATIS FM", "FM"},
+        kish_hi = {255.00, "Sector Kish Hi", "AM"},
+        kish_lo = {122.10, "Sector Kish Lo", "AM"},
+        kish_fm = {37.00, "Sector Kish FM", "FM"},
+        atis_kish_hi = {256.90, "Sector Kish ATIS Hi", "AM"},
+        atis_kish_lo = {122.40, "Sector Kish ATIS Lo", "AM"},
+        atis_kish_fm = {38.00, "Sector Kish ATIS FM", "FM"}
+    },
+    AWACS = {
+        darkstar = {247.50, "AWACS Darkstar", "AM"},
+        overlord = {247.90, "AWACS Overlord", "AM"},
+        wizard = {247.70, "AWACS Wizard", "AM"}
+    },
+    AAR = {
+        common = {243.25, "TANKERS BIG BIRDS", "AM"},
+        arco = {243.50, "TANKER Arco", "AM"}
+    },
+    FLIGHTS = {
+        flight_hi = {242.00, "FLIGHTS Hi", "AM"},
+        flight_lo = {121.0, "FLIGHTS Lo", "AM"},
+        flight_fm = {41.9, "FLIGHTS FM", " FM"},
+        HORNET = {
+            keep = nil        
+        }
+    },
+    CV = {
+        lso = {260.00, "Airbos LSO", "AM"},
+        marshal = {260.50, "Airbos Marshal", "AM"},
+        sc = {123.80, "CVN71 Tower", "AM"}
+    },
+    GROUND = {
+        al_minhad_hi = {250.10, "Al Minhad Tower Hi", "AM"},
+        al_minhad_lo = {118.55, "Al Minhad Tower Lo", "AM"},
+        al_minhad_fm = {38.5, "Al Minhad Tower", "FM"},
+        al_minhad_atis = {127.7, "Al Minhad ATIS", "AM"},
+        khasab_hi = {250.00, "Khasab Tower", "AM"}
+    },
+    SPECIAL = {
+        guard_hi = {243.00, "Guard Freq Hi", "AM"},
+        guard_lo = {121.5, "Guard Freq Lo", "AM"}
     }
-    return frequencies_data
-end
-
-function manual_ordered_frequencies()
-    local freqs = frequencies()
-    local ordered_frequencies_data = {
-        freqs.freq_flight,
-        freqs.freq_flight_lo,
-        freqs.freq_flight_fm,
-        freqs.freq_aar,
-        freqs.freq_awacs,
-        freqs.freq_sc,
-        freqs.freq_al_minhad,
-        freqs.freq_khasab,
-        freqs.freq_lso,
-        freqs.freq_marshal,
-        freqs.freq_atis_hi,
-        freqs.freq_atis_lo,
-        freqs.freq_atis_fm,
-        freqs.freq_elint_hi,
-        freqs.freq_elint_lo,
-        freqs.freq_elint_fm,
-        freqs.guard_hi,
-        freqs.guard_lo
-    }
-    return ordered_frequencies_data
-end
-
-function icls()
-    local icls_data = {
-        icls_sc = {1, "CVN", "ICLS CVN-71"},
-        ils_al_minhad090 = {110.70, "n/a", "ILS Al Minhad rwy 09"},
-        ils_al_minhad270 = {110.75, "n/a", "ILS Al Minhad rwy 27"},
-        ils_khasab194 = {110.75, "n/a", "ILS Khasab rwy 19"}
-    }
-    return icls_data
-end
-
-function manual_ordered_icls()
-    local icls = icls()
-    local ordered_icls = {
-        icls.icls_sc,
-        icls.ils_al_minhad090,
-        icls.ils_al_minhad270,
-        icls.ils_khasab194
-    }
-    return ordered_icls
-end
-
-function tacans()
-    local tacans_data = {
-        tacan_sc = {74, "X", "CVN", "CVN-71"},
-        tacan_arco = {1, "X", "RCV", "Recovery Tanker CVN-71"},
-        tacan_shell = {70, "X", "SHL", "Tanker Shell"},
-        tacan_al_minhad = {99, "X", "MIN", "Al Minhad AFB"}
-    }
-    return tacans_data
-end
-
-function manual_ordered_tacans()
-    local tcs = tacans()
-    local ordered_tcs = {
-        tcs.tacan_sc,
-        tcs.tacan_arco,
-        tcs.tacan_shell,
-        tcs.tacan_al_minhad,
-    }
-    return ordered_tcs
-end
-
-function air_routes()
-    local routes_data = {
-        {"Incirlik", 167, 100, "Al-Assad"},
-        {"Paphos", 79, 176, "Al-Assad"},
-        {"Paphos", 113, 132, "Beirut"},
-        {"Akrotiri", 74, 155, "Al-Assad"},
-        {"Ramat David", 15, 169, "Al-Assad"}
-    }
-    return routes_data
-end
+}
+ICLS = {
+    sc = {1, "CV", "ICLS CVN-71"},
+    al_minhad090 = {110.70, "n/a", "ILS Al Minhad rwy 09"},
+    al_minhad270 = {110.75, "n/a", "ILS Al Minhad rwy 27"},
+    khasab194 = {110.75, "n/a", "ILS Khasab rwy 19"}
+}
+TACAN = {
+    sc = {74, "X", "CVN", "CVN-71"},
+    arco = {1, "Y", "RCV", "Recovery Tanker CVN-71"},
+    shell = {70, "Y", "SHL", "Tanker Shell"},
+    texaco = {72, "Y", "TEX", "Tanker Texaco"},
+    al_minhad = {99, "X", "MIN", "Al Minhad AFB"}
+}

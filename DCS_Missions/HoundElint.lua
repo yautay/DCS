@@ -937,6 +937,8 @@ do
             ['KA-27'] = {antenna = {size = 4, factor = 1}},
             ['C-130'] = {antenna = {size = 35, factor = 1}},
             ['Hercules'] = {antenna = {size = 35, factor = 1}}, -- Anubis' C-130J
+            ['EC130'] = {antenna = {size = 35, factor = 1}},  -- Secret Squirrel EC-130
+            ['RC135RJ'] = {antenna = {size = 40, factor = 1}}, -- Secret Squirrel RC-135
             ['C-17A'] = {antenna = {size = 50, factor = 1}},
             ['S-3B'] = {antenna = {size = 18, factor = 0.8}},
             ['E-3A'] = {antenna = {size = 9, factor = 0.5}},
