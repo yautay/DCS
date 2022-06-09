@@ -1,5 +1,7 @@
 local debug_menu = false
 local dump_to_file = true
+local show_freqs_menu = true
+local show_presets_menu = true
 
 local ordered_flight_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
@@ -126,24 +128,26 @@ local presets_f18 = info_preset_f18_210_1 .. info_preset_f18_210_2
 -- local presets_mi8 = info_preset_ru_heli_828 .. info_preset_ru_heli_863
 
 MenuSeler = MENU_MISSION:New("Seler Menu")
-MenuFreq = MENU_MISSION:New("Data", MenuSeler)
-MenuPresets = MENU_MISSION:New("Presets", MenuSeler)
 
-local freqInfo = MENU_MISSION_COMMAND:New("Flights", MenuFreq, Msg, {flight_freqs_info, 10})
-local freqInfo = MENU_MISSION_COMMAND:New("ELINT", MenuFreq, Msg, {elint_freqs_info, 10})
-local freqInfo = MENU_MISSION_COMMAND:New("Ground", MenuFreq, Msg, {ground_freqs_info, 10})
+if (show_freqs_menu) then
+    MenuFreq = MENU_MISSION:New("Data", MenuSeler)
+    local freqInfo = MENU_MISSION_COMMAND:New("Flights", MenuFreq, Msg, {flight_freqs_info, 10})
+    local freqInfo = MENU_MISSION_COMMAND:New("ELINT", MenuFreq, Msg, {elint_freqs_info, 10})
+    local freqInfo = MENU_MISSION_COMMAND:New("Ground", MenuFreq, Msg, {ground_freqs_info, 10})
+    local TacanInfo = MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})
+    local IclsInfo = MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
+end
 
-local TacanInfo = MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})
-local IclsInfo = MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
-
-local PresetsInfoF14 = MENU_MISSION_COMMAND:New("Presets F-14", MenuPresets, Msg, {presets_f14, 10})
--- local PresetsInfoF16 = MENU_MISSION_COMMAND:New("Presets F-16", MenuPresets, Msg, {presets_f16, 10})
-local PresetsInfoF18 = MENU_MISSION_COMMAND:New("Presets F-18", MenuPresets, Msg, {presets_f18, 10})
--- local PresetsInfoMig21 = MENU_MISSION_COMMAND:New("Presets MiG-21", MenuPresets, Msg, {presets_mig21, 10})
--- local PresetsInfoKa50 = MENU_MISSION_COMMAND:New("Presets Ka-50", MenuPresets, Msg, {presets_ka50, 10})
--- local PresetsInfoMi24 = MENU_MISSION_COMMAND:New("Presets Mi-24", MenuPresets, Msg, {presets_mi24, 10})
--- local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", MenuPresets, Msg, {presets_mi8, 10})
-
+if (show_presets_menu) then
+    MenuPresets = MENU_MISSION:New("Presets", MenuSeler)
+    local PresetsInfoF14 = MENU_MISSION_COMMAND:New("Presets F-14", MenuPresets, Msg, {presets_f14, 10})
+    -- local PresetsInfoF16 = MENU_MISSION_COMMAND:New("Presets F-16", MenuPresets, Msg, {presets_f16, 10})
+    local PresetsInfoF18 = MENU_MISSION_COMMAND:New("Presets F-18", MenuPresets, Msg, {presets_f18, 10})
+    -- local PresetsInfoMig21 = MENU_MISSION_COMMAND:New("Presets MiG-21", MenuPresets, Msg, {presets_mig21, 10})
+    -- local PresetsInfoKa50 = MENU_MISSION_COMMAND:New("Presets Ka-50", MenuPresets, Msg, {presets_ka50, 10})
+    -- local PresetsInfoMi24 = MENU_MISSION_COMMAND:New("Presets Mi-24", MenuPresets, Msg, {presets_mi24, 10})
+    -- local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", MenuPresets, Msg, {presets_mi8, 10})
+end
 
 if (dump_to_file) then
     save_to_file("presets_f14", presets_f14)
