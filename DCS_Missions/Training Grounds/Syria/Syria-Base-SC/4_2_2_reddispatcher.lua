@@ -1,5 +1,3 @@
-local debug_reddispatcher = false
-
 -- ZONES -----------------------------------------------------
 ZONE_border_1 = ZONE_POLYGON:New("red_border_1", GROUP:FindByName("red_border_1"))
 ZONE_cap_1 = ZONE_POLYGON:New("red_cap_1", GROUP:FindByName("red_cap_1"))

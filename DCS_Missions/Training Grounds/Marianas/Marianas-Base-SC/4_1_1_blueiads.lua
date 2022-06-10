@@ -1,5 +1,3 @@
-local debug_blueiads = false
-
 blueIADS = SkynetIADS:create("uae_iads")
 blueIADS:addSAMSitesByPrefix("blue-sam")
 blueIADS:addEarlyWarningRadarsByPrefix("AWACS Hormuz")

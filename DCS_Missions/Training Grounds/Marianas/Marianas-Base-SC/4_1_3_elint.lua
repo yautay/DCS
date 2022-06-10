@@ -1,6 +1,3 @@
-local debug_elint = false
-
-
 function init_elint_elements(templates_table)
     for i, v in pairs(templates_table) do
         SPAWN:New(v):InitKeepUnitNames():InitLimit(1, 0):SpawnScheduled(5, .1):OnSpawnGroup(

@@ -1,5 +1,3 @@
-local debug_rediads = false
-
 function add_sam_sites(iads, sam_units)
     for k, v in pairs(sam_units) do
         iads:addSAMSite(v)

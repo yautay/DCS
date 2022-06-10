@@ -50,3 +50,21 @@ TACAN = {
     shell = {70, "Y", "SHL", "Tanker Shell"},
     texaco = {72, "Y", "TEX", "Tanker Texaco"}
 }
+
+fox_trainer = true
+rat = true
+csar = true
+
+debug_blueiads = false
+debug_rediads = false
+
+debug_bluedispatcher = false
+debug_reddispatcher = false
+
+debug_airbos = false
+debug_elint = false
+debug_csar = false
+
+menu_dump_to_file = true
+menu_show_freqs = true
+menu_show_presets = true

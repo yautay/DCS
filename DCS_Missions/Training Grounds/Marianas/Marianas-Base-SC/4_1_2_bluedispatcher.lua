@@ -1,7 +1,5 @@
-local debug_bluedispatcher = false
-
 -- ZONES -----------------------------------------------------
-ZONE_cap_cv = ZONE_POLYGON:New("ZONE-CV-CAP", GROUP:FindByName("ZONE-CV-CAP"))
+
 
 -- DETECTION -----------------------------------------------------
 detection_assets = SET_GROUP:New():FilterCoalitions("blue"):FilterActive():FilterPrefixes("AWACS"):FilterStart()
@@ -48,7 +46,7 @@ end
 -- SQUADRONS sq_name, template_name, base, palnes, grouping, overhead, cap_zone   -------
 
 local squadrons = {
-    f18_cv = {"VFA-37", "Hornet-AI", "CVN", 10, 2, 1, ZONE_cap_cv},
+    f18_cv = {"VFA-37", "Hornet-AI", "CVN", 10, 2, 1, zoneCAP_cv},
 }
 
 for k, v in pairs(squadrons) do

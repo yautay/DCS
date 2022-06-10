@@ -1,7 +1,4 @@
-local debug_menu = false
-local dump_to_file = true
-local show_freqs_menu = true
-local show_presets_menu = true
+_SETTINGS:SetPlayerMenuOff()
 
 local ordered_flight_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
@@ -129,7 +126,7 @@ local presets_f18 = info_preset_f18_210_1 .. info_preset_f18_210_2
 
 MenuSeler = MENU_MISSION:New("Seler Menu")
 
-if (show_freqs_menu) then
+if (menu_show_freqs) then
     MenuFreq = MENU_MISSION:New("Data", MenuSeler)
     local freqInfo = MENU_MISSION_COMMAND:New("Flights", MenuFreq, Msg, {flight_freqs_info, 10})
     local freqInfo = MENU_MISSION_COMMAND:New("ELINT", MenuFreq, Msg, {elint_freqs_info, 10})
@@ -138,7 +135,7 @@ if (show_freqs_menu) then
     local IclsInfo = MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
 end
 
-if (show_presets_menu) then
+if (menu_show_presets) then
     MenuPresets = MENU_MISSION:New("Presets", MenuSeler)
     local PresetsInfoF14 = MENU_MISSION_COMMAND:New("Presets F-14", MenuPresets, Msg, {presets_f14, 10})
     -- local PresetsInfoF16 = MENU_MISSION_COMMAND:New("Presets F-16", MenuPresets, Msg, {presets_f16, 10})
@@ -149,7 +146,7 @@ if (show_presets_menu) then
     -- local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", MenuPresets, Msg, {presets_mi8, 10})
 end
 
-if (dump_to_file) then
+if (menu_dump_to_file) then
     save_to_file("presets_f14", presets_f14)
     -- save_to_file("presets_f16", presets_f16)
     save_to_file("presets_f18", presets_f18)
