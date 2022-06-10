@@ -18,15 +18,15 @@ tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(TACAN.arco[1], TACAN.arco[3])
 tanker:Start()
 
--- E-2D AWACS
-awacs = RECOVERYTANKER:New("CVN", "CV AWACS")
-awacs:SetAWACS()
-awacs:SetRadio(FREQUENCIES.AWACS.wizard[1])
-awacs:SetAltitude(25000)
-awacs:SetCallsign(CALLSIGN.AWACS.Wizard)
-awacs:SetTACAN(2, "WIZ")
-awacs:SetRacetrackDistances(20, 8)
-awacs:Start()
+-- E-2D AWACS_cv
+awacs_cv = RECOVERYTANKER:New("CVN", "AWACS CV")
+awacs_cv:SetAWACS()
+awacs_cv:SetRadio(FREQUENCIES.AWACS.wizard[1])
+awacs_cv:SetAltitude(25000)
+awacs_cv:SetCallsign(CALLSIGN.AWACS.Wizard)
+awacs_cv:SetTACAN(2, "WIZ")
+awacs_cv:SetRacetrackDistances(20, 8)
+awacs_cv:Start()
 
 -- Rescue Helo
 rescuehelo = RESCUEHELO:New(UNIT:FindByName("CVN"), "CV SAR")

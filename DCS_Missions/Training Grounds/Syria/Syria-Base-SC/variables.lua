@@ -1,11 +1,11 @@
 FREQUENCIES = {
     ELINT = {
-        allepo_hi = {255.50, "Sector Allepo", "AM"},
-        allepo_lo = {121.75, "Sector Allepo", "AM"},
-        allepo_fm = {35.00, "Sector Allepo", "FM"},
-        atis_allepo_hi = {256.50, "Sector Allepo ATIS", "AM"},
-        atis_allepo_lo = {122.75, "Sector Allepo ATIS", "AM"},
-        atis_allepo_fm = {36.00, "Sector Allepo ATIS", "FM"},
+        allepo_hi = {255.50, "Sector Aleppo", "AM"},
+        allepo_lo = {121.75, "Sector Aleppo", "AM"},
+        allepo_fm = {35.00, "Sector Aleppo", "FM"},
+        atis_allepo_hi = {256.50, "Sector Aleppo ATIS", "AM"},
+        atis_allepo_lo = {122.75, "Sector Aleppo ATIS", "AM"},
+        atis_allepo_fm = {36.00, "Sector Aleppo ATIS", "FM"},
         beirut_hi = {255.00, "Sector Beirut", "AM"},
         beirut_lo = {122.10, "Sector Beirut", "AM"},
         beirut_fm = {37.00, "Sector Beirut", "FM"},
