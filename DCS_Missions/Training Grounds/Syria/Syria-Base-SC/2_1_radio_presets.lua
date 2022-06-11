@@ -138,7 +138,7 @@ local presets_data = {
     -- preset_ru_heli_863 = ru_heli_863,
 }
 
-function info_preset(preset_data, radio_name)
+local function info_preset(preset_data, radio_name)
     local tmp_table = {}
     local msg = string.format("Radio %s presets: \n", radio_name)
     table.insert(tmp_table, msg)

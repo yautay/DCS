@@ -1,4 +1,4 @@
-function start_fox()
+local function start_fox()
 	MESSAGE:New("TOP GUN START"):ToAll()
 	zonePvP:DrawZone(2, {0,.7,0}, 1, {0,.7,0}, 0.2, 0, true)
 	StartFox:Remove()
@@ -6,7 +6,7 @@ function start_fox()
 	fox:Start()
 end
 
-function stop_fox()
+local function stop_fox()
 	MESSAGE:New("TOP GUN STOP"):ToAll()
 	zonePvP:UndrawZone(Delay)
 	StopFox:Remove()

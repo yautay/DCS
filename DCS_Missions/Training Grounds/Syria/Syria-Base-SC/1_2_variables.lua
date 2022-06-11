@@ -52,8 +52,18 @@ TACAN = {
 }
 
 fox_trainer = true
+ag_range = true
 rat = true
 csar = true
+elint = true
+atis = false
+airboss = true
+
+iads_blue = false
+iads_red = false
+
+dispatcher_blue = true
+dispatcher_red = false
 
 debug_blueiads = false
 debug_rediads = false

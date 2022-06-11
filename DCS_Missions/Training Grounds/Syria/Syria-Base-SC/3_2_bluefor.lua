@@ -1,5 +1,3 @@
-local warehouese_ramat_david = "WH Ramat David"
-
 -- ###########################################################
 -- ###                  BLUE COALITION                     ###
 -- ###########################################################
@@ -45,13 +43,15 @@ AWACS_Overlord =
 -- ###########################################################
 -- ###                      CHROME                         ###
 -- ###########################################################
-AtisRamatDavid=ATIS:New(AIRBASE.Syria.Ramat_David, FREQUENCIES.GROUND.atis_ramat_david[1])
-AtisRamatDavid:SetRadioRelayUnitName("ELINT-Beirut")
-AtisRamatDavid:SetTACAN(84)
-AtisRamatDavid:SetVOR(113.70)
-AtisRamatDavid:SetTowerFrequencies({251.05, 118.6})
-AtisRamatDavid:AddILS(110.10, "33")
-AtisRamatDavid:AddNDBinner(368.00)
-AtisRamatDavid:SetSRS("C:\\DCS-SimpleRadio-Standalone", "female", "en-US")
-AtisRamatDavid:SetMapMarks()
-AtisRamatDavid:Start()
+if (atis) then
+    AtisRamatDavid = ATIS:New(AIRBASE.Syria.Ramat_David, FREQUENCIES.GROUND.atis_ramat_david[1])
+    AtisRamatDavid:SetRadioRelayUnitName("ELINT-Beirut")
+    AtisRamatDavid:SetTACAN(84)
+    AtisRamatDavid:SetVOR(113.70)
+    AtisRamatDavid:SetTowerFrequencies({251.05, 118.6})
+    AtisRamatDavid:AddILS(110.10, "33")
+    AtisRamatDavid:AddNDBinner(368.00)
+    AtisRamatDavid:SetSRS("C:\\DCS-SimpleRadio-Standalone", "female", "en-US")
+    AtisRamatDavid:SetMapMarks()
+    AtisRamatDavid:Start()
+end
