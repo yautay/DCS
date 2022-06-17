@@ -1,0 +1,9 @@
+TACANs in use: 
+Ch 74 X Code: CVN -> CVN-75 
+Ch 1 Y Code: RCV -> Recovery Tanker CVN-75 
+Ch 51 Y Code: SHE -> Tanker Shell East Boom 
+Ch 53 Y Code: SHW -> Tanker Shell West Boom 
+Ch 52 Y Code: TEE -> Tanker Texaco East Probe 
+Ch 54 Y Code: TEW -> Tanker Texaco West Probe 
+Ch 69 X Code: PVP -> PvP Training Zone Probe 
+
