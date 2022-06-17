@@ -1,0 +1,21 @@
+Radio AN/ARC-164 presets: 
+  Ch 1 preset 242.00 -> AWACS Darkstar UHF 
+  Ch 2 preset 242.50 -> AWACS Overlord UHF 
+  Ch 3 preset 247.70 -> AWACS Wizard UHF 
+  Ch 5 preset 251.00 -> TANKERS BIG BIRDS UHF 
+  Ch 6 preset 243.50 -> TANKER Arco UHF 
+  Ch 10 preset 255.00 -> Sector Vaziani UHF 
+  Ch 11 preset 255.50 -> Sector Vaziani ATIS UHF 
+  Ch 12 preset 256.00 -> Sector Kutaisi UHF 
+  Ch 13 preset 256.50 -> Sector Kutaisi ATIS UHF 
+  Ch 15 preset 269.00 -> Tower Vaziani UHF 
+  Ch 17 preset 263.00 -> Tower Kutaisi UHF 
+
+Radio AN/ARC-222 presets: 
+  Ch 10 preset 123.00 -> Sector Vaziani VHF 
+  Ch 11 preset 123.50 -> Sector Vaziani ATIS VHF 
+  Ch 12 preset 124.00 -> Sector Kutaisi VHF 
+  Ch 13 preset 124.50 -> Sector Kutaisi ATIS VHF 
+  Ch 16 preset 118.75 -> ATIS Vaziani VHF 
+  Ch 18 preset 118.25 -> ATIS Kutaisi VHF 
+
