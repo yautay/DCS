@@ -1,4 +1,4 @@
-SERVER = true
+SERVER = false
 
 SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-BVR\\Scripts\\"
 LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-BVR\\Scripts\\"
@@ -50,6 +50,10 @@ function loadAtis(scripts_path)
 	dofile(scripts_path .. "3_2_atis.lua")
 end
 
+function loadAGRange(scripts_path)
+	dofile(scripts_path .. "4_1_7_training_ground_ag.lua")
+end
+
 function loadVazianiAW(scripts_path)
 	dofile(scripts_path .. "AW_Vaziani.lua")
 end
@@ -64,6 +68,10 @@ end
 
 function loadScheduler(scripts_path)
 	dofile(scripts_path .. "5_1_1_schedulers.lua")
+end
+
+function loadDebuger(scripts_path)
+	dofile(scripts_path .. "debuger.lua")
 end
 
 function save_to_file(filename, content)

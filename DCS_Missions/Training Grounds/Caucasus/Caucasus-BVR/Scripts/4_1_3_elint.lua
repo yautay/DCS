@@ -63,8 +63,8 @@ local notifier_args = {
 }
 
 local sector_templates = {
-    {"Vaziani", "Sector Vaziani", controler_args.allepo, atis_args.allepo},
-    {"Kutaisi", "Sector Kutaisi", controler_args.beirut, atis_args.beirut}
+    {"Vaziani", "Sector Vaziani", controler_args.vaziani, atis_args.vaziani},
+    {"Kutaisi", "Sector Kutaisi", controler_args.kutaisi, atis_args.kutaisi}
 }
 
 local zone_vaziani = ZONE_POLYGON:New("Sector Vaziani", GROUP:FindByName("ELINT VAZIANI")):DrawZone(2, {1,0.7,0.1}, 1, {1,0.7,0.1}, 0.2, 0, true)

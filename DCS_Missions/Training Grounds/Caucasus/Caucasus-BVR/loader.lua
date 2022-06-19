@@ -1,9 +1,3 @@
--- if (SERVER) then
--- 	scripts_path = SERVER_PATH
--- else
--- 	scripts_path = LOCAL_PATH
--- end
-
 loadScriptVariables(scripts_path)
 loadScriptCommonData(scripts_path)
 
@@ -43,10 +37,14 @@ if (fox_trainer) then
 	timer.scheduleFunction(loadFOX, scripts_path, timer.getTime() + 6)
 end
 
+if (ag_range) then
+	timer.scheduleFunction(loadAGRange, scripts_path, timer.getTime() + 6)
+end
+
 if (aw_mozdok) then
 	timer.scheduleFunction(loadRedChief, scripts_path, timer.getTime() + 10)
 end
 
-if (ag_range) then
-	timer.scheduleFunction(loadCyprusAGRange, scripts_path, timer.getTime() + 6)
+if (debug_menu) then
+	timer.scheduleFunction(loadDebuger, scripts_path, timer.getTime() + 10)
 end

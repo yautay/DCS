@@ -1,89 +1,110 @@
-zoneAG_trgt = ZONE_POLYGON:New("AtG Sector", GROUP:FindByName("AG-TRG")):DrawZone(2, {.5, 0, 1}, 1, {.5, 0, 1}, 0.6, 0, true)
+zoneAG_trgt = ZONE:New("AG-RANGE")
 
-local function get_group_units_type_and_coords(group)
-    local units = group:GetUnits()
-    local coords = {}
-    for key, value in pairs(units) do
-        env.info(value:GetName())
-        local type = value:GetTypeName()
-        local coordinates = value:GetCoordinate()
-        table.insert(coords, {type, coordinates})
+if (menu_dump_to_file) then
+    local targets_hard = {
+        "Static Ammunition depot-1-1",
+        "Static Ammunition depot-2-1",
+        "Static Ammunition depot-3-1",
+        "Static Ammunition depot-4-1",
+    }
+    local targets_medium = {
+        "Static Warehouse-1-1",
+        "Static Warehouse-2-1",
+        "Static Warehouse-3-1",
+        "Static Warehouse-4-1",
+        "Static Workshop A-1",
+    }
+    local targets_soft = {
+        "Static Tank 1-1-1",
+        "Static Tank 1-2-1",
+        "Static Tank 1-3-1",
+        "Static Tank 1-4-1",
+        "Static Tank 1-5-1",
+        "Static Tank 1-6-1",
+        "Static Tank 2-1-1",
+        "Static Tank 2-2-1",
+        "Static Tank 2-3-1",
+        "Static Tank 2-4-1",
+        "Static Tank 2-5-1",
+        "Static Tank 2-6-1",
+        "Static Tank 2-7-1",
+    }
+
+    -- local function get_group_units_type_and_coords(group)
+    --     local units = group:GetUnits()
+    --     local coords = {}
+    --     for key, value in pairs(units) do
+    --         env.info(value:GetName())
+    --         local type = value:GetTypeName()
+    --         local coordinates = value:GetCoordinate()
+    --         table.insert(coords, {type, coordinates})
+    --     end
+    --     return coords
+    -- end
+
+    local function coord_to_LLDMS_H(coord)
+        return {coord:ToStringLLDMS(nil), UTILS.MetersToFeet(coord:GetLandHeight())}
     end
-    return coords
-end
 
-local function coord_to_LLDMS_H(coord)
-    return {coord:ToStringLLDMS(nil), coord:GetLandHeight()}
-end
-
-local function targets_to_JDAM_text(targets)
-    local tmp_table = {}
-    local msg = string.format("Targets Coordinates: \n")
-    table.insert(tmp_table, msg)
-    for i, v in ipairs(targets) do
-        local tmp_string = string.format("T%s-> DMS %s\n        h= %d mtrs \n",v[1] , v[2], v[3])
-        table.insert(tmp_table, tmp_string)
+    local function targets_to_JDAM_text(targets_coords, prefix)
+        local tmp_table = {}
+        local msg = string.format("%s Targets Coordinates: \n", prefix)
+        table.insert(tmp_table, msg)
+        for i, v in ipairs(targets_coords) do
+            local human_coords = coord_to_LLDMS_H(v)
+            local tmp_string = string.format("DMS %s\n        h= %d fts \n",human_coords[1], human_coords[2])
+            table.insert(tmp_table, tmp_string)
+        end
+        local final_msg = table.concat(tmp_table)
+        return final_msg .. "\n"
     end
-    local final_msg = table.concat(tmp_table)
-    return final_msg .. "\n"
+
+    function get_statics_coords(statics_table)
+        local table_coords = {}
+        for i, v in pairs(statics_table) do
+            local static_target = STATIC:FindByName(v, false)
+            local coords = static_target:GetCoordinate()
+            table.insert(table_coords, coords)
+        end
+        return table_coords
+    end
+
+    local hard_statics = targets_to_JDAM_text(get_statics_coords(targets_hard), "Hard Targets")
+    local medium_statics = targets_to_JDAM_text(get_statics_coords(targets_medium), "Medium Targets")
+    local soft_statics = targets_to_JDAM_text(get_statics_coords(targets_soft), "Soft Targets")
+    local concat_targets = hard_statics .. medium_statics .. soft_statics
+    save_to_file("ag_statics", concat_targets)
 end
 
-local function Msg(arg)
-    MESSAGE:New(arg[1], arg[2]):ToAll()
+function spawn_drone()
+    agDrone = SPAWN:New("AG-DRONE"):OnSpawnGroup(
+        function(drone)
+            agDrone:CommandSetCallsign(CALLSIGN.Aircraft.Uzi, 1, 1)
+            agDrone:CommandSetFrequency(FREQUENCIES.FLIGHTS.ag_drone[1])
+            local beacon = agDrone:GetBeacon()
+            beacon:ActivateTACAN(TACAN.ag[1], TACAN.ag[2], TACAN.ag[3], true)
+        end)
+    :Spawn()
 end
 
 function spawn_train_sector()
-    local target_urban = SPAWN:New("TGT-STORES"):Spawn()
-    local target_circles = SPAWN:New("TGT-CIRCLE"):Spawn()
-    local target_sam = SPAWN:New("TGT-SAM"):Spawn()
-    local target_tanks = SPAWN:New("TGT-TANKS"):Spawn()
-
-    local targets = {}
-    for i, v in pairs(target_circles, target_urban, target_tanks, target_sam) do
-        local units_types_and_coordinates = get_group_units_coords(v)
-        for i, v in pairs(units_types_and_coordinates) do
-            local unit_data = {}
-            local unit_type = v[1]
-            local unit_coordinate_JDAM_friendly = coord_to_LLDMS_H(v[2])
-            for i, v in pairs(unit_coordinate_JDAM_friendly) do 
-                local pos = v[1]
-                local hgt = v[2]
-                table.insert(unit_data, {unit_type, pos, hgt})
-            end
-            table.insert(targets, unit_data)
-        end
-    end
-    local message = targets_to_JDAM_text(targets)
-    if (menu_dump_to_file) then
-        save_to_file("training ground coordinates", message)
-    end
-    MESSAGE:New("Grount Training Range spawned on Cyprus"):ToAll()
+    zoneAG_trgt:DrawZone(-1,{0.5,0.25,0},1,{0.5,0.25,0},0.4,1,true)
+    target_moving = SPAWN:New("Moving-Target-1"):Spawn()
+    spawn_drone()
+    MESSAGE:New("AG Range Spawned"):ToBlue()
     StartAGGround:Remove()
-    DisplayAGTRData = MENU_MISSION_COMMAND:New("Targets data", MenuAGGround, Msg, {message, 30})
+    StopAGGround:Refresh()
 end
 
-MenuAGGround = MENU_MISSION:New("AG Ground Menu", MenuSeler) --Główny kontener
-StartAGGround = MENU_MISSION_COMMAND:New("Start Ground Range", MenuAGGround, spawn_train_sector)
+function kill_train_sector()
+    zoneAG_trgt:UndrawZone(1)
+    target_moving:Destroy()
+    agDrone:Destroy()
+    MESSAGE:New("AG Range Removed"):ToBlue()
+    StartAGGround:Refresh()
+    StopAGGround:Remove()
+end
 
-"Static Ammunition depot-1-1"
-"Static Ammunition depot-2-1"
-"Static Ammunition depot-3-1"
-"Static Ammunition depot-4-1"
-"Static Tank 1-1-1"
-"Static Tank 1-2-1"
-"Static Tank 1-3-1"
-"Static Tank 1-4-1"
-"Static Tank 1-5-1"
-"Static Tank 1-6-1"
-"Static Tank 2-1-1"
-"Static Tank 2-2-1"
-"Static Tank 2-3-1"
-"Static Tank 2-4-1"
-"Static Tank 2-5-1"
-"Static Tank 2-6-1"
-"Static Tank 2-7-1"
-"Static Warehouse-1-1"
-"Static Warehouse-2-1"
-"Static Warehouse-3-1"
-"Static Warehouse-4-1"
-"Static Workshop A-1"
+StartAGGround = MENU_MISSION_COMMAND:New("Start Ground Range", MenuFeatures, spawn_train_sector)
+StopAGGround = MENU_MISSION_COMMAND:New("Stop Ground Range", MenuFeatures, kill_train_sector)
+StopAGGround:Remove()

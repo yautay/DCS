@@ -23,14 +23,15 @@ FREQUENCIES = {
         arco = {243.50, "TANKER Arco UHF", "AM"}
     },
     FLIGHTS = {
-        hornet_1 = {"MIDS 1", "HORNET-1", "AM"},
-        hornet_2 = {"MIDS 2", "HORNET-2", "AM"},
-        hornet_3 = {"MIDS 3", "HORNET-3", "AM"},
-        hornet_4 = {"MIDS 4", "HORNET-4", "AM"},
-        viper_1 = {271.00, "VIPER-1 UHF", "AM"},
-        viper_2 = {272.00, "VIPER-2 UHF", "AM"},
-        viper_3 = {273.00, "VIPER-3 UHF", "AM"},
-        viper_4 = {274.00, "VIPER-4 UHF", "AM"},
+        hornet_1 = {"MIDS 1", "HORNET MIDS", "AM"},
+        hornet_2 = {"MIDS 2", "SQUID MIDS", "AM"},
+        hornet_3 = {"MIDS 3", "DEVIL MIDS", "AM"},
+        hornet_4 = {"MIDS 4", "CHECK MIDS", "AM"},
+        viper_1 = {271.00, "VIPER UHF", "AM"},
+        viper_2 = {272.00, "PYTHON UHF", "AM"},
+        viper_3 = {273.00, "NINJA UHF", "AM"},
+        viper_4 = {274.00, "JEDI UHF", "AM"},
+        ag_drone = {301.00, "AG DRONE UHF", "AM"}
     },
     CV = {
         lso = {260.00, "CV-75 LSO UHF", "AM"},
@@ -58,17 +59,18 @@ TACAN = {
     shell_w = {53, "Y", "SHW", "Tanker Shell West Boom"},
     texaco_e = {52, "Y", "TEE", "Tanker Texaco East Probe"},
     texaco_w = {54, "Y", "TEW", "Tanker Texaco West Probe"},
-    pvp = {69, "X", "PVP", "PvP Training Zone Probe"},
+    pvp = {69, "X", "PVP", "PvP Training Zone (on request)"},
+    ag = {88, "Y", "AG", "AG Training Zone (on request)"},
 }
 YARDSTICKS = {
-    hornet_1 = {"Hornet-1", 37, 100, "Y"},
-    hornet_2 = {"Hornet-2", 38, 101, "Y"},
-    hornet_3 = {"Hornet-3", 39, 102, "Y"},
-    hornet_4 = {"Hornet-4", 40, 103, "Y"},
-    viper_1 = {"Viper-1", 41, 104, "Y"},
-    viper_2 = {"Viper-2", 42, 105, "Y"},
-    viper_3 = {"Viper-3", 43, 106, "Y"},
-    viper_4 = {"Viper-4", 44, 107, "Y"},
+    hornet_1 = {"HORNET", 37, 100, "Y"},
+    hornet_2 = {"SQUID", 38, 101, "Y"},
+    hornet_3 = {"DEVIL", 39, 102, "Y"},
+    hornet_4 = {"CHECK", 40, 103, "Y"},
+    viper_1 = {"VIPER", 41, 104, "Y"},
+    viper_2 = {"PYTHON", 42, 105, "Y"},
+    viper_3 = {"NINJA", 43, 106, "Y"},
+    viper_4 = {"JEDI", 44, 107, "Y"},
 }
 
 SRS_PATH = "C:\\DCS-SimpleRadio-Standalone"
@@ -98,7 +100,7 @@ debug_airbos = false
 -- FOX Trainer
 fox_trainer = true
 -- AG Range
-ag_range = false
+ag_range = true
 -- ELINT
 elint = true
 debug_elint = false
@@ -128,6 +130,8 @@ debug_awacs = false
 
 
 
-menu_dump_to_file = false
-menu_show_freqs = false
-menu_show_presets = false
+menu_dump_to_file = true
+menu_show_freqs = true
+menu_show_presets = true
+
+debug_menu = false

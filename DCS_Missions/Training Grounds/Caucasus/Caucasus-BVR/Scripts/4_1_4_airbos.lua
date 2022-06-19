@@ -45,7 +45,7 @@ local window1 = Airboss:AddRecoveryWindow("5:00", "19:00", 1, nil, true, 25)
 -- local window2 = Airboss:AddRecoveryWindow("19:00", "20:00", 2, nil, true, 25)
 -- local window3 = Airboss:AddRecoveryWindow("20:00", "06:00+1", 3, nil, true, 25)
 
-Airboss:SetSoundfilesFolder("Airboss Soundfiles")
+-- Airboss:SetSoundfilesFolder("Airboss Soundfiles")
 Airboss:SetMenuSingleCarrier()
 Airboss:SetDefaultPlayerSkill("Naval Aviator")
 Airboss:SetMenuRecovery(30, 25, false)

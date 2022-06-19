@@ -22,9 +22,9 @@ RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
 -- RESOURCES
 if (aw_mozdok) then
     RedChief:AddAirwing(AWMozdok)
-    RedChief:AddAwacsZone(ZONE:New("URAL"), 25000, 320, 225, 20)
-    RedChief:AddCapZone(ZONE:New("MOSCOW"), 30000, 350, 180, 20)
-    RedChief:AddGciCapZone(ZONE:New("GORKI"), 30000, 350, 180, 30)    
+    RedChief:AddAwacsZone(ZONE:New("RED AWACS"), 25000, 320, 225, 20)
+    RedChief:AddCapZone(ZONE:New("RED CAP"), 30000, 350, 180, 20)
+    RedChief:AddGciCapZone(ZONE:New("RED GCICAP"), 30000, 350, 180, 30)    
 end
 
 RedChief:SetTacticalOverviewOn()
