@@ -84,13 +84,13 @@ aw_vaziani_escort = false
 debug_aw_vaziani = false
 
 -- Vaziani
-aw_kutaisi = false
+aw_kutaisi = true
 aw_kutaisi_cap = false
 aw_kutaisi_escort = false
 debug_aw_kutaisi = false
 
 -- Mozdok
-aw_mozdok = false
+aw_mozdok = true
 debug_aw_mozdok = false
 
 -- FEATURES
