@@ -1,20 +1,26 @@
 loadScriptVariables(scripts_path)
 loadScriptCommonData(scripts_path)
 
+timer.scheduleFunction(loadLibSTTS, scripts_path, timer.getTime() + 1)
 timer.scheduleFunction(loadScriptRadioPresets, scripts_path, timer.getTime() + 1)
 timer.scheduleFunction(loadScriptMenu, scripts_path, timer.getTime() + 2)
 timer.scheduleFunction(loadScheduler, scripts_path, timer.getTime() + 10)
 
+if (skynet_lib) then
+	timer.scheduleFunction(LoadLibSkynet, scripts_path, timer.getTime() + 2)
+end
+
 if (atis) then
-	timer.scheduleFunction(loadAtis, scripts_path, timer.getTime() + 3)
+	timer.scheduleFunction(loadAtis, scripts_path, timer.getTime() + 5)
 end
 
 if (airboss) then
-	timer.scheduleFunction(loadAirboss, scripts_path, timer.getTime() + 3)
+	timer.scheduleFunction(loadAirboss, scripts_path, timer.getTime() + 5)
 end
 
 if (elint) then
-	timer.scheduleFunction(loadElint, scripts_path, timer.getTime() + 3)
+	timer.scheduleFunction(loadLibHound, scripts_path, timer.getTime() + 2)
+	timer.scheduleFunction(loadElint, scripts_path, timer.getTime() + 5)
 end
 
 if (aw_vaziani) then

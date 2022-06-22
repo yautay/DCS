@@ -36,12 +36,12 @@ Airboss = AIRBOSS:New("CVN")
 Airboss:SetTACAN(TACAN.sc[1], TACAN.sc[2], TACAN.sc[3])
 Airboss:SetICLS(ICLS.sc[1], ICLS.sc[2])
 Airboss:SetMarshalRadio(FREQUENCIES.CV.marshal[1], FREQUENCIES.CV.marshal[3])
-Airboss:SetRadioRelayMarshal("RELAY-CVN-MARSHAL")
+-- Airboss:SetRadioRelayMarshal("RELAY-CVN-MARSHAL")
 Airboss:SetLSORadio(FREQUENCIES.CV.lso[1])
-Airboss:SetRadioRelayLSO("RELAY-CVN-LSO")
+-- Airboss:SetRadioRelayLSO("RELAY-CVN-LSO")
 Airboss:SetQueueUpdateTime(10)
 
-local window1 = Airboss:AddRecoveryWindow("5:00", "19:00", 1, nil, true, 25)
+local window1 = Airboss:AddRecoveryWindow("01:00", "06:00", 3, nil, true, 25)
 -- local window2 = Airboss:AddRecoveryWindow("19:00", "20:00", 2, nil, true, 25)
 -- local window3 = Airboss:AddRecoveryWindow("20:00", "06:00+1", 3, nil, true, 25)
 
@@ -53,6 +53,7 @@ Airboss:SetDespawnOnEngineShutdown()
 Airboss:Load()
 Airboss:SetAutoSave()
 Airboss:SetTrapSheet()
+Airboss:SetHandleAIOFF()
 Airboss:Start()
 
 if (debug_airbos) then

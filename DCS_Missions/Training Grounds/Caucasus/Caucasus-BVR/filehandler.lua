@@ -1,14 +1,37 @@
-SERVER = false
+SERVER = true
 
-SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-BVR\\Scripts\\"
-LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-BVR\\Scripts\\"
+SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-CASE3\\Scripts\\"
+LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-CASE3\\Scripts\\"
+
+SRS_PATH = nil
+SRS_PORT = nil
+
+SRS_SERVER_PATH = "C:\\DCS-SimpleRadio-Standalone"
+SRS_SERVER_PORT = 5002
+SRS_LOCAL_PATH = "C:\\DCS-SimpleRadio-Standalone"
+SRS_LOCAL_PORT = 5002
 
 if (SERVER) then
 	scripts_path = SERVER_PATH
+	SRS_PATH = SRS_SERVER_PATH
+	SRS_PORT = SRS_SERVER_PORT
 else
 	scripts_path = LOCAL_PATH
+	SRS_PATH = SRS_LOCAL_PATH
+	SRS_PORT = SRS_LOCAL_PORT
 end
 
+function loadLibSTTS(scripts_path)
+	dofile(scripts_path .. "DCS-SimpleTextToSpeech.lua")
+end
+
+function loadLibHound(scripts_path)
+	dofile(scripts_path .. "HoundElint.lua")
+end
+
+function LoadLibSkynet(scripts_path)
+	dofile(scripts_path .. "skynet-iads-compiled.lua")
+end
 
 function loadScriptVariables(scripts_path)
 	dofile(scripts_path .. "1_1_variables.lua")

@@ -73,9 +73,6 @@ YARDSTICKS = {
     viper_4 = {"JEDI", 44, 107, "Y"},
 }
 
-SRS_PATH = "C:\\DCS-SimpleRadio-Standalone"
-SRS_PORT = 5002
-
 --AIRWINGS
 -- Vaziani
 aw_vaziani = false
@@ -84,13 +81,13 @@ aw_vaziani_escort = false
 debug_aw_vaziani = false
 
 -- Vaziani
-aw_kutaisi = true
+aw_kutaisi = false
 aw_kutaisi_cap = false
 aw_kutaisi_escort = false
 debug_aw_kutaisi = false
 
 -- Mozdok
-aw_mozdok = true
+aw_mozdok = false
 debug_aw_mozdok = false
 
 -- FEATURES
@@ -115,20 +112,12 @@ rat = false
 cvn_awacs = true
 moose_awacs_rejection_red_zone = false
 debug_awacs = false
-
+-- IADS
+skynet_lib = false
 -- iads_blue = false
 -- iads_red = false
-
--- dispatcher_blue = false
--- dispatcher_red = false
-
 -- debug_blueiads = false
 -- debug_rediads = false
-
--- debug_bluedispatcher = false
--- debug_reddispatcher = false
-
-
 
 menu_dump_to_file = true
 menu_show_freqs = true

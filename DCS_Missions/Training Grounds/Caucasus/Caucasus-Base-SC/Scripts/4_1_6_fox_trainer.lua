@@ -1,41 +1,41 @@
-zonePvP = ZONE_POLYGON:New("PvP Sector", GROUP:FindByName("ZONE-PvP"))
+zonePvP_trgt = ZONE:New("PVP-RANGE")
 
-tacanPvP = STATIC:FindByName("PvP TACAN", false)
-beaconPvP = BEACON:New(zonePvP)
+function spawn_cc()
+    pvpcc = SPAWN:New("PVP-CC"):OnSpawnGroup(
+        function(cc)
+            beaconPvP = cc:GetBeacon()
+            beaconPvP:ActivateTACAN(TACAN.pvp[1], TACAN.pvp[2], TACAN.pvp[3], true)
+        end)
+    :Spawn()
+end
 
 local function start_fox()
-	MESSAGE:New("PvP ZONE START"):ToAll()
-	zonePvP:DrawZone(2, {0,.7,0}, 1, {0,.7,0}, 0.2, 0, true)
-	StartFox:Remove()
-	StopFox = MENU_MISSION_COMMAND:New("Stop PvP Training", MenuFox, stop_fox)
+	zonePvP_trgt:DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+	spawn_cc()
 	fox:Start()
-	beaconPvP:ActivateTACAN(TACAN.pvp[1], TACAN.pvp[2], TACAN.pvp[3], true)
+	MESSAGE:New("PvP ZONE START"):ToBlue()
+	StartFox:Remove()
+	StopFox:Refresh()
 end
 
 local function stop_fox()
-	MESSAGE:New("PvP ZONE STOP"):ToAll()
-	zonePvP:UndrawZone(Delay)
-	StopFox:Remove()
-	StartFox = MENU_MISSION_COMMAND:New("Start PvP Training", MenuFox, start_fox)
-	fox:Stop()
+	zonePvP_trgt:UndrawZone(1)
 	beaconPvP:StopRadioBeacon()
+	fox:Stop()
+	pvpcc:Destroy()
+	MESSAGE:New("PvP ZONE STOP"):ToBlue()
+	StopFox:Remove()
+	StartFox:Refresh()
 end
 
-if (fox_trainer) then
-	
+fox=FOX:New()
 
-	-- Create a new missile trainer object.
-	fox=FOX:New()
+fox:AddSafeZone(zone_PvP)
+fox:AddLaunchZone(zone_PvP)
 
-	-- Add training zones.
-	fox:AddSafeZone(zone_PvP)
-	fox:AddLaunchZone(zone_PvP)
+FOX:SetDefaultLaunchAlerts(false)
+FOX:SetDefaultLaunchMarks(false)
 
-	FOX:SetDefaultLaunchAlerts(false)
-	FOX:SetDefaultLaunchMarks(false)
-
-    MenuFox = MENU_MISSION:New("Features", MenuSeler)
-	StartFox = MENU_MISSION_COMMAND:New("Start PvP Training", MenuFox, start_fox)
-	StopFox = MENU_MISSION_COMMAND:New("Stop PvP Training", MenuFox, stop_fox)
-end
-
+StartFox = MENU_MISSION_COMMAND:New("Start PvP Training", MenuFeatures, start_fox)
+StopFox = MENU_MISSION_COMMAND:New("Stop PvP Training", MenuFeatures, stop_fox)
+StopFox:Remove()

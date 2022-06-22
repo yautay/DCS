@@ -41,7 +41,8 @@ local ordered_tacan_data = {
     TACAN.shell_w,
     TACAN.texaco_e,
     TACAN.texaco_w,
-    TACAN.pvp
+    TACAN.pvp,
+    TACAN.ag,
 }
 local ordered_yardstick_data = {
     YARDSTICKS.hornet_1,
@@ -109,7 +110,7 @@ local function yardsticks_text(general_yardsticks)
     local msg = string.format("YARDSTICK's in use: \n")
     table.insert(tmp_table, msg)
     for i, v in pairs(general_yardsticks) do
-        local tmp_string = string.format("%s -> %d--%d %s \n", v[1], v[2], v[3], v[4])
+        local tmp_string = string.format("%s -> Leader: %d <-> Wingman: %d (%s) \n", v[1], v[2], v[3], v[4])
         table.insert(tmp_table, tmp_string)
     end
     local final_msg = table.concat(tmp_table)
@@ -174,7 +175,7 @@ if (menu_show_freqs) then
     local freqInfo = MENU_MISSION_COMMAND:New("ELINT", MenuFreq, Msg, {elint_freqs_info, 10})
     local freqInfo = MENU_MISSION_COMMAND:New("Ground", MenuFreq, Msg, {ground_freqs_info, 10})
     local TacanInfo = MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})
-    local YardstickInfo = MENU_MISSION_COMMAND:New("YARDSTICK", MenuFreq, Msg, {tacan_info, 10})
+    local YardstickInfo = MENU_MISSION_COMMAND:New("YARDSTICK", MenuFreq, Msg, {yardsticks_info, 10})
     local IclsInfo = MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
 end
 
@@ -189,6 +190,8 @@ if (menu_show_presets) then
     -- local PresetsInfoMi8 = MENU_MISSION_COMMAND:New("Presets Mi-8", MenuPresets, Msg, {presets_mi8, 10})
     local PresetsInfoRu863 = MENU_MISSION_COMMAND:New("Presets R-863", MenuPresets, Msg, {presets_ru_863, 10})
 end
+
+MenuFeatures = MENU_MISSION:New("Features", MenuSeler)
 
 if (menu_dump_to_file) then
     -- save_to_file("presets_f14", presets_f14)

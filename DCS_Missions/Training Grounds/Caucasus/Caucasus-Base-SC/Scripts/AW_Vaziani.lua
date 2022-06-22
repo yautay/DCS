@@ -2,9 +2,9 @@
 -- ###########################################################
 -- ###                  Vaziani Air Wing                   ###
 -- ###########################################################
-ZONE_CHICAGO_CAP = ZONE:New("CHICAGO")
-ZONE_HOUSTON_FEZ = ZONE:New("HOUSTON")
-ZONE_ATLANTA_AWACS = ZONE:New("ATLANTA")
+ZONE_VAZIANI_CAP = ZONE:New("CORN FLAKES")
+ZONE_VAZIANI_FEZ = ZONE:New("GUADALCANAL")
+ZONE_VAZIANI_AWACS = ZONE:New("DARKSTAR")
 ZONE_SHELL_EAST_AAR = ZONE:New("SHELL EAST")
 ZONE_TEXACO_EAST_AAR = ZONE:New("TEXACO EAST")
 
@@ -44,7 +44,6 @@ Vaziani_MPRS:SetTakeoffAir()
 Vaziani_MPRS:SetFuelLowRefuel(false)
 Vaziani_MPRS:SetFuelLowThreshold(0.25)
 Vaziani_MPRS:SetTurnoverTime(15,60)
-Vaziani_MPRS:SetCallsign(CALLSIGN.Aircraft.Shell, 1)
 Vaziani_MPRS:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWVaziani:AddSquadron(Vaziani_MPRS)
 AWVaziani:NewPayload("ME TANKER KC135MPRS", -1, {AUFTRAG.Type.TANKER},100)
@@ -55,7 +54,6 @@ Vaziani_135:SetTakeoffAir()
 Vaziani_135:SetFuelLowRefuel(false)
 Vaziani_135:SetFuelLowThreshold(0.25)
 Vaziani_135:SetTurnoverTime(15,60)
-Vaziani_135:SetCallsign(CALLSIGN.Aircraft.Texaco, 1)
 Vaziani_135:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWVaziani:AddSquadron(Vaziani_135)
 AWVaziani:NewPayload("ME AAR KC135", -1, {AUFTRAG.Type.TANKER},100)
@@ -64,12 +62,14 @@ TankerShellEast = AUFTRAG:NewTANKER(ZONE_SHELL_EAST_AAR:GetCoordinate(), 25000, 
 TankerShellEast:AssignSquadrons({Vaziani_135})
 TankerShellEast:SetTACAN(TACAN.shell_e[1], TACAN.shell_e[3], TACAN.shell_e[2])
 TankerShellEast:SetRadio(FREQUENCIES.AAR.common[1])
+TankerShellEast:SetName("Shell East")
 AWVaziani:AddMission(TankerShellEast)
 
 TankerTexacoEast = AUFTRAG:NewTANKER(ZONE_TEXACO_EAST_AAR:GetCoordinate(), 22000, 310, 100, 40, 1)
 TankerTexacoEast:AssignSquadrons({Vaziani_MPRS})
 TankerTexacoEast:SetTACAN(TACAN.texaco_e[1], TACAN.texaco_e[3], TACAN.texaco_e[2])
 TankerTexacoEast:SetRadio(FREQUENCIES.AAR.common[1])
+TankerTexacoEast:SetName("Texaco East")
 AWVaziani:AddMission(TankerTexacoEast)
 
 
@@ -96,7 +96,7 @@ end
 AWVaziani:__Start(2)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-AwacsDarkstar = AWACS:New("Darkstar", AWVaziani, "blue", AIRBASE.Caucasus.Vaziani, "ATLANTA", "HOUSTON", "CHICAGO", FREQUENCIES.AWACS.darkstar[1] ,radio.modulation.AM)
+AwacsDarkstar = AWACS:New("Darkstar", AWVaziani, "blue", AIRBASE.Caucasus.Vaziani, "DARKSTAR", "GUADALCANAL", "CORN FLAKES", FREQUENCIES.AWACS.darkstar[1] ,radio.modulation.AM)
 if (aw_vaziani_escort) then
 	AwacsDarkstar:SetEscort(1)
 end
@@ -106,7 +106,7 @@ AwacsDarkstar:SetSRS(SRS_PATH, "female","en-GB", SRS_PORT)
 if (moose_awacs_rejection_red_zone) then
 	AwacsDarkstar:SetRejectionZone(borderRed)
 end
-AwacsDarkstar:SetAdditionalZone(borderBlue)
+AwacsDarkstar:SetAdditionalZone(borderBlue, true)
 AwacsDarkstar:SetAICAPDetails(CALLSIGN.Aircraft.Ford, 2, 2, 300)
 AwacsDarkstar:SetModernEraAgressive()
 
@@ -122,6 +122,8 @@ AwacsDarkstar.invisible = true -- set AWACS to be invisible to hostiles
 AwacsDarkstar.immortal = true -- set AWACS to be immortal
 AwacsDarkstar.GoogleTTSPadding = 1 -- seconds
 AwacsDarkstar.WindowsTTSPadding = 2.5 -- seconds
+
+AwacsDarkstar:SuppressScreenMessages(true)
 
 AwacsDarkstar:__Start(5)
 

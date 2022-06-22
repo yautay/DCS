@@ -2,9 +2,9 @@
 -- ###########################################################
 -- ###                  Kutaisi Air Wing                   ###
 -- ###########################################################
-ZONE_BERLIN_CAP = ZONE:New("BERLIN")
-ZONE_PARIS_FEZ = ZONE:New("PARIS")
-ZONE_WARSAW_AWACS = ZONE:New("WARSAW")
+ZONE_KUTAISI_CAP = ZONE:New("PANCAKE")
+ZONE_KUTAISI_FEZ = ZONE:New("MIDWAY")
+ZONE_KUTAISI_AWACS = ZONE:New("OVERLORD")
 ZONE_SHELL_WEST_AAR = ZONE:New("SHELL WEST")
 ZONE_TEXACO_WEST_AAR = ZONE:New("TEXACO WEST")
 
@@ -44,7 +44,6 @@ Kutaisi_MPRS:SetTakeoffAir()
 Kutaisi_MPRS:SetFuelLowRefuel(false)
 Kutaisi_MPRS:SetFuelLowThreshold(0.25)
 Kutaisi_MPRS:SetTurnoverTime(15,60)
-Kutaisi_MPRS:SetCallsign(CALLSIGN.Aircraft.Shell, 2)
 Kutaisi_MPRS:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWKutaisi:AddSquadron(Kutaisi_MPRS)
 AWKutaisi:NewPayload("ME TANKER KC135MPRS", -1, {AUFTRAG.Type.TANKER, AUFTRAG.Type.ORBIT},100)
@@ -55,7 +54,6 @@ Kutaisi_135:SetTakeoffAir()
 Kutaisi_135:SetFuelLowRefuel(false)
 Kutaisi_135:SetFuelLowThreshold(0.25)
 Kutaisi_135:SetTurnoverTime(15,60)
-Kutaisi_135:SetCallsign(CALLSIGN.Aircraft.Texaco, 2)
 Kutaisi_135:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWKutaisi:AddSquadron(Kutaisi_135)
 AWKutaisi:NewPayload("ME AAR KC135", -1, {AUFTRAG.Type.TANKER, AUFTRAG.Type.ORBIT},100)
@@ -64,12 +62,14 @@ TankerShellWest = AUFTRAG:NewTANKER(ZONE_SHELL_WEST_AAR:GetCoordinate(), 25000, 
 TankerShellWest:AssignSquadrons({Kutaisi_135})
 TankerShellWest:SetTACAN(TACAN.shell_w[1], TACAN.shell_w[3], TACAN.shell_w[2])
 TankerShellWest:SetRadio(FREQUENCIES.AAR.common[1])
+TankerShellWest:SetName("Shell West")
 AWKutaisi:AddMission(TankerShellWest)
 
 TankerTexacoWest = AUFTRAG:NewTANKER(ZONE_TEXACO_WEST_AAR:GetCoordinate(), 22000, 310, 100, 40, 1)
 TankerTexacoWest:AssignSquadrons({Kutaisi_MPRS})
 TankerTexacoWest:SetTACAN(TACAN.texaco_w[1], TACAN.texaco_w[3], TACAN.texaco_w[2])
 TankerTexacoWest:SetRadio(FREQUENCIES.AAR.common[1])
+TankerTexacoWest:SetName("Texaco West")
 AWKutaisi:AddMission(TankerTexacoWest)
 
 
@@ -96,12 +96,12 @@ end
 AWKutaisi:__Start(2)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-AwacsOverlord = AWACS:New("Overlord", AWKutaisi, "blue", AIRBASE.Caucasus.Kutaisi, "WARSAW", "PARIS", "BERLIN", FREQUENCIES.AWACS.overlord[1] ,radio.modulation.AM)
+AwacsOverlord = AWACS:New("Overlord", AWKutaisi, "blue", AIRBASE.Caucasus.Kutaisi, "OVERLORD", "MIDWAY", "PANCAKE", FREQUENCIES.AWACS.overlord[1] ,radio.modulation.AM)
 if (aw_kutaisi_escort) then
 	AwacsOverlord:SetEscort(1)
 end
 AwacsOverlord:SetBullsEyeAlias("TEXAS")
-AwacsOverlord:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 30000, 220, 120, 20)
+AwacsOverlord:SetAwacsDetails(CALLSIGN.AWACS.Overlord, 1, 30000, 220, 120, 20)
 AwacsOverlord:SetSRS(SRS_PATH, "female","en-GB", SRS_PORT)
 if (moose_awacs_rejection_red_zone) then
 	AwacsOverlord:SetRejectionZone(borderRed)
@@ -122,6 +122,8 @@ AwacsOverlord.invisible = true -- set AWACS to be invisible to hostiles
 AwacsOverlord.immortal = true -- set AWACS to be immortal
 AwacsOverlord.GoogleTTSPadding = 1 -- seconds
 AwacsOverlord.WindowsTTSPadding = 2.5 -- seconds
+
+AwacsOverlord:SuppressScreenMessages(true)
 
 AwacsOverlord:__Start(5)
 
