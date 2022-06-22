@@ -1,0 +1,2 @@
+zonePvP = ZONE_POLYGON:New("PvP Sector", GROUP:FindByName("ZONE-PvP"))
+zoneRED = ZONE_POLYGON:New("ZONE-AREA-TINIAN", GROUP:FindByName("ZONE-AREA-TINIAN"))
