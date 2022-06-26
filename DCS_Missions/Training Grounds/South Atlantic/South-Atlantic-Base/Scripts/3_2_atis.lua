@@ -1,0 +1,8 @@
+AtisPuntaArenas = ATIS:New(AIRBASE.SouthAtlantic.Punta_Arenas, FREQUENCIES.GROUND.atis_punta_arenas[1])
+AtisPuntaArenas:SetRadioRelayUnitName("Punta Arenas ATIS")
+AtisPuntaArenas:SetTowerFrequencies({FREQUENCIES.GROUND.tower_punta_arenas_uhf[1], FREQUENCIES.GROUND.tower_punta_arenas_vhf[1]})
+AtisPuntaArenas:AddILS(109.90, "258")
+AtisPuntaArenas:SetVOR(114.10)
+AtisPuntaArenas:SetSRS(SRS_PATH, "female", "en-US")
+AtisPuntaArenas:SetMapMarks()
+AtisPuntaArenas:Start()
