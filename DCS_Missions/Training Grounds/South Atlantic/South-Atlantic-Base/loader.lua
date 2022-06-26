@@ -1,10 +1,10 @@
-loadScriptVariables(scripts_path)
-loadScriptCommonData(scripts_path)
+loloadScriptVariables(scripts_path)
+-- loadScriptCommonData(scripts_path)
 
 timer.scheduleFunction(loadLibSTTS, scripts_path, timer.getTime() + 1)
-timer.scheduleFunction(loadScriptRadioPresets, scripts_path, timer.getTime() + 1)
-timer.scheduleFunction(loadScriptMenu, scripts_path, timer.getTime() + 2)
-timer.scheduleFunction(loadScheduler, scripts_path, timer.getTime() + 10)
+-- timer.scheduleFunction(loadScriptRadioPresets, scripts_path, timer.getTime() + 1)
+-- timer.scheduleFunction(loadScriptMenu, scripts_path, timer.getTime() + 2)
+-- timer.scheduleFunction(loadScheduler, scripts_path, timer.getTime() + 10)
 
 if (skynet_lib) then
 	timer.scheduleFunction(LoadLibSkynet, scripts_path, timer.getTime() + 2)
