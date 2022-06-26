@@ -1,4 +1,4 @@
-loloadScriptVariables(scripts_path)
+loadScriptVariables(scripts_path)
 -- loadScriptCommonData(scripts_path)
 
 timer.scheduleFunction(loadLibSTTS, scripts_path, timer.getTime() + 1)
