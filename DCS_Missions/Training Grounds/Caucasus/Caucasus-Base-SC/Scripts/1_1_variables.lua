@@ -44,6 +44,11 @@ FREQUENCIES = {
         viper_3 = {273.00, "NINJA UHF", "AM"},
 		viper_3_1 = {273.50, "NINJA ONE UHF", "AM"},
 		viper_3_2 = {273.75, "NINJA TWO UHF", "AM"},
+        pontiac_1 = {274.00, "PONTIAC UHF", "AM"},
+        pontiac_1_1 = {274.25, "PONTIAC ONE UHF", "AM"},
+        pontiac_1_2 = {274.50, "PONTIAC TWO UHF", "AM"},
+        pontiac_1_3 = {274.75, "PONTIAC THREE UHF", "AM"},
+        pig_1 = {274.00, "PIG ONE UHF", "AM"},
         ag_drone = {301.00, "AG DRONE UHF", "AM"}
     },
     CV = {
@@ -90,6 +95,7 @@ YARDSTICKS = {
     viper_2_2 = {"JEDI TWO", 48, 111, "Y"},
     viper_3_1 = {"NINJA ONE", 49, 112, "Y"},
     viper_3_2 = {"NINJA TWO", 50, 113, "Y"},
+    pig_1 = {"PIG ONE", 51, 114, "Y"},
 }
 
 --AIRWINGS

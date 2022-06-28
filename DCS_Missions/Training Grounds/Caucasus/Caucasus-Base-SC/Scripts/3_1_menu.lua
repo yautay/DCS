@@ -27,6 +27,11 @@ local ordered_flight_freq = {
     FREQUENCIES.FLIGHTS.viper_3,
 	FREQUENCIES.FLIGHTS.viper_3_1,
 	FREQUENCIES.FLIGHTS.viper_3_2,
+    FREQUENCIES.FLIGHTS.pontiac_1,
+    FREQUENCIES.FLIGHTS.pontiac_1_1,
+    FREQUENCIES.FLIGHTS.pontiac_1_2,
+    FREQUENCIES.FLIGHTS.pontiac_1_3,
+    FREQUENCIES.FLIGHTS.pig_1,
 	FREQUENCIES.FLIGHTS.ag_drone,
 }
 local ordered_elint_freq = {
@@ -73,13 +78,14 @@ local ordered_yardstick_data = {
     YARDSTICKS.viper_2_2,
     YARDSTICKS.viper_3_1,
     YARDSTICKS.viper_3_2,
+    YARDSTICKS.pig_1,
 }
 local ordered_icls_data = {
     ICLS.sc,
 }
 
--- local info_preset_f14_159 = info_preset_f14_159()
--- local info_preset_f14_182 = info_preset_f14_182()
+local info_preset_f14_159 = info_preset_f14_159()
+local info_preset_f14_182 = info_preset_f14_182()
 
 local info_preset_f16_164 = info_preset_f16_164()
 local info_preset_f16_222 = info_preset_f16_222()
@@ -177,7 +183,7 @@ local yardsticks_info = yardsticks_text(ordered_yardstick_data)
 local icls_info = icls_text(ordered_icls_data)
 
 local freqs_info = flight_freqs_info .. ground_freqs_info .. elint_freqs_info
--- local presets_f14 = info_preset_f14_159 .. info_preset_f14_182
+local presets_f14 = info_preset_f14_159 .. info_preset_f14_182
 local presets_f16 = info_preset_f16_164
 local presets_f16 = info_preset_f16_164 .. info_preset_f16_222
 local presets_f18 = info_preset_f18_210_1 .. info_preset_f18_210_2
@@ -201,7 +207,7 @@ end
 
 if (menu_show_presets) then
     MenuPresets = MENU_MISSION:New("Presets", MenuSeler)
-    -- local PresetsInfoF14 = MENU_MISSION_COMMAND:New("Presets F-14", MenuPresets, Msg, {presets_f14, 10})
+    local PresetsInfoF14 = MENU_MISSION_COMMAND:New("Presets F-14", MenuPresets, Msg, {presets_f14, 10})
     local PresetsInfoF16 = MENU_MISSION_COMMAND:New("Presets F-16", MenuPresets, Msg, {presets_f16, 10})
     local PresetsInfoF18 = MENU_MISSION_COMMAND:New("Presets F-18", MenuPresets, Msg, {presets_f18, 10})
     -- local PresetsInfoMig21 = MENU_MISSION_COMMAND:New("Presets MiG-21", MenuPresets, Msg, {presets_mig21, 10})
@@ -214,7 +220,7 @@ end
 MenuFeatures = MENU_MISSION:New("Features", MenuSeler)
 
 if (menu_dump_to_file) then
-    -- save_to_file("presets_f14", presets_f14)
+    save_to_file("presets_f14", presets_f14)
     save_to_file("presets_f16", presets_f16)
     save_to_file("presets_f18", presets_f18)
     -- save_to_file("presets_mig21", presets_mig21)

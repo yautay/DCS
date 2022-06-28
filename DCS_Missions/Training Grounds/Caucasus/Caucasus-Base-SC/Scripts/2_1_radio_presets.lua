@@ -45,39 +45,55 @@ local ru_heli_863 = {
 --     {"11", FREQUENCIES.GROUND.al_minhad_hi},
 --     {"12", FREQUENCIES.GROUND.khasab_hi}
 -- }
--- -- 225/399,97
--- local f14_159 = {
---     {"2", FREQUENCIES.AWACS.overlord},
---     {"3", FREQUENCIES.AWACS.darkstar},
---     {"4", FREQUENCIES.AWACS.wizard},
---     {"5", FREQUENCIES.ELINT.vaziani_hi},
---     {"6", FREQUENCIES.ELINT.atis_vaziani_hi},
---     {"7", FREQUENCIES.ELINT.kutaisi_hi},
---     {"8", FREQUENCIES.ELINT.atis_kutaisi_hi},
---     {"16", FREQUENCIES.AAR.common},
---     {"17", FREQUENCIES.AAR.arco},
---     {"18", FREQUENCIES.CV.marshal},
---     {"19", FREQUENCIES.CV.lso},
---     {"20", FREQUENCIES.SPECIAL.guard_hi},
-
--- }
--- -- 30/399,97
--- local f14_182 = {
---     {"1", FREQUENCIES.CV.sc},
---     {"2", FREQUENCIES.AWACS.overlord},
---     {"3", FREQUENCIES.AWACS.darkstar},
---     {"4", FREQUENCIES.AWACS.wizard},
---     {"5", FREQUENCIES.ELINT.vaziani_hi},
---     {"6", FREQUENCIES.ELINT.atis_vaziani_hi},
---     {"7", FREQUENCIES.ELINT.kutaisi_hi},
---     {"8", FREQUENCIES.ELINT.atis_kutaisi_hi},
---     {"16", FREQUENCIES.AAR.common},
---     {"17", FREQUENCIES.AAR.arco},
---     {"18", FREQUENCIES.CV.marshal},
---     {"19", FREQUENCIES.CV.lso},
---     {"20", FREQUENCIES.SPECIAL.guard_hi},
---     {"21", FREQUENCIES.SPECIAL.guard_lo},
--- }
+-- 225/399,97
+local f14_159 = {
+    -- AWACS
+    {"1", FREQUENCIES.AWACS.darkstar},
+    {"2", FREQUENCIES.AWACS.overlord},
+    {"3", FREQUENCIES.AWACS.wizard},
+    -- AAR
+    {"5", FREQUENCIES.AAR.common},
+    {"6", FREQUENCIES.AAR.arco},
+    -- CV
+    {"7", FREQUENCIES.CV.marshal},
+    {"8", FREQUENCIES.CV.lso},
+    -- ELINT
+    {"10", FREQUENCIES.ELINT.vaziani_hi},
+    {"11", FREQUENCIES.ELINT.atis_vaziani_hi},
+    {"12", FREQUENCIES.ELINT.kutaisi_hi},
+    {"13", FREQUENCIES.ELINT.atis_kutaisi_hi},
+    -- GROUND
+    {"15", FREQUENCIES.GROUND.tower_vaziani},
+    {"17", FREQUENCIES.GROUND.tower_kutaisi},
+    -- 19 -> SECTION
+    -- 20 -> FLIGHT
+}
+-- 30/399,97
+local f14_182 = {
+    -- AWACS
+    {"1", FREQUENCIES.AWACS.darkstar},
+    {"2", FREQUENCIES.AWACS.overlord},
+    {"3", FREQUENCIES.AWACS.wizard},
+    -- AAR
+    {"5", FREQUENCIES.AAR.common},
+    {"6", FREQUENCIES.AAR.arco},
+    -- CV
+    {"7", FREQUENCIES.CV.marshal},
+    {"8", FREQUENCIES.CV.lso},
+    {"9", FREQUENCIES.CV.sc},
+    -- ELINT
+    {"10", FREQUENCIES.ELINT.vaziani_hi},
+    {"11", FREQUENCIES.ELINT.atis_vaziani_hi},
+    {"12", FREQUENCIES.ELINT.kutaisi_hi},
+    {"13", FREQUENCIES.ELINT.atis_kutaisi_hi},
+    -- GROUND
+    {"15", FREQUENCIES.GROUND.tower_vaziani},
+    {"16", FREQUENCIES.GROUND.atis_vaziani},
+    {"17", FREQUENCIES.GROUND.tower_kutaisi},
+    {"18", FREQUENCIES.GROUND.atis_kutaisi},
+    -- 19 -> SECTION
+    -- 20 -> FLIGHT
+}
 -- 225/399,97
 local f16_164 = {
     -- AWACS
@@ -95,6 +111,8 @@ local f16_164 = {
     -- GROUND
     {"15", FREQUENCIES.GROUND.tower_vaziani},
     {"17", FREQUENCIES.GROUND.tower_kutaisi},
+    -- 19 -> SECTION
+    -- 20 -> FLIGHT
 }
 -- 30/155,97
 local f16_222 = {
@@ -156,8 +174,8 @@ local f18_210_2 = {
     {"18", FREQUENCIES.GROUND.atis_kutaisi},
 }
 local presets_data = {
-    -- preset_f14_159 = f14_159,
-    -- preset_f14_182 = f14_182,
+    preset_f14_159 = f14_159,
+    preset_f14_182 = f14_182,
     preset_f16_164 = f16_164,
     preset_f16_222 = f16_222,
     preset_f18_210_1 = f18_210_1,
@@ -179,13 +197,13 @@ local function info_preset(preset_data, radio_name)
     return final_msg .. "\n"
 end
 
--- function info_preset_f14_159()
---     return info_preset(presets_data.preset_f14_159, "AN/ARC-159")
--- end
+function info_preset_f14_159()
+    return info_preset(presets_data.preset_f14_159, "AN/ARC-159")
+end
 
--- function info_preset_f14_182()
---     return info_preset(presets_data.preset_f14_182, "AN/ARC-182")
--- end
+function info_preset_f14_182()
+    return info_preset(presets_data.preset_f14_182, "AN/ARC-182")
+end
 
 function info_preset_f16_164()
     return info_preset(presets_data.preset_f16_164, "AN/ARC-164")
