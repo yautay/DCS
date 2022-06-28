@@ -95,18 +95,18 @@ YARDSTICKS = {
 --AIRWINGS
 -- Vaziani
 aw_vaziani = true
-aw_vaziani_cap = true
-aw_vaziani_escort = true
+aw_vaziani_cap = false
+aw_vaziani_escort = false
 debug_aw_vaziani = false
 
 -- Vaziani
 aw_kutaisi = true
-aw_kutaisi_cap = true
-aw_kutaisi_escort = true
+aw_kutaisi_cap = false
+aw_kutaisi_escort = false
 debug_aw_kutaisi = false
 
 -- Mozdok
-aw_mozdok = false
+aw_mozdok = true
 debug_aw_mozdok = false
 
 -- FEATURES
@@ -126,7 +126,7 @@ atis = true
 csar = true
 debug_csar = false
 -- AWACS
-cvn_awacs = false
+cvn_awacs = true
 moose_awacs_rejection_red_zone = false
 debug_awacs = false
 -- IADS

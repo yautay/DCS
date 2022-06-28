@@ -1,18 +1,18 @@
-RedAgentSet = SET_GROUP:New()
+local VazianiZone = ZONE:New("TARGET VAZIANI")
 
-RedBorderZoneSet = SET_ZONE:New()
+local RedAgentSet = SET_GROUP:New()
+
+local RedBorderZoneSet = SET_ZONE:New()
 RedBorderZoneSet:AddZone(borderRed)
 
-ConflictZoneSet = SET_ZONE:New()
-ConflictZoneSet:AddZone(zoneConflict1)
-ConflictZoneSet:AddZone(zoneConflict2)
+local ConflictZoneSet = SET_ZONE:New()
+-- ConflictZoneSet:AddZone(zoneConflict1)
+-- ConflictZoneSet:AddZone(zoneConflict2)
 
-BASE:E(ConflictZoneSet)
+local AtackZoneSet = SET_ZONE:New()
+AtackZoneSet:AddZone(VazianiZone)
 
-AtackZoneSet = SET_ZONE:New()
-AtackZoneSet:AddZone(zoneVaziani)
-
-RedChief = CHIEF:New("red", RedAgentSet, "PUTIN")
+RedChief = CHIEF:New("red", RedAgentSet, "Comrade RedChief")
 -- ZONES
 RedChief:SetBorderZones(RedBorderZoneSet)
 -- RedChief:AddConflictZone(ConflictZoneSet)
@@ -22,7 +22,7 @@ RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
 -- RESOURCES
 if (aw_mozdok) then
     RedChief:AddAirwing(AWMozdok)
-    RedChief:AddAwacsZone(ZONE:New("RED AWACS"), 25000, 320, 225, 20)
+    RedChief:AddAwacsZone(ZONE:New("RED AWACS"), 35000, 320, 225, 20)
     RedChief:AddCapZone(ZONE:New("RED CAP"), 30000, 350, 180, 20)
     RedChief:AddGciCapZone(ZONE:New("RED GCICAP"), 30000, 350, 180, 30)    
 end
