@@ -14,6 +14,9 @@ tanker:SetRadio(FREQUENCIES.AAR.arco[1])
 tanker:SetCallsign(CALLSIGN.Tanker.Arco)
 tanker:SetTACAN(TACAN.arco[1], TACAN.arco[3])
 tanker:Start()
+function tanker:OnAfterStart(From, Event, To)
+	env.info("RECOVERY TANKER SPAWNED KURŁA")
+end
 
 -- E-2D AWACS_cv
 if (cvn_awacs) then
@@ -36,14 +39,13 @@ Airboss = AIRBOSS:New("CVN")
 Airboss:SetTACAN(TACAN.sc[1], TACAN.sc[2], TACAN.sc[3])
 Airboss:SetICLS(ICLS.sc[1], ICLS.sc[2])
 Airboss:SetMarshalRadio(FREQUENCIES.CV.marshal[1], FREQUENCIES.CV.marshal[3])
--- Airboss:SetRadioRelayMarshal("RELAY-CVN-MARSHAL")
 Airboss:SetLSORadio(FREQUENCIES.CV.lso[1])
--- Airboss:SetRadioRelayLSO("RELAY-CVN-LSO")
 Airboss:SetQueueUpdateTime(10)
 
-local window1 = Airboss:AddRecoveryWindow("01:00", "06:00", 3, nil, true, 25)
--- local window2 = Airboss:AddRecoveryWindow("19:00", "20:00", 2, nil, true, 25)
--- local window3 = Airboss:AddRecoveryWindow("20:00", "06:00+1", 3, nil, true, 25)
+Airboss:AddRecoveryWindow("00:01", "06:30", 3, -30, true, 25)
+Airboss:AddRecoveryWindow("07:00", "20:30", 1, nil, true, 25)
+Airboss:AddRecoveryWindow("21:00", "23:59", 3, -30, true, 25)
+Airboss:AddRecoveryWindow("00:01+1", "06:30+1", 3, -30, true, 25)
 
 -- Airboss:SetSoundfilesFolder("Airboss Soundfiles")
 Airboss:SetMenuSingleCarrier()

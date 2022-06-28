@@ -87,7 +87,7 @@ aw_kutaisi_escort = false
 debug_aw_kutaisi = false
 
 -- Mozdok
-aw_mozdok = false
+aw_mozdok = true
 debug_aw_mozdok = false
 
 -- FEATURES

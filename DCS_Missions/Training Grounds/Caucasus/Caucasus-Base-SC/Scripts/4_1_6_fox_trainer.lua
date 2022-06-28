@@ -1,7 +1,7 @@
 zonePvP_trgt = ZONE:New("PVP-RANGE")
 
 function spawn_cc()
-    pvpcc = SPAWN:New("PVP-CC"):OnSpawnGroup(
+    pvpcc = SPAWN:New("PvP TACAN"):OnSpawnGroup(
         function(cc)
             beaconPvP = cc:GetBeacon()
             beaconPvP:ActivateTACAN(TACAN.pvp[1], TACAN.pvp[2], TACAN.pvp[3], true)
@@ -30,8 +30,8 @@ end
 
 fox=FOX:New()
 
-fox:AddSafeZone(zone_PvP)
-fox:AddLaunchZone(zone_PvP)
+fox:AddSafeZone(zonePvP_trgt)
+fox:AddLaunchZone(zonePvP_trgt)
 
 FOX:SetDefaultLaunchAlerts(false)
 FOX:SetDefaultLaunchMarks(false)

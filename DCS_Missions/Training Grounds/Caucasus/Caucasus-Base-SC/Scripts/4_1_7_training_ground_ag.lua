@@ -30,18 +30,6 @@ if (menu_dump_to_file) then
         "Static Tank 2-7-1",
     }
 
-    -- local function get_group_units_type_and_coords(group)
-    --     local units = group:GetUnits()
-    --     local coords = {}
-    --     for key, value in pairs(units) do
-    --         env.info(value:GetName())
-    --         local type = value:GetTypeName()
-    --         local coordinates = value:GetCoordinate()
-    --         table.insert(coords, {type, coordinates})
-    --     end
-    --     return coords
-    -- end
-
     local function coord_to_LLDMS_H(coord)
         return {coord:ToStringLLDMS(nil), UTILS.MetersToFeet(coord:GetLandHeight())}
     end
@@ -82,7 +70,7 @@ function spawn_drone()
             agDrone:CommandSetCallsign(CALLSIGN.Aircraft.Uzi, 1, 1)
             agDrone:CommandSetFrequency(FREQUENCIES.FLIGHTS.ag_drone[1])
             local beacon = agDrone:GetBeacon()
-            beacon:ActivateTACAN(TACAN.ag[1], TACAN.ag[2], TACAN.ag[3], true)
+            beacon:ActivateTACAN(TACAN.ag[1], TACAN.ag[2], TACAN.ag[3], false)
         end)
     :Spawn()
 end

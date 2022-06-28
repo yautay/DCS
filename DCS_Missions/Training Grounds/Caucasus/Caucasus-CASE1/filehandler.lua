@@ -8,7 +8,7 @@ SRS_PORT = nil
 
 SRS_SERVER_PATH = "C:\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
-SRS_LOCAL_PATH = "C:\\DCS-SimpleRadio-Standalone"
+SRS_LOCAL_PATH = "E:\\Software\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
 if (SERVER) then
@@ -145,4 +145,3 @@ function append_to_file(filename, content)
 	f:write(content)
 	f:close()
 end
-

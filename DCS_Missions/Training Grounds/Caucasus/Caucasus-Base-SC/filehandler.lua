@@ -1,14 +1,14 @@
 SERVER = false
 
-SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-CASE3\\Scripts\\"
-LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-CASE3\\Scripts\\"
+SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-Base-SC\\Scripts\\"
+LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus-Base-SC\\Scripts\\"
 
 SRS_PATH = nil
 SRS_PORT = nil
 
 SRS_SERVER_PATH = "C:\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
-SRS_LOCAL_PATH = "C:\\DCS-SimpleRadio-Standalone"
+SRS_LOCAL_PATH = "E:\\Software\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
 if (SERVER) then
@@ -145,4 +145,3 @@ function append_to_file(filename, content)
 	f:write(content)
 	f:close()
 end
-

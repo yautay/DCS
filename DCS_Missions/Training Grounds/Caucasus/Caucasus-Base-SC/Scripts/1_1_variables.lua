@@ -23,14 +23,27 @@ FREQUENCIES = {
         arco = {243.50, "TANKER Arco UHF", "AM"}
     },
     FLIGHTS = {
-        hornet_1 = {"MIDS 1", "HORNET MIDS", "AM"},
-        hornet_2 = {"MIDS 2", "SQUID MIDS", "AM"},
-        hornet_3 = {"MIDS 3", "DEVIL MIDS", "AM"},
-        hornet_4 = {"MIDS 4", "CHECK MIDS", "AM"},
-        viper_1 = {271.00, "VIPER UHF", "AM"},
-        viper_2 = {272.00, "PYTHON UHF", "AM"},
+		hornet_1 = {"MIDS 1", "SQUID MIDS", ""},
+		hornet_1_1 = {"MIDS 11", "SQUID ONE MIDS", ""},
+        hornet_1_2 = {"MIDS 12", "SQUID TWO MIDS", ""},
+        hornet_2 = {"MIDS 2", "HAWK MIDS", ""},
+		hornet_2_1 = {"MIDS 21", "HAWK ONE MIDS", ""},
+		hornet_2_2 = {"MIDS 22", "HAWK TWO MIDS", ""},
+		hornet_3 = {"MIDS 3", "SNAKE MIDS", ""},
+		hornet_3_1 = {"MIDS 31", "SNAKE ONE MIDS", ""},
+		hornet_3_2 = {"MIDS 32", "SNAKE TWO MIDS", ""},
+		hornet_4 = {"MIDS 4", "CHECK MIDS", ""},
+		hornet_4_1 = {"MIDS 41", "CHECK ONE MIDS", ""},
+		hornet_4_2 = {"MIDS 42", "CHECK TWO MIDS", ""},
+	    viper_1 = {271.00, "VIPER UHF", "AM"},
+        viper_1_1 = {271.50, "VIPER ONE UHF", "AM"},
+		viper_1_2 = {271.75, "VIPER TWO UHF", "AM"},
+		viper_2 = {272.00, "JEDI UHF", "AM"},
+		viper_2_1 = {272.50, "JEDI ONE UHF", "AM"},
+		viper_2_2 = {272.75, "JEDI TWO UHF", "AM"},
         viper_3 = {273.00, "NINJA UHF", "AM"},
-        viper_4 = {274.00, "JEDI UHF", "AM"},
+		viper_3_1 = {273.50, "NINJA ONE UHF", "AM"},
+		viper_3_2 = {273.75, "NINJA TWO UHF", "AM"},
         ag_drone = {301.00, "AG DRONE UHF", "AM"}
     },
     CV = {
@@ -63,27 +76,33 @@ TACAN = {
     ag = {88, "Y", "AG", "AG Training Zone (on request)"},
 }
 YARDSTICKS = {
-    hornet_1 = {"HORNET", 37, 100, "Y"},
-    hornet_2 = {"SQUID", 38, 101, "Y"},
-    hornet_3 = {"DEVIL", 39, 102, "Y"},
-    hornet_4 = {"CHECK", 40, 103, "Y"},
-    viper_1 = {"VIPER", 41, 104, "Y"},
-    viper_2 = {"PYTHON", 42, 105, "Y"},
-    viper_3 = {"NINJA", 43, 106, "Y"},
-    viper_4 = {"JEDI", 44, 107, "Y"},
+    hornet_1_1 = {"SQUID ONE", 37, 100, "Y"},
+    hornet_1_2 = {"SQUID TWO", 38, 101, "Y"},
+    hornet_2_1 = {"HAWK ONE", 39, 102, "Y"},
+    hornet_2_2 = {"HAWK TWO", 40, 103, "Y"},
+    hornet_3_1 = {"SNAKE ONE", 41, 104, "Y"},
+    hornet_3_2 = {"SNAKE TWO", 42, 105, "Y"},
+    hornet_4_1 = {"CHECK ONE", 43, 106, "Y"},
+    hornet_4_2 = {"CHECK TWO", 44, 107, "Y"},
+    viper_1_1 = {"VIPER ONE", 45, 108, "Y"},
+    viper_1_2 = {"VIPER TWO", 46, 109, "Y"},
+    viper_2_1 = {"JEDI ONE", 47, 110, "Y"},
+    viper_2_2 = {"JEDI TWO", 48, 111, "Y"},
+    viper_3_1 = {"NINJA ONE", 49, 112, "Y"},
+    viper_3_2 = {"NINJA TWO", 50, 113, "Y"},
 }
 
 --AIRWINGS
 -- Vaziani
-aw_vaziani = false
-aw_vaziani_cap = false
-aw_vaziani_escort = false
+aw_vaziani = true
+aw_vaziani_cap = true
+aw_vaziani_escort = true
 debug_aw_vaziani = false
 
 -- Vaziani
-aw_kutaisi = false
-aw_kutaisi_cap = false
-aw_kutaisi_escort = false
+aw_kutaisi = true
+aw_kutaisi_cap = true
+aw_kutaisi_escort = true
 debug_aw_kutaisi = false
 
 -- Mozdok
@@ -95,21 +114,19 @@ debug_aw_mozdok = false
 airboss = true
 debug_airbos = false
 -- FOX Trainer
-fox_trainer = false
+fox_trainer = true
 -- AG Range
-ag_range = false
+ag_range = true
 -- ELINT
-elint = false
+elint = true
 debug_elint = false
 -- ATIS
 atis = true
 -- CSAR
 csar = true
 debug_csar = false
--- RAT
-rat = false
 -- AWACS
-cvn_awacs = true
+cvn_awacs = false
 moose_awacs_rejection_red_zone = false
 debug_awacs = false
 -- IADS
