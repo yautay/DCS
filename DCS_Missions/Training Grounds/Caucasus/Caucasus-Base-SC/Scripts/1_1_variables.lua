@@ -48,6 +48,11 @@ FREQUENCIES = {
         pontiac_1_1 = {274.25, "PONTIAC ONE UHF", "AM"},
         pontiac_1_2 = {274.50, "PONTIAC TWO UHF", "AM"},
         pontiac_1_3 = {274.75, "PONTIAC THREE UHF", "AM"},
+        ford_1 = {275.25, "FORD ONE UHF", "AM"},
+        ford_2 = {275.50, "FORD TWO UHF", "AM"},
+        ford_1 = {275.25, "FORD ONE UHF", "AM"},
+        ford_2 = {275.50, "FORD TWO UHF", "AM"},
+        springfield_1 = {275.75, "SPRINGFIELD ONE UHF", "AM"},
         pig_1 = {274.00, "PIG ONE UHF", "AM"},
         ag_drone = {301.00, "AG DRONE UHF", "AM"}
     },

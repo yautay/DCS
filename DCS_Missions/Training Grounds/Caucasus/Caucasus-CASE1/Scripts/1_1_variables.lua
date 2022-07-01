@@ -87,7 +87,7 @@ aw_kutaisi_escort = false
 debug_aw_kutaisi = false
 
 -- Mozdok
-aw_mozdok = true
+aw_mozdok = false
 debug_aw_mozdok = false
 
 -- FEATURES
@@ -102,7 +102,7 @@ ag_range = false
 elint = false
 debug_elint = false
 -- ATIS
-atis = true
+-- @filehandler
 -- CSAR
 csar = true
 debug_csar = false

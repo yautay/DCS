@@ -13,12 +13,8 @@ local ru_heli_863 = {
     {"1", FREQUENCIES.AWACS.darkstar},
     {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.wizard},
-    -- AAR
-    {"5", FREQUENCIES.AAR.common},
-    {"6", FREQUENCIES.AAR.arco},
     -- CV
     {"7", FREQUENCIES.CV.marshal},
-    {"8", FREQUENCIES.CV.lso},
     {"9", FREQUENCIES.CV.sc},
     -- ELINT
     {"10", FREQUENCIES.ELINT.vaziani_hi},

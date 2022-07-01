@@ -31,7 +31,12 @@ local ordered_flight_freq = {
     FREQUENCIES.FLIGHTS.pontiac_1_1,
     FREQUENCIES.FLIGHTS.pontiac_1_2,
     FREQUENCIES.FLIGHTS.pontiac_1_3,
+    FREQUENCIES.FLIGHTS.springfield_1,
+    FREQUENCIES.FLIGHTS.springfield_2,
+    FREQUENCIES.FLIGHTS.springfield_3,
     FREQUENCIES.FLIGHTS.pig_1,
+    FREQUENCIES.FLIGHTS.ford_1,
+    FREQUENCIES.FLIGHTS.ford_2,
 	FREQUENCIES.FLIGHTS.ag_drone,
 }
 local ordered_elint_freq = {
