@@ -3,10 +3,8 @@ local f16_164 = {
     -- AWACS
     {"1", FREQUENCIES.AWACS.darkstar},
     {"2", FREQUENCIES.AWACS.overlord},
-    {"3", FREQUENCIES.AWACS.wizard},
     -- AAR
-    {"5", FREQUENCIES.AAR.common},
-    {"6", FREQUENCIES.AAR.arco},
+    -- 5 -> DESIGNATED TANKER
     -- GROUND
     {"15", FREQUENCIES.GROUND.tower_vaziani},
     {"17", FREQUENCIES.GROUND.tower_kutaisi},
@@ -24,13 +22,9 @@ local f18_210_1 = {
     -- AWACS
     {"1", FREQUENCIES.AWACS.darkstar},
     {"2", FREQUENCIES.AWACS.overlord},
-    {"3", FREQUENCIES.AWACS.wizard},
     -- AAR
-    {"5", FREQUENCIES.AAR.common},
-    {"6", FREQUENCIES.AAR.arco},
+    -- 5 -> DESIGNATED TANKER
     -- CV
-    {"7", FREQUENCIES.CV.marshal},
-    {"8", FREQUENCIES.CV.lso},
     {"9", FREQUENCIES.CV.sc},
     -- GROUND
     {"15", FREQUENCIES.GROUND.tower_vaziani},
@@ -43,13 +37,9 @@ local f18_210_2 = {
     -- AWACS
     {"1", FREQUENCIES.AWACS.darkstar},
     {"2", FREQUENCIES.AWACS.overlord},
-    {"3", FREQUENCIES.AWACS.wizard},
     -- AAR
-    {"5", FREQUENCIES.AAR.common},
-    {"6", FREQUENCIES.AAR.arco},
+    -- 5 -> DESIGNATED TANKER
     -- CV
-    {"7", FREQUENCIES.CV.marshal},
-    {"8", FREQUENCIES.CV.lso},
     {"9", FREQUENCIES.CV.sc},
     -- GROUND
     {"15", FREQUENCIES.GROUND.tower_vaziani},

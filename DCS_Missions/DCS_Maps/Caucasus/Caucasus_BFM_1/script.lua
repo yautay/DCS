@@ -1,18 +1,18 @@
- _          __     ___    ____  ___    _    ____  _     _____ ____  
-/ |         \ \   / / \  |  _ \|_ _|  / \  | __ )| |   | ____/ ___| 
-| |  _____   \ \ / / _ \ | |_) || |  / _ \ |  _ \| |   |  _| \___ \ 
-| | |_____|   \ V / ___ \|  _ < | | / ___ \| |_) | |___| |___ ___) |
-|_|            \_/_/   \_\_| \_\___/_/   \_\____/|_____|_____|____/ 
-                                                                    
+
+--1 - VARIABLES)
 
 FREQUENCIES = {
     AWACS = {
         darkstar = {242.00, "AWACS Darkstar UHF", "AM"},
         overlord = {242.50, "AWACS Overlord UHF", "AM"},
-        wizard = {247.70, "AWACS Wizard UHF", "AM"}
+        wizard = {247.75, "AWACS Wizard UHF", "AM"}
     },
     AAR = {
-        common = {251.00, "TANKERS BIG BIRDS UHF", "AM"},
+        shell_e = {251.00, "Tanker Shell East UHF", "AM"},
+        shell_c = {251.25, "Tanker Shell Center UHF", "AM"},
+        shell_w = {251.50, "Tanker Shell West UHF", "AM"},
+        texaco_e = {252.00, "Tanker Texaco East UHF", "AM"},
+        texaco_w = {252.25, "Tanker Texaco West UHF", "AM"},
         arco = {243.50, "TANKER Arco UHF", "AM"}
     },
     FLIGHTS = {
@@ -40,7 +40,7 @@ FREQUENCIES = {
     },
     SPECIAL = {
         guard_hi = {243.00, "Guard Freq UHF", "AM"},
-        guard_lo = {121.5, "Guard Freq VHF", "AM"},
+        guard_lo = {121.50, "Guard Freq VHF", "AM"},
     }
 }
 ICLS = {
@@ -49,10 +49,11 @@ ICLS = {
 TACAN = {
     sc = {74, "X", "CVN", "CVN-75"},
     arco = {1, "Y", "RCV", "Recovery Tanker CVN-75"},
-    shell_e = {51, "Y", "SHE", "Tanker Shell East Probe"},
-    shell_w = {53, "Y", "SHW", "Tanker Shell West Probe"},
-    texaco_e = {52, "Y", "TEE", "Tanker Texaco East Boom"},
-    texaco_w = {54, "Y", "TEW", "Tanker Texaco West Boom"},
+    shell_e = {51, "Y", "SHE", "Tanker Shell East"},
+    shell_c = {52, "Y", "SHE", "Tanker Shell Center"},
+    shell_w = {53, "Y", "SHW", "Tanker Shell West"},
+    texaco_e = {61, "Y", "TEE", "Tanker Texaco East"},
+    texaco_w = {62, "Y", "TEW", "Tanker Texaco West"},
 }
 YARDSTICKS = {
     sting_1 = {"STING ONE", 37, 100, "Y"},
@@ -93,15 +94,8 @@ debug_awacs = false
 menu_dump_to_file = true
 menu_show_freqs = false
 menu_show_presets = false
- ____             ____ ___  __  __ __  __  ___  _   _ 
-|___ \           / ___/ _ \|  \/  |  \/  |/ _ \| \ | |
-  __) |  _____  | |  | | | | |\/| | |\/| | | | |  \| |
- / __/  |_____| | |__| |_| | |  | | |  | | |_| | |\  |
-|_____|          \____\___/|_|  |_|_|  |_|\___/|_| \_|
-                                                      
-borderRed = ZONE_POLYGON:New("Red Zone", GROUP:FindByName("ZONE-RED-BORDER"))
-borderBlue = ZONE_POLYGON:New("Blue Zone", GROUP:FindByName("ZONE-BLUE-BORDER"))
 
+--2 - COMMON
 function save_to_file(filename, content)
 	local fdir = lfs.writedir() .. [[Logs\]] .. filename .. timer.getTime() .. ".txt"
 	local f,err = io.open(fdir,"w")
@@ -124,18 +118,8 @@ function append_to_file(filename, content)
 	end
 	f:write(content)
 	f:close()
-end _____           ____      _    ____ ___ ___  
-|___ /          |  _ \    / \  |  _ \_ _/ _ \ 
-  |_ \   _____  | |_) |  / _ \ | | | | | | | |
- ___) | |_____| |  _ <  / ___ \| |_| | | |_| |
-|____/          |_| \_\/_/   \_\____/___\___/ 
-                                              
- ____  ____  _____ ____  _____ _____ ____  
-|  _ \|  _ \| ____/ ___|| ____|_   _/ ___| 
-| |_) | |_) |  _| \___ \|  _|   | | \___ \ 
-|  __/|  _ <| |___ ___) | |___  | |  ___) |
-|_|   |_| \_\_____|____/|_____| |_| |____/ 
-                                           
+end
+--3 - RADIO PRESETS
 -- 225/399,97
 local f16_164 = {
     -- AWACS
@@ -143,7 +127,7 @@ local f16_164 = {
     {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.wizard},
     -- AAR
-    {"5", FREQUENCIES.AAR.common},
+    -- 5 -> DESIGNATED TANKER
     {"6", FREQUENCIES.AAR.arco},
     -- GROUND
     {"15", FREQUENCIES.GROUND.tower_vaziani},
@@ -164,7 +148,7 @@ local f18_210_1 = {
     {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.wizard},
     -- AAR
-    {"5", FREQUENCIES.AAR.common},
+    -- 5 -> DESIGNATED TANKER
     {"6", FREQUENCIES.AAR.arco},
     -- CV
     {"7", FREQUENCIES.CV.marshal},
@@ -183,7 +167,7 @@ local f18_210_2 = {
     {"2", FREQUENCIES.AWACS.overlord},
     {"3", FREQUENCIES.AWACS.wizard},
     -- AAR
-    {"5", FREQUENCIES.AAR.common},
+    -- 5 -> DESIGNATED TANKER
     {"6", FREQUENCIES.AAR.arco},
     -- CV
     {"7", FREQUENCIES.CV.marshal},
@@ -229,12 +213,8 @@ end
 local function info_preset_f18_210_2()
     return info_preset(presets_data.preset_f18_210_2, "ARC-210-2")
 end
- _  _             __  __ _____ _   _ _   _ 
-| || |           |  \/  | ____| \ | | | | |
-| || |_   _____  | |\/| |  _| |  \| | | | |
-|__   _| |_____| | |  | | |___| |\  | |_| |
-   |_|           |_|  |_|_____|_| \_|\___/ 
-                                           
+
+--4 - MENU
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
     FREQUENCIES.AWACS.overlord,
@@ -385,12 +365,8 @@ if (menu_dump_to_file) then
     save_to_file("yardstick_info", yardsticks_info)
     save_to_file("icls_info", icls_info)
 end
- ____               _  _____ ___ ____  
-| ___|             / \|_   _|_ _/ ___| 
-|___ \   _____    / _ \ | |  | |\___ \ 
- ___) | |_____|  / ___ \| |  | | ___) |
-|____/          /_/   \_\_| |___|____/ 
-                                       
+
+--5 - ATIS
 AtisVaziani = ATIS:New(AIRBASE.Caucasus.Vaziani, FREQUENCIES.GROUND.atis_vaziani[1])
 AtisVaziani:SetRadioRelayUnitName("RELAY-VAZIANI")
 AtisVaziani:SetTACAN(22)
@@ -411,12 +387,8 @@ AtisKutaisi:AddILS(109.75, "07")
 AtisKutaisi:SetSRS(SRS_PATH, "female", "en-US")
 AtisKutaisi:SetMapMarks()
 AtisKutaisi:__Start(5)
- _____              _    ___ ____  ____   ___  ____ ____  
-|___  |            / \  |_ _|  _ \| __ ) / _ \/ ___/ ___| 
-   / /   _____    / _ \  | || |_) |  _ \| | | \___ \___ \ 
-  / /   |_____|  / ___ \ | ||  _ <| |_) | |_| |___) |__) |
- /_/            /_/   \_\___|_| \_\____/ \___/|____/____/ 
-                                                          
+
+--7 - AIRBOSS
 -- F10 Map Markings
 ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 4, true)
 -- S-3B Recovery Tanker
@@ -496,12 +468,7 @@ function Airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- Report LSO grade to dcs.log file.
     env.info(string.format("CUSTOM: Player %s scored %.1f", name, score))
 end
- ___             ____ ____    _    ____
- ( _ )           / ___/ ___|  / \  |  _ \ 
- / _ \   _____  | |   \___ \ / _ \ | |_) |
-| (_) | |_____| | |___ ___) / ___ \|  _ < 
- \___/           \____|____/_/   \_\_| \_\
-                                          
+--8 - CSAR
 -- Instantiate and start a CSAR for the blue side, with template "Downed Pilot" and alias "Luftrettung"
 mycsar = CSAR:New(coalition.side.BLUE,"Downed Pilot","MIA")
 -- options
@@ -566,34 +533,20 @@ mycsar.SRSVolume = 1 -- Volume, between 0 and 1
 mycsar.csarUsePara = false -- If set to true, will use the LandingAfterEjection Event instead of Ejection --shagrat
 -- mycsar.wetfeettemplate = "man in floating thingy" -- if you use a mod to have a pilot in a rescue float, put the template name in here for wet feet spawns. Note: in conjunction with csarUsePara this might create dual ejected pilots in edge cases.
 
-  ___            _____ _____  __
- / _ \          |  ___/ _ \ \/ /
-| (_) |  _____  | |_ | | | \  / 
- \__, | |_____| |  _|| |_| /  \ 
-   /_/          |_|   \___/_/\_\
-                                
-alpha_1 = ZONE_POLYGON:New("ALPHA ONE", GROUP:FindByName("zone-10")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Squid-1
-alpha_2 = ZONE_POLYGON:New("ALPHA TWO", GROUP:FindByName("zone-8")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Devil-1
-alpha_3 = ZONE_POLYGON:New("ALPHA THREE", GROUP:FindByName("zone-2")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Hawk-1
-alpha_4 = ZONE_POLYGON:New("ALPHA FOUR", GROUP:FindByName("zone-1")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Joker-1
-bravo_1 = ZONE_POLYGON:New("BRAVO ONE", GROUP:FindByName("zone-11")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Check-1
-bravo_2 = ZONE_POLYGON:New("BRAVO TWO", GROUP:FindByName("zone-9")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
 
-bravo_3 = ZONE_POLYGON:New("BRAVO THREE", GROUP:FindByName("zone-4")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Ninja-1
-bravo_4 = ZONE_POLYGON:New("BRAVO FOUR", GROUP:FindByName("zone-3")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Sting-1
-charlie_1 = ZONE_POLYGON:New("CHARLIE ONE", GROUP:FindByName("zone-7")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Jedi-1
-delta_1 = ZONE_POLYGON:New("DELTA ONE", GROUP:FindByName("zone-6")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Venom-1
-delta_2 = ZONE_POLYGON:New("DELTA0 TWO", GROUP:FindByName("zone-5")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Viper-1
+--9 - FOX
+
+navy_1 = ZONE_POLYGON:New("NAVY ONE", GROUP:FindByName("navy-1")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+navy_2 = ZONE_POLYGON:New("NAVY TWO", GROUP:FindByName("navy-2")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+navy_3 = ZONE_POLYGON:New("NAVY THREE", GROUP:FindByName("navy-3")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_1 = ZONE_POLYGON:New("ZONE ONE", GROUP:FindByName("zone-1")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_2 = ZONE_POLYGON:New("ZONE TWO", GROUP:FindByName("zone-2")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+zone_3 = ZONE_POLYGON:New("ZONE THREE", GROUP:FindByName("zone-3")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_4 = ZONE_POLYGON:New("ZONE FOUR", GROUP:FindByName("zone-3")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+zone_5 = ZONE_POLYGON:New("ZONE FIVE", GROUP:FindByName("zone-4")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_6 = ZONE_POLYGON:New("ZONE SIX", GROUP:FindByName("zone-6")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+zone_7 = ZONE_POLYGON:New("ZONE SEVEN", GROUP:FindByName("zone-7")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_8 = ZONE_POLYGON:New("ZONE EIGHT", GROUP:FindByName("zone-8")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
 
 squid_1 = GROUP:FindByName("Squid-1")
 devil_1 = GROUP:FindByName("Devil-1")
@@ -607,16 +560,16 @@ venom_1 = GROUP:FindByName("Venom-1")
 viper_1 = GROUP:FindByName("Viper-1")
 
 local zones_data = {
-	{alpha_1, squid_1},
-	{alpha_2, devil_1},
-	{alpha_3, hawk_1},
-	{alpha_4, joker_1},
-	{bravo_1, check_1},
-	{bravo_3, ninja_1},
-	{bravo_4, sting_1},
-	{charlie_1, jedi_1},
-	{delta_1, venom_1},
-	{delta_2, viper_1},
+	{navy_2, squid_1, "Squid-1"},
+	{navy_3, check_1, "Check-1"},
+	{zone_1, devil_1, "Devil-1"},
+	{zone_2, joker_1, "Joker-1"},
+	{zone_3, check_1, "Check-1"},
+	{zone_4, ninja_1, "Ninja-1"},
+	{zone_5, viper_1, "Viper-1"},
+	{zone_6, venom_1, "Venom-1"},
+	{zone_7, jedi_1, "Jedi-1"},
+	{zone_8, sting_1, "Sting-1"},
 }
 
 fox=FOX:New()
@@ -656,12 +609,7 @@ end
 local zones = get_coords(zones_data)
 
 save_to_file("bfm_zones_data", zones)
- _ _   _              ___        __ __     ___     _____
-/ / | / |            / \ \      / / \ \   / / \   |__  /
-| | | | |  _____    / _ \ \ /\ / /   \ \ / / _ \    / / 
-| | |_| | |_____|  / ___ \ V  V /     \ V / ___ \  / /_ 
-|_|_(_)_|         /_/   \_\_/\_/       \_/_/   \_\/____|
-                                                        
+--11.1 - AW VAZ
 ZONE_VAZIANI_CAP = ZONE:New("CORN FLAKES")
 ZONE_VAZIANI_FEZ = ZONE:New("GUADALCANAL")
 ZONE_VAZIANI_AWACS = ZONE:New("DARKSTAR")
@@ -698,7 +646,7 @@ Vaziani_AWACS:SetRadio(FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
 AWVaziani:AddSquadron(Vaziani_AWACS)
 AWVaziani:NewPayload("ME AWACS E3" ,-1,{AUFTRAG.Type.ORBIT},100)
 
-Vaziani_MPRS = SQUADRON:New("ME TANKER KC135MPRS",2,"AAR MPRS Vaziani")
+Vaziani_MPRS = SQUADRON:New("ME TANKER KC135MPRS",6,"AAR MPRS Vaziani")
 Vaziani_MPRS:AddMissionCapability({AUFTRAG.Type.TANKER},100)
 Vaziani_MPRS:SetTakeoffAir()
 Vaziani_MPRS:SetFuelLowRefuel(false)
@@ -718,17 +666,17 @@ Vaziani_135:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWVaziani:AddSquadron(Vaziani_135)
 AWVaziani:NewPayload("ME AAR KC135", -1, {AUFTRAG.Type.TANKER},100)
 
-TankerShellEast = AUFTRAG:NewTANKER(ZONE_SHELL_EAST_AAR:GetCoordinate(), 25000, 320, 80, 20, 0)
+TankerShellEast = AUFTRAG:NewTANKER(ZONE_SHELL_EAST_AAR:GetCoordinate(), 20000, 270, 80, 30, 0)
 TankerShellEast:AssignSquadrons({Vaziani_135})
 -- TankerShellEast:SetTACAN(TACAN.shell_e[1], TACAN.shell_e[3], TACAN.shell_e[2])
-TankerShellEast:SetRadio(FREQUENCIES.AAR.common[1])
+TankerShellEast:SetRadio(FREQUENCIES.AAR.shell_e[1])
 TankerShellEast:SetName("Shell East")
 AWVaziani:AddMission(TankerShellEast)
 
-TankerTexacoEast = AUFTRAG:NewTANKER(ZONE_TEXACO_EAST_AAR:GetCoordinate(), 22000, 310, 80, 20, 1)
+TankerTexacoEast = AUFTRAG:NewTANKER(ZONE_TEXACO_EAST_AAR:GetCoordinate(), 20000, 270, 352, 30, 1)
 TankerTexacoEast:AssignSquadrons({Vaziani_MPRS})
 -- TankerTexacoEast:SetTACAN(TACAN.texaco_e[1], TACAN.texaco_e[3], TACAN.texaco_e[2])
-TankerTexacoEast:SetRadio(FREQUENCIES.AAR.common[1])
+TankerTexacoEast:SetRadio(FREQUENCIES.AAR.texaco_e[1])
 TankerTexacoEast:SetName("Texaco East")
 AWVaziani:AddMission(TankerTexacoEast)
 
@@ -761,7 +709,7 @@ if (aw_vaziani_escort) then
 	AwacsDarkstar:SetEscort(1)
 end
 AwacsDarkstar:SetBullsEyeAlias("TEXAS")
-AwacsDarkstar:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 30000, 220, 120, 20)
+AwacsDarkstar:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 30000, 220, 171, 20)
 AwacsDarkstar:SetSRS(SRS_PATH, "female","en-GB", SRS_PORT)
 if (moose_awacs_rejection_red_zone) then
 	AwacsDarkstar:SetRejectionZone(borderRed)
@@ -791,16 +739,13 @@ if (debug_awacs) then
 	AwacsDarkstar.debug = true -- set to true to produce more log output.
 else
   	AwacsDarkstar.debug = false
-end _ _   ____               ___        __  _  ___   _ _____ 
-/ / | |___ \             / \ \      / / | |/ / | | |_   _|
-| | |   __) |  _____    / _ \ \ /\ / /  | ' /| | | | | |  
-| | |_ / __/  |_____|  / ___ \ V  V /   | . \| |_| | | |  
-|_|_(_)_____|         /_/   \_\_/\_/    |_|\_\\___/  |_|  
-                                                          
+end
+--11.2 - AW KUT
 ZONE_KUTAISI_CAP = ZONE:New("PANCAKE")
 ZONE_KUTAISI_FEZ = ZONE:New("MIDWAY")
 ZONE_KUTAISI_AWACS = ZONE:New("OVERLORD")
 ZONE_SHELL_WEST_AAR = ZONE:New("SHELL WEST")
+ZONE_SHELL_CENTER_AAR = ZONE:New("SHELL CENTER")
 ZONE_TEXACO_WEST_AAR = ZONE:New("TEXACO WEST")
 
 AWKutaisi = AIRWING:New("WH KUTAISI", "Kutaisi Air Wing")
@@ -843,7 +788,7 @@ Kutaisi_MPRS:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWKutaisi:AddSquadron(Kutaisi_MPRS)
 AWKutaisi:NewPayload("ME TANKER KC135MPRS", -1, {AUFTRAG.Type.TANKER, AUFTRAG.Type.ORBIT},100)
 
-Kutaisi_135 = SQUADRON:New("ME AAR KC135",2,"AAR 135 Kutaisi")
+Kutaisi_135 = SQUADRON:New("ME AAR KC135",6,"AAR 135 Kutaisi")
 Kutaisi_135:AddMissionCapability({AUFTRAG.Type.TANKER},100)
 Kutaisi_135:SetTakeoffAir()
 Kutaisi_135:SetFuelLowRefuel(false)
@@ -853,17 +798,24 @@ Kutaisi_135:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWKutaisi:AddSquadron(Kutaisi_135)
 AWKutaisi:NewPayload("ME AAR KC135", -1, {AUFTRAG.Type.TANKER, AUFTRAG.Type.ORBIT},100)
 
-TankerShellWest = AUFTRAG:NewTANKER(ZONE_SHELL_WEST_AAR:GetCoordinate(), 25000, 320, 80, 20, 0)
+TankerShellWest = AUFTRAG:NewTANKER(ZONE_SHELL_WEST_AAR:GetCoordinate(), 20000, 270, 171, 30, 0)
 TankerShellWest:AssignSquadrons({Kutaisi_135})
 -- TankerShellWest:SetTACAN(TACAN.shell_w[1], TACAN.shell_w[3], TACAN.shell_w[2])
-TankerShellWest:SetRadio(FREQUENCIES.AAR.common[1])
+TankerShellWest:SetRadio(FREQUENCIES.AAR.shell_w[1])
 TankerShellWest:SetName("Shell West")
 AWKutaisi:AddMission(TankerShellWest)
 
-TankerTexacoWest = AUFTRAG:NewTANKER(ZONE_TEXACO_WEST_AAR:GetCoordinate(), 22000, 310, 135, 20, 1)
+TankerShellCenter = AUFTRAG:NewTANKER(ZONE_SHELL_CENTER_AAR:GetCoordinate(), 20000, 270, 171, 30, 0)
+TankerShellCenter:AssignSquadrons({Kutaisi_135})
+-- TankerShellWest:SetTACAN(TACAN.shell_w[1], TACAN.shell_w[3], TACAN.shell_w[2])
+TankerShellCenter:SetRadio(FREQUENCIES.AAR.shell_c[1])
+TankerShellCenter:SetName("Shell West")
+AWKutaisi:AddMission(TankerShellCenter)
+
+TankerTexacoWest = AUFTRAG:NewTANKER(ZONE_TEXACO_WEST_AAR:GetCoordinate(), 20000, 270, 80, 30, 1)
 TankerTexacoWest:AssignSquadrons({Kutaisi_MPRS})
 -- TankerTexacoWest:SetTACAN(TACAN.texaco_w[1], TACAN.texaco_w[3], TACAN.texaco_w[2])
-TankerTexacoWest:SetRadio(FREQUENCIES.AAR.common[1])
+TankerTexacoWest:SetRadio(FREQUENCIES.AAR.texaco_w[1])
 TankerTexacoWest:SetName("Texaco West")
 AWKutaisi:AddMission(TankerTexacoWest)
 
@@ -896,7 +848,7 @@ if (aw_kutaisi_escort) then
 	AwacsOverlord:SetEscort(1)
 end
 AwacsOverlord:SetBullsEyeAlias("TEXAS")
-AwacsOverlord:SetAwacsDetails(CALLSIGN.AWACS.Overlord, 1, 30000, 220, 120, 20)
+AwacsOverlord:SetAwacsDetails(CALLSIGN.AWACS.Overlord, 1, 30000, 220, 080, 20)
 AwacsOverlord:SetSRS(SRS_PATH, "female","en-GB", SRS_PORT)
 if (moose_awacs_rejection_red_zone) then
 	AwacsOverlord:SetRejectionZone(borderRed)
@@ -926,41 +878,53 @@ if (debug_awacs) then
 	AwacsOverlord.debug = true -- set to true to produce more log output.
 else
   	AwacsOverlord.debug = false
-end _ _____           ____   ____ _   _ _____ ____  _   _ _     _____ ____  
-/ |___ /          / ___| / ___| | | | ____|  _ \| | | | |   | ____|  _ \ 
-| | |_ \   _____  \___ \| |   | |_| |  _| | | | | | | | |   |  _| | |_) |
-| |___) | |_____|  ___) | |___|  _  | |___| |_| | |_| | |___| |___|  _ < 
-|_|____/          |____/ \____|_| |_|_____|____/ \___/|_____|_____|_| \_\
-                                                                         
+end
+--13 - SCHEDULER
 function tanker_platform_updater(airwing)
     function airwing:OnAfterFlightOnMission(From, Event, To, FlightGroup, Mission)
+        
         local flightgroup=FlightGroup --Ops.FlightGroup#FLIGHTGROUP
         local mission=Mission --Ops.Auftrag#AUFTRAG
         local callsign = "nil"
         local index = 99
+        
         if (mission:GetType() == AUFTRAG.Type.TANKER) then
+        
             local unit_alive = flightgroup:GetGroup():GetFirstUnitAlive()
             
             if (mission.refuelSystem == 1) then --probe
                 callsign = CALLSIGN.Tanker.Shell
+                if (string.find(mission:GetName(), "East")) then
+                    index = 1
+                elseif (string.find(mission:GetName(), "Center")) then
+                    index = 2
+                elseif (string.find(mission:GetName(), "West")) then
+                    index = 3
+                end
+        
             elseif (mission.refuelSystem == 0) then --boom
                 callsign = CALLSIGN.Tanker.Texaco
+                if (string.find(mission:GetName(), "East")) then
+                    index = 1
+                elseif (string.find(mission:GetName(), "West")) then
+                    index = 2
+                end
             end
-            if (string.find(mission:GetName(), "East")) then
-                index = 1
-            elseif (string.find(mission:GetName(), "West")) then
-                index = 2
-            end
+            
             env.info(string.format("TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
             unit_alive:CommandSetCallsign(callsign, index, 1)
             
             unit_beacon = unit_alive:GetBeacon()
+        
             if (mission.refuelSystem == 1) then --probe
                 if (string.find(mission:GetName(), "East")) then
                     unit_beacon:ActivateTACAN(FREQUENCIES.TACAN.shell_e[1], FREQUENCIES.TACAN.shell_e[2], FREQUENCIES.TACAN.shell_e[3], false)
+                elseif (string.find(mission:GetName(), "Center")) then
+                    unit_beacon:ActivateTACAN(FREQUENCIES.TACAN.shell_c[1], FREQUENCIES.TACAN.shell_c[2], FREQUENCIES.TACAN.shell_c[3], false)
                 elseif (string.find(mission:GetName(), "West")) then
                     unit_beacon:ActivateTACAN(FREQUENCIES.TACAN.shell_w[1], FREQUENCIES.TACAN.shell_w[2], FREQUENCIES.TACAN.shell_w[3], false)
                 end
+        
             elseif (mission.refuelSystem == 0) then --boom
                 if (string.find(mission:GetName(), "East")) then
                     unit_beacon:ActivateTACAN(FREQUENCIES.TACAN.texaco_e[1], FREQUENCIES.TACAN.texaco_e[2], FREQUENCIES.TACAN.texaco_e[3], false)

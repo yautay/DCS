@@ -54,14 +54,14 @@ Vaziani_135:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWVaziani:AddSquadron(Vaziani_135)
 AWVaziani:NewPayload("ME AAR KC135", -1, {AUFTRAG.Type.TANKER},100)
 
-TankerShellEast = AUFTRAG:NewTANKER(ZONE_SHELL_EAST_AAR:GetCoordinate(), 20000, 270, 80, 20, 0)
+TankerShellEast = AUFTRAG:NewTANKER(ZONE_SHELL_EAST_AAR:GetCoordinate(), 20000, 270, 80, 30, 0)
 TankerShellEast:AssignSquadrons({Vaziani_135})
 -- TankerShellEast:SetTACAN(TACAN.shell_e[1], TACAN.shell_e[3], TACAN.shell_e[2])
 TankerShellEast:SetRadio(FREQUENCIES.AAR.shell_e[1])
 TankerShellEast:SetName("Shell East")
 AWVaziani:AddMission(TankerShellEast)
 
-TankerTexacoEast = AUFTRAG:NewTANKER(ZONE_TEXACO_EAST_AAR:GetCoordinate(), 20000, 270, 80, 20, 1)
+TankerTexacoEast = AUFTRAG:NewTANKER(ZONE_TEXACO_EAST_AAR:GetCoordinate(), 20000, 270, 352, 30, 1)
 TankerTexacoEast:AssignSquadrons({Vaziani_MPRS})
 -- TankerTexacoEast:SetTACAN(TACAN.texaco_e[1], TACAN.texaco_e[3], TACAN.texaco_e[2])
 TankerTexacoEast:SetRadio(FREQUENCIES.AAR.texaco_e[1])
@@ -97,7 +97,7 @@ if (aw_vaziani_escort) then
 	AwacsDarkstar:SetEscort(1)
 end
 AwacsDarkstar:SetBullsEyeAlias("TEXAS")
-AwacsDarkstar:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 30000, 220, 120, 20)
+AwacsDarkstar:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 30000, 220, 171, 20)
 AwacsDarkstar:SetSRS(SRS_PATH, "female","en-GB", SRS_PORT)
 if (moose_awacs_rejection_red_zone) then
 	AwacsDarkstar:SetRejectionZone(borderRed)

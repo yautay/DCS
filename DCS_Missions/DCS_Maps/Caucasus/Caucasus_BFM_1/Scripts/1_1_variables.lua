@@ -3,7 +3,6 @@ FREQUENCIES = {
     AWACS = {
         darkstar = {242.00, "AWACS Darkstar UHF", "AM"},
         overlord = {242.50, "AWACS Overlord UHF", "AM"},
-        wizard = {247.75, "AWACS Wizard UHF", "AM"}
     },
     AAR = {
         shell_e = {251.00, "Tanker Shell East UHF", "AM"},
@@ -11,7 +10,6 @@ FREQUENCIES = {
         shell_w = {251.50, "Tanker Shell West UHF", "AM"},
         texaco_e = {252.00, "Tanker Texaco East UHF", "AM"},
         texaco_w = {252.25, "Tanker Texaco West UHF", "AM"},
-        arco = {243.50, "TANKER Arco UHF", "AM"}
     },
     FLIGHTS = {
 		sting_1 = {"MIDS 1", "STING ONE MIDS", ""},
@@ -26,8 +24,6 @@ FREQUENCIES = {
 		ninja_1 = {271.75, "NINJA ONE UHF", "AM"},
     },
     CV = {
-        lso = {260.00, "CV-75 LSO UHF", "AM"},
-        marshal = {260.50, "CV-75 Marshal UHF", "AM"},
         sc = {127.50, "CV-75 Tower VHF", "AM"}
     },
     GROUND = {
@@ -46,7 +42,6 @@ ICLS = {
 }
 TACAN = {
     sc = {74, "X", "CVN", "CVN-75"},
-    arco = {1, "Y", "RCV", "Recovery Tanker CVN-75"},
     shell_e = {51, "Y", "SHE", "Tanker Shell East"},
     shell_c = {52, "Y", "SHE", "Tanker Shell Center"},
     shell_w = {53, "Y", "SHW", "Tanker Shell West"},
@@ -80,12 +75,9 @@ aw_kutaisi_escort = false
 debug_aw_kutaisi = false
 
 -- FEATURES
--- Airboss
-debug_airbos = false
 -- CSAR
 debug_csar = false
 -- AWACS
-cvn_awacs = true
 moose_awacs_rejection_red_zone = false
 debug_awacs = false
 

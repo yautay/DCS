@@ -2,7 +2,6 @@ from lib import *
 from DCS_Maps.Caucasus.Caucasus_BFM_1.Scripts import *
 from collections import OrderedDict
 import os
-import pyfiglet
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -10,24 +9,24 @@ FRAMEWORK_FILE = "frameworks.lua"
 SCRIPTS_FILE = "script.lua"
 
 frameworks_order = OrderedDict()
-frameworks_order[pyfiglet.figlet_format('1 - PATHS')] = PATH_SCRIPT_PATHS
-frameworks_order[pyfiglet.figlet_format('2 - MOOSE')] = PATH_LIBS_MOOSE
-frameworks_order[pyfiglet.figlet_format('3 - MIST')] = PATH_LIBS_MIST
-frameworks_order[pyfiglet.figlet_format('4 - STTS')] = PATH_LIBS_STTS
+frameworks_order["\n--1 - PATHS\n"] = PATH_SCRIPT_PATHS
+frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE
+frameworks_order["\n--3 - MIST\n"] = PATH_LIBS_MIST
+frameworks_order["\n--4 - STTS\n"] = PATH_LIBS_STTS
 
 
 scripts_order = OrderedDict()
-scripts_order[pyfiglet.figlet_format('1 - VARIABLES')] = PATH_SCRIPT_VARIABLES
-scripts_order[pyfiglet.figlet_format('2 - COMMON')] = PATH_SCRIPT_COMMON
-scripts_order[pyfiglet.figlet_format('3 - RADIO PRESETS')] = PATH_SCRIPT_RADIO_PRESETS
-scripts_order[pyfiglet.figlet_format('4 - MENU')] = PATH_SCRIPT_MENU
-scripts_order[pyfiglet.figlet_format('5 - ATIS')] = PATH_SCRIPT_ATIS
-scripts_order[pyfiglet.figlet_format('7 - AIRBOSS')] = PATH_SCRIPT_AIRBOSS
-scripts_order[pyfiglet.figlet_format('8 - CSAR')] = PATH_SCRIPT_CSAR
-scripts_order[pyfiglet.figlet_format('9 - FOX')] = PATH_SCRIPT_FOX_TRAINER
-scripts_order[pyfiglet.figlet_format('11.1 - AW VAZ')] = PATH_SCRIPT_AW_VAZIANI
-scripts_order[pyfiglet.figlet_format('11.2 - AW KUT')] = PATH_SCRIPT_AW_KUTAISI
-scripts_order[pyfiglet.figlet_format('13 - SCHEDULER')] = PATH_SCRIPT_SCHEDULERS
+scripts_order["\n--1 - VARIABLES)\n"] = PATH_SCRIPT_VARIABLES
+scripts_order["\n--2 - COMMON\n"] = PATH_SCRIPT_COMMON
+scripts_order["\n--3 - RADIO PRESETS\n"] = PATH_SCRIPT_RADIO_PRESETS
+scripts_order["\n--4 - MENU\n"] = PATH_SCRIPT_MENU
+scripts_order["\n--5 - ATIS\n"] = PATH_SCRIPT_ATIS
+scripts_order["\n--7 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
+scripts_order["\n--8 - CSAR\n"] = PATH_SCRIPT_CSAR
+scripts_order["\n--9 - FOX\n"] = PATH_SCRIPT_FOX_TRAINER
+scripts_order["\n--11.1 - AW VAZ\n"] = PATH_SCRIPT_AW_VAZIANI
+scripts_order["\n--11.2 - AW KUT\n"] = PATH_SCRIPT_AW_KUTAISI
+scripts_order["\n--13 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
 
 
 def open_script(path):

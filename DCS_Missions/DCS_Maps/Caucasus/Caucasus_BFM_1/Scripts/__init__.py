@@ -7,7 +7,6 @@ PATH_SCRIPT_RADIO_PRESETS = os.path.join(PATH_CAUCASUS_SCRIPTS, "2_1_radio_prese
 PATH_SCRIPT_MENU = os.path.join(PATH_CAUCASUS_SCRIPTS, "3_1_menu.lua")
 PATH_SCRIPT_ATIS = os.path.join(PATH_CAUCASUS_SCRIPTS, "3_2_atis.lua")
 PATH_SCRIPT_ELINT = os.path.join(PATH_CAUCASUS_SCRIPTS, "4_1_3_elint.lua")
-PATH_SCRIPT_AIRBOSS = os.path.join(PATH_CAUCASUS_SCRIPTS, "4_1_4_airbos.lua")
 PATH_SCRIPT_CSAR = os.path.join(PATH_CAUCASUS_SCRIPTS, "4_1_5_csar.lua")
 PATH_SCRIPT_FOX_TRAINER = os.path.join(PATH_CAUCASUS_SCRIPTS, "4_1_6_fox_trainer.lua")
 PATH_SCRIPT_TRAINING_GROUND_AG = os.path.join(PATH_CAUCASUS_SCRIPTS, "4_1_7_training_ground_ag.lua")

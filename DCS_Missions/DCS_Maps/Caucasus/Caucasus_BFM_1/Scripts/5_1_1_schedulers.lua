@@ -32,7 +32,7 @@ function tanker_platform_updater(airwing)
             env.info(string.format("TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
             unit_alive:CommandSetCallsign(callsign, index, 1)
             
-            unit_beacon = unit_alive:GetBeacon()
+            local unit_beacon = unit_alive:GetBeacon()
         
             if (mission.refuelSystem == 1) then --probe
                 if (string.find(mission:GetName(), "East")) then

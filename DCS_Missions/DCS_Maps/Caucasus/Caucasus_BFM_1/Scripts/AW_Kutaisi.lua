@@ -55,21 +55,21 @@ Kutaisi_135:SetRadio(FREQUENCIES.AAR.common[1], radio.modulation.AM)
 AWKutaisi:AddSquadron(Kutaisi_135)
 AWKutaisi:NewPayload("ME AAR KC135", -1, {AUFTRAG.Type.TANKER, AUFTRAG.Type.ORBIT},100)
 
-TankerShellWest = AUFTRAG:NewTANKER(ZONE_SHELL_WEST_AAR:GetCoordinate(), 20000, 270, 350, 20, 0)
+TankerShellWest = AUFTRAG:NewTANKER(ZONE_SHELL_WEST_AAR:GetCoordinate(), 20000, 270, 171, 30, 0)
 TankerShellWest:AssignSquadrons({Kutaisi_135})
 -- TankerShellWest:SetTACAN(TACAN.shell_w[1], TACAN.shell_w[3], TACAN.shell_w[2])
 TankerShellWest:SetRadio(FREQUENCIES.AAR.shell_w[1])
 TankerShellWest:SetName("Shell West")
 AWKutaisi:AddMission(TankerShellWest)
 
-TankerShellCenter = AUFTRAG:NewTANKER(ZONE_SHELL_CENTER_AAR:GetCoordinate(), 20000, 270, 80, 20, 0)
+TankerShellCenter = AUFTRAG:NewTANKER(ZONE_SHELL_CENTER_AAR:GetCoordinate(), 20000, 270, 171, 30, 0)
 TankerShellCenter:AssignSquadrons({Kutaisi_135})
 -- TankerShellWest:SetTACAN(TACAN.shell_w[1], TACAN.shell_w[3], TACAN.shell_w[2])
 TankerShellCenter:SetRadio(FREQUENCIES.AAR.shell_c[1])
 TankerShellCenter:SetName("Shell West")
 AWKutaisi:AddMission(TankerShellCenter)
 
-TankerTexacoWest = AUFTRAG:NewTANKER(ZONE_TEXACO_WEST_AAR:GetCoordinate(), 20000, 270, 135, 20, 1)
+TankerTexacoWest = AUFTRAG:NewTANKER(ZONE_TEXACO_WEST_AAR:GetCoordinate(), 20000, 270, 80, 30, 1)
 TankerTexacoWest:AssignSquadrons({Kutaisi_MPRS})
 -- TankerTexacoWest:SetTACAN(TACAN.texaco_w[1], TACAN.texaco_w[3], TACAN.texaco_w[2])
 TankerTexacoWest:SetRadio(FREQUENCIES.AAR.texaco_w[1])
@@ -105,7 +105,7 @@ if (aw_kutaisi_escort) then
 	AwacsOverlord:SetEscort(1)
 end
 AwacsOverlord:SetBullsEyeAlias("TEXAS")
-AwacsOverlord:SetAwacsDetails(CALLSIGN.AWACS.Overlord, 1, 30000, 220, 120, 20)
+AwacsOverlord:SetAwacsDetails(CALLSIGN.AWACS.Overlord, 1, 30000, 220, 080, 20)
 AwacsOverlord:SetSRS(SRS_PATH, "female","en-GB", SRS_PORT)
 if (moose_awacs_rejection_red_zone) then
 	AwacsOverlord:SetRejectionZone(borderRed)

@@ -1,7 +1,7 @@
 SERVER = false
 
-SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus_BFM_1\\Scripts\\"
-LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\Caucasus_BFM_1\\Scripts\\"
+SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\Training Grounds\\Caucasus\\LR_LL_Strike\\Scripts\\"
+LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\Training Grounds\\Caucasus\\LR_LL_Strike\\Scripts\\"
 
 SRS_PATH = nil
 SRS_PORT = nil

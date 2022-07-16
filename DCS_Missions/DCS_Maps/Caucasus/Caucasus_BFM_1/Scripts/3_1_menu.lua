@@ -1,9 +1,11 @@
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
     FREQUENCIES.AWACS.overlord,
-    FREQUENCIES.AWACS.wizard,
-    FREQUENCIES.AAR.common,
-    FREQUENCIES.AAR.arco,
+    FREQUENCIES.AAR.shell_e,
+    FREQUENCIES.AAR.shell_c,
+    FREQUENCIES.AAR.shell_w,
+    FREQUENCIES.AAR.texaco_e,
+    FREQUENCIES.AAR.texaco_w,
     FREQUENCIES.FLIGHTS.sting_1,
 	FREQUENCIES.FLIGHTS.joker_1,
     FREQUENCIES.FLIGHTS.hawk_1,
@@ -17,8 +19,6 @@ local ordered_flight_freq = {
 }
 local ordered_ground_freq = {
     FREQUENCIES.CV.sc,
-    FREQUENCIES.CV.lso,
-    FREQUENCIES.CV.marshal,
     FREQUENCIES.GROUND.tower_vaziani,
     FREQUENCIES.GROUND.atis_vaziani,
     FREQUENCIES.GROUND.tower_kutaisi,
@@ -26,8 +26,8 @@ local ordered_ground_freq = {
 }
 local ordered_tacan_data = {
     TACAN.sc,
-    TACAN.arco,
     TACAN.shell_e,
+    TACAN.shell_c,
     TACAN.shell_w,
     TACAN.texaco_e,
     TACAN.texaco_w,
@@ -125,17 +125,17 @@ MenuSeler = MENU_MISSION:New("Seler Menu")
 
 if (menu_show_freqs) then
     MenuFreq = MENU_MISSION:New("Data", MenuSeler)
-    local freqInfo = MENU_MISSION_COMMAND:New("Flights", MenuFreq, Msg, {flight_freqs_info, 10})
-    local freqInfo = MENU_MISSION_COMMAND:New("Ground", MenuFreq, Msg, {ground_freqs_info, 10})
-    local TacanInfo = MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})
-    local YardstickInfo = MENU_MISSION_COMMAND:New("YARDSTICK", MenuFreq, Msg, {yardsticks_info, 10})
-    local IclsInfo = MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
+    MENU_MISSION_COMMAND:New("Flights", MenuFreq, Msg, {flight_freqs_info, 10})
+    MENU_MISSION_COMMAND:New("Ground", MenuFreq, Msg, {ground_freqs_info, 10})
+    MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})
+    MENU_MISSION_COMMAND:New("YARDSTICK", MenuFreq, Msg, {yardsticks_info, 10})
+    MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
 end
 
 if (menu_show_presets) then
     MenuPresets = MENU_MISSION:New("Presets", MenuSeler)
-    local PresetsInfoF16 = MENU_MISSION_COMMAND:New("Presets F-16", MenuPresets, Msg, {presets_f16, 10})
-    local PresetsInfoF18 = MENU_MISSION_COMMAND:New("Presets F-18", MenuPresets, Msg, {presets_f18, 10})
+    MENU_MISSION_COMMAND:New("Presets F-16", MenuPresets, Msg, {presets_f16, 10})
+    MENU_MISSION_COMMAND:New("Presets F-18", MenuPresets, Msg, {presets_f18, 10})
 end
 
 MenuFeatures = MENU_MISSION:New("Features", MenuSeler)

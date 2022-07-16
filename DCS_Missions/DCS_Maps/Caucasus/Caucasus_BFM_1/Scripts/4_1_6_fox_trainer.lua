@@ -1,67 +1,43 @@
-alpha_1 = ZONE_POLYGON:New("ALPHA ONE", GROUP:FindByName("zone-10")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Squid-1
-alpha_2 = ZONE_POLYGON:New("ALPHA TWO", GROUP:FindByName("zone-8")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Devil-1
-alpha_3 = ZONE_POLYGON:New("ALPHA THREE", GROUP:FindByName("zone-2")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Hawk-1
-alpha_4 = ZONE_POLYGON:New("ALPHA FOUR", GROUP:FindByName("zone-1")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Joker-1
-bravo_1 = ZONE_POLYGON:New("BRAVO ONE", GROUP:FindByName("zone-11")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Check-1
-bravo_2 = ZONE_POLYGON:New("BRAVO TWO", GROUP:FindByName("zone-9")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
 
-bravo_3 = ZONE_POLYGON:New("BRAVO THREE", GROUP:FindByName("zone-4")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Ninja-1
-bravo_4 = ZONE_POLYGON:New("BRAVO FOUR", GROUP:FindByName("zone-3")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Sting-1
-charlie_1 = ZONE_POLYGON:New("CHARLIE ONE", GROUP:FindByName("zone-7")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Jedi-1
-delta_1 = ZONE_POLYGON:New("DELTA ONE", GROUP:FindByName("zone-6")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
--- Venom-1
-delta_2 = ZONE_POLYGON:New("DELTA0 TWO", GROUP:FindByName("zone-5")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
--- Viper-1
+navy_1 = ZONE_POLYGON:New("NAVY ONE", GROUP:FindByName("navy-1")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+navy_2 = ZONE_POLYGON:New("NAVY TWO", GROUP:FindByName("navy-2")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+navy_3 = ZONE_POLYGON:New("NAVY THREE", GROUP:FindByName("navy-3")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_1 = ZONE_POLYGON:New("ZONE ONE", GROUP:FindByName("zone-1")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_2 = ZONE_POLYGON:New("ZONE TWO", GROUP:FindByName("zone-2")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+zone_3 = ZONE_POLYGON:New("ZONE THREE", GROUP:FindByName("zone-3")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_4 = ZONE_POLYGON:New("ZONE FOUR", GROUP:FindByName("zone-4")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+zone_5 = ZONE_POLYGON:New("ZONE FIVE", GROUP:FindByName("zone-5")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_6 = ZONE_POLYGON:New("ZONE SIX", GROUP:FindByName("zone-6")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
+zone_7 = ZONE_POLYGON:New("ZONE SEVEN", GROUP:FindByName("zone-7")):DrawZone(-1,{0,0.5,1},1,{0,0.5,1},0.4,1,true)
+zone_8 = ZONE_POLYGON:New("ZONE EIGHT", GROUP:FindByName("zone-8")):DrawZone(-1,{0,0.75,1},1,{0,0.75,1},0.4,1,true)
 
-squid_1 = GROUP:FindByName("Squid-1")
-devil_1 = GROUP:FindByName("Devil-1")
-hawk_1 = GROUP:FindByName("Hawk-1")
-joker_1 = GROUP:FindByName("Joker-1")
-check_1 = GROUP:FindByName("Check-1")
-ninja_1 = GROUP:FindByName("Ninja-1")
-sting_1 = GROUP:FindByName("Sting-1")
-jedi_1 = GROUP:FindByName("Jedi-1")
-venom_1 = GROUP:FindByName("Venom-1")
-viper_1 = GROUP:FindByName("Viper-1")
+fox_zones = {navy_1, navy_2, navy_3, zone_1, zone_2, zone_3, zone_4, zone_5, zone_6, zone_7, zone_8}
 
 local zones_data = {
-	{alpha_1, squid_1},
-	{alpha_2, devil_1},
-	{alpha_3, hawk_1},
-	{alpha_4, joker_1},
-	{bravo_1, check_1},
-	{bravo_3, ninja_1},
-	{bravo_4, sting_1},
-	{charlie_1, jedi_1},
-	{delta_1, venom_1},
-	{delta_2, viper_1},
+	{navy_2, "squid-1"},
+	{navy_3, "check_1"},
+	{zone_1, "devil_1"},
+	{zone_2, "joker_1"},
+	{zone_3, "check_1"},
+	{zone_4, "ninja_1"},
+	{zone_5, "viper_1"},
+	{zone_6, "venom_1"},
+	{zone_7, "jedi_1"},
+	{zone_8, "sting_1"},
 }
 
 fox=FOX:New()
 
-fox:AddSafeZone(alpha_1)
-fox:AddSafeZone(alpha_2)
-fox:AddSafeZone(alpha_3)
-fox:AddSafeZone(alpha_4)
-fox:AddSafeZone(bravo_1)
-fox:AddSafeZone(bravo_2)
-fox:AddSafeZone(bravo_3)
-fox:AddSafeZone(bravo_4)
-fox:AddSafeZone(delta_1)
-fox:AddSafeZone(delta_2)
-fox:Start()
+for i, v in pairs(fox_zones) do
+	fox:AddSafeZone(v)
+end
 
 FOX:SetDisableF10Menu(true)
 FOX:SetDefaultLaunchAlerts(false)
 FOX:SetDefaultLaunchMarks(false)
+FOX:SetDefaultMissileDestruction(true)
+
+fox:Start()
 
 function get_coords(data)
 	local zone_info = {}
@@ -71,9 +47,8 @@ function get_coords(data)
 		local zone = v[1]
 		local group = v[2]
 		local coordinate = zone:GetCoordinate(0):ToStringLLDMS()
-		local tmp_msg = string.format("%s / %s -> %s\n", zone:GetName(), group:GetName(), coordinate)
+		local tmp_msg = string.format("%s / %s -> %s\n", zone:GetName(), group, coordinate)
 		table.insert(tmp_msg)
-		zone:MarkToGroup("BFM ZONE", group, true)
 	end
 	local final_msg = table.concat(zone_info)
 	return final_msg .. "\n"
