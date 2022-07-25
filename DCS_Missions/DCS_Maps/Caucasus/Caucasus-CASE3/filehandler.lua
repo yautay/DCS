@@ -58,8 +58,8 @@ function loadScriptRadioPresets(scripts_path)
 end
 
 function loadScriptMenu(scripts_path)
-	env.info("loading -> 3_1_menu.lua")
-	dofile(scripts_path .. "3_1_menu.lua")
+	env.info("loading -> 2_1_menu.lua")
+	dofile(scripts_path .. "2_1_menu.lua")
 end
 
 function loadAirboss(scripts_path)
@@ -88,8 +88,8 @@ function loadRedChief(scripts_path)
 end
 
 function loadAtis(scripts_path)
-	env.info("loading -> 3_2_atis.lua")
-	dofile(scripts_path .. "3_2_atis.lua")
+	env.info("loading -> 3_1_atis.lua")
+	dofile(scripts_path .. "3_1_atis.lua")
 end
 
 function loadAGRange(scripts_path)
