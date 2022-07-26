@@ -17,17 +17,18 @@ frameworks_order["\n--6 - HOUND\n"] = PATH_LIBS_HOUND
 
 
 scripts_order = OrderedDict()
-scripts_order["\n--1.1 - VARIABLES)\n"] = PATH_SCRIPT_VARIABLES
+scripts_order["\n--1.1 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--1.2 - COMMON\n"] = PATH_SCRIPT_COMMON
 scripts_order["\n--2.1 - MENU\n"] = PATH_SCRIPT_MENU
 scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 
-scripts_order["\n--7 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
-scripts_order["\n--8 - CSAR\n"] = PATH_SCRIPT_CSAR
-scripts_order["\n--9 - FOX\n"] = PATH_SCRIPT_FOX_TRAINER
-scripts_order["\n--11.1 - AW VAZ\n"] = PATH_SCRIPT_AW_VAZIANI
-scripts_order["\n--11.2 - AW KUT\n"] = PATH_SCRIPT_AW_KUTAISI
-scripts_order["\n--13 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
+scripts_order["\n--4.1 - RANGE\n"] = PATH_SCRIPT_RANGE
+scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
+
+# scripts_order["\n--7 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
+# scripts_order["\n--11.1 - AW VAZ\n"] = PATH_SCRIPT_AW_VAZIANI
+# scripts_order["\n--11.2 - AW KUT\n"] = PATH_SCRIPT_AW_KUTAISI
+# scripts_order["\n--13 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
 
 
 def open_script(path):
