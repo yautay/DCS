@@ -73,8 +73,8 @@ function loadElint(scripts_path)
 end
 
 function loadCSAR(scripts_path)
-	env.info("loading -> 4_1_5_csar.lua")
-	dofile(scripts_path .. "4_1_5_csar.lua")
+	env.info("loading -> 4_2_csar.lua")
+	dofile(scripts_path .. "4_2_csar.lua")
 end
 
 function loadFOX(scripts_path)
@@ -113,8 +113,8 @@ function loadMozdokAW(scripts_path)
 end
 
 function loadScheduler(scripts_path)
-	env.info("loading -> 5_1_1_schedulers.lua")
-	dofile(scripts_path .. "5_1_1_schedulers.lua")
+	env.info("loading -> 5_1_schedulers.lua")
+	dofile(scripts_path .. "5_1_schedulers.lua")
 end
 
 function loadDebuger(scripts_path)

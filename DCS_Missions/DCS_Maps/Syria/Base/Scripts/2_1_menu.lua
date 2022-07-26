@@ -13,6 +13,7 @@ local ordered_ground_freq = {
     FREQUENCIES.GROUND.tower_hatay_uhf,
     FREQUENCIES.GROUND.tower_hatay_vhf,
     FREQUENCIES.GROUND.atis_hatay_vhf,
+    FREQUENCIES.GROUND.hatay_range_uhf,
 }
 local ordered_special_freq = {
     FREQUENCIES.SPECIAL.guard_hi,

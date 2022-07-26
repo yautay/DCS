@@ -21,3 +21,15 @@ function append_to_file(filename, content)
 	f:write(content)
 	f:close()
 end
+
+
+function data_extractor_static_object(static_object)
+    local name = static_object:GetName()
+    local coordinate = static_object:GetCoordinate()
+    local lldms = coordinate:ToStringLLDMS()
+    local llddm = coordinate:ToStringLLDMS()
+    local mgrs = coordinate:ToStringMGRS()
+    local height = coordinate:GetLandHeight()
+    local msg = string.format("Target: %s\n   LLDMS -> %s\n   LLDDM -> %s\n   MGRS -> %s\n   HEIGHT[Ft] -> %d\n", name, lldms, llddm, mgrs, height)
+    return msg
+end
