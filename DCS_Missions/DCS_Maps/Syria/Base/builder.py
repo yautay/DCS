@@ -46,10 +46,13 @@ def append_binary(path, content):
         file.write(content)
 
 
+for file in [FRAMEWORK_FILE, SCRIPTS_FILE]:
+    if os.path.exists(file):
+        os.remove(file)
+
 for k, v in frameworks_order.items():
     append_script(FRAMEWORK_FILE, k)
     append_binary(FRAMEWORK_FILE, open_script(v))
-
 
 for k, v in scripts_order.items():
     append_script(SCRIPTS_FILE, k)
