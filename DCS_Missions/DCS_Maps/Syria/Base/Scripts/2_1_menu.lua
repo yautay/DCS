@@ -35,7 +35,7 @@ local ordered_icls_data = {
     --ICLS.sc,
 }
 
-local function Msg(arg)
+function Msg(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
 

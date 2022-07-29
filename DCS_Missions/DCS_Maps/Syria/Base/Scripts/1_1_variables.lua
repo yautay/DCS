@@ -30,7 +30,8 @@ FREQUENCIES = {
         atis_hatay_vhf = {121.25, "ATIS Hatay VHF", "AM"},
         tower_hatay_uhf = {250.25, "Tower Hatay UHF", "AM"},
         tower_hatay_vhf = {128.50, "Tower Hatay VHF", "AM"},
-        hatay_range_uhf = {267.25, "Range Hatay UHF", "AM"},
+        hatay_range_uhf = {256.00, "Range Hatay UHF", "AM"},
+        farp_warsaw_uhf = {256.75, "FARP Warsaw UHF", "AM"}
     },
     SPECIAL = {
         guard_hi = {243.00, "Guard Freq UHF", "AM"},

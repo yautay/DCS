@@ -62,29 +62,41 @@ end
 local RangeHatay=RANGE:New("Range Hatay")
 
 local zone_range_hatay = ZONE_POLYGON:New("Zone Range Hatay", GROUP:FindByName("Zone Range Hatay"))
-        :DrawZone(-1, CONST.RGB.range, 1, CONST.RGB.range, 0.8, 1, true)
+        :DrawZone(-1, CONST.RGB.range, 1, CONST.RGB.range, 1, 1, true)
 local zone_range_hatay_farp = ZONE:New("Zone FARP Hatay Range")
-        :DrawZone(-1, CONST.RGB.farp, 1, CONST.RGB.farp, 0.8, 1, true)
+        :DrawZone(-1, CONST.RGB.farp, 1, CONST.RGB.farp, 1, 1, true)
 
-local set_range_hatay_strafepits = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit"):FilterStart()
-local set_range_hatay_bombtargets = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb"):FilterStart()
+local set_range_hatay_strafepit_E = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit E"):FilterStart()
+local set_range_hatay_strafepit_W = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit W"):FilterStart()
+local set_range_hatay_bombtarget_N = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb N"):FilterStart()
+local set_range_hatay_bombtarget_C = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb C"):FilterStart()
+local set_range_hatay_bombtarget_S = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb S"):FilterStart()
 
-local dict_range_hatay_strafepits = iterate_set(set_range_hatay_strafepits)
-local dict_hatay_bombtargets = iterate_set(set_range_hatay_bombtargets)
+local dict_range_hatay_strafepit_E = iterate_set(set_range_hatay_strafepit_E)
+local dict_range_hatay_strafepit_W = iterate_set(set_range_hatay_strafepit_W)
+local dict_hatay_bombtarget_N = iterate_set(set_range_hatay_bombtarget_N)
+local dict_hatay_bombtarget_C = iterate_set(set_range_hatay_bombtarget_C)
+local dict_hatay_bombtarget_S = iterate_set(set_range_hatay_bombtarget_S)
 
 local text_range_hatay_wx = get_range_wx(zone_range_hatay, "HATAY RANGE METEO")
 save_to_file("hatay_range_wx", text_range_hatay_wx)
 
 
 --RANGE.AddStrafePitGroup(group, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
-BASE:E(dict_range_hatay_strafepits.names)
-RangeHatay:AddStrafePit(dict_range_hatay_strafepits.names, 3000, 500, 200, false, 10, 400)
+RangeHatay:AddStrafePit(dict_range_hatay_strafepit_E.names, 3000, 300, 200, false, 10, 400)
+RangeHatay:AddStrafePit(dict_range_hatay_strafepit_W.names, 3000, 300, 200, false, 10, 400)
 
 --RANGE.AddBombingTargetGroup(group, goodhitrange, randommove)
-BASE:E(dict_hatay_bombtargets.names)
-RangeHatay:AddBombingTargets(dict_hatay_bombtargets.names, 20)
+RangeHatay:AddBombingTargets(dict_hatay_bombtarget_N.names, 10)
+RangeHatay:AddBombingTargets(dict_hatay_bombtarget_C.names, 20)
+RangeHatay:AddBombingTargets(dict_hatay_bombtarget_S.names, 30)
 
--- Start range.
+RangeHatay:AddBombingTargetGroup(GROUP:FindByName("Range Hatay Target Trucks"), 20)
+RangeHatay:AddBombingTargetGroup(GROUP:FindByName("Range Hatay Target Tanks"), 20)
+
+RangeHatay:SetRangeZone(zone_range_hatay)
+RangeHatay:SetRangeControl(FREQUENCIES.GROUND.hatay_range_uhf[1], "Range Hatay Relay")
 RangeHatay:Start()
+
 
 MENU_MISSION_COMMAND:New("Hatay Range WX", MenuSeler, Msg, {text_range_hatay_wx, 10})
