@@ -20,6 +20,7 @@ frameworks_order["\n--6 - HOUND\n"] = PATH_LIBS_HOUND
 
 
 scripts_order = OrderedDict()
+scripts_order["\n--0.1 - CONST\n"] = PATH_SCRIPT_CONST
 scripts_order["\n--1.1 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--1.2 - COMMON\n"] = PATH_SCRIPT_COMMON
 scripts_order["\n--2.1 - MENU\n"] = PATH_SCRIPT_MENU

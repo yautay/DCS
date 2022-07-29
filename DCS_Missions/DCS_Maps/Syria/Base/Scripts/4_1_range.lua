@@ -1,23 +1,38 @@
 RANGE:SetAutosaveOn()
 
-function get_range_wx(ZoneObject)
+function get_range_wx(ZoneObject, string_report_title)
     local CoordinateObject = ZoneObject:GetCoordinate()
-    local pressure = CoordinateObject:GetPressureText()
-    local temperature = CoordinateObject:GetTemperatureText()
+    local sunrise = CoordinateObject:GetSunrise(false)
+    local sunset = CoordinateObject:GetSunset(false)
+    local qnh = CoordinateObject:GetPressureText(0)
+    local qfe = CoordinateObject:GetPressureText(CoordinateObject:GetLandHeight())
+    local temperature = CoordinateObject:GetTemperatureText(CoordinateObject:GetLandHeight())
     local wind_0 = CoordinateObject:GetWindText()
     local wind_1km = CoordinateObject:GetWindText(1000)
     local wind_3km = CoordinateObject:GetWindText(3000)
     local wind_6km = CoordinateObject:GetWindText(6000)
     local wx_data = {
-        ["pressure"] = pressure,
+        ["sunrise"] = sunrise,
+        ["sunset"] = sunset,
+        ["QNH"] = qnh,
+        ["QFE"] = qfe,
         ["temperature"] = temperature,
         ["wind_0"] = wind_0,
         ["wind_1km"] = wind_1km,
         ["wind_3km"] = wind_3km,
         ["wind_6km"] = wind_6km,
     }
-    BASE:E(wx_data)
-    return wx_data
+    local ReportObject = REPORT:New(string_report_title)
+    ReportObject:Add(string.format("Sunrise: %s", wx_data.sunrise))
+    ReportObject:Add(string.format("Sunset: %s", wx_data.sunset))
+    ReportObject:Add(string.format("QNH: %s", wx_data.QNH))
+    ReportObject:Add(string.format("QFE: %s", wx_data.QFE))
+    ReportObject:Add(string.format("Temperature: %s", wx_data.temperature))
+    ReportObject:Add(string.format("Wind @ground: %s", wx_data.wind_0))
+    ReportObject:Add(string.format("Wind @3k: %s", wx_data.wind_1km))
+    ReportObject:Add(string.format("Wind @10k: %s", wx_data.wind_3km))
+    ReportObject:Add(string.format("Wind @20k: %s", wx_data.wind_6km))
+    return ReportObject:Text()
 end
 
 function iterate_set(SetObject)
@@ -45,18 +60,24 @@ function iterate_set(SetObject)
 end
 
 local RangeHatay=RANGE:New("Range Hatay")
---FIX DRAWIG
-local zone_range_hatay = ZONE_POLYGON:New("Zone Range Hatay", GROUP:FindByName("Zone Range Hatay")):DrawZone(1, {1,0.7,0.1}, 1, {1,0.7,0.1}, 0.2, 0, true)
+
+local zone_range_hatay = ZONE_POLYGON:New("Zone Range Hatay", GROUP:FindByName("Zone Range Hatay"))
+        :DrawZone(-1, CONST.RGB.range, 1, CONST.RGB.range, 0.8, 1, true)
+local zone_range_hatay_farp = ZONE:New("Zone FARP Hatay Range")
+        :DrawZone(-1, CONST.RGB.farp, 1, CONST.RGB.farp, 0.8, 1, true)
 
 local set_range_hatay_strafepits = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit"):FilterStart()
 local set_range_hatay_bombtargets = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb"):FilterStart()
 
 local dict_range_hatay_strafepits = iterate_set(set_range_hatay_strafepits)
 local dict_hatay_bombtargets = iterate_set(set_range_hatay_bombtargets)
---SAVE REPORT
-local dict_range_hatay_wx = get_range_wx(zone_range_hatay)
+
+local text_range_hatay_wx = get_range_wx(zone_range_hatay, "HATAY RANGE METEO")
+save_to_file("hatay_range_wx", text_range_hatay_wx)
+
 
 --RANGE.AddStrafePitGroup(group, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
+BASE:E(dict_range_hatay_strafepits.names)
 RangeHatay:AddStrafePit(dict_range_hatay_strafepits.names, 3000, 500, 200, false, 10, 400)
 
 --RANGE.AddBombingTargetGroup(group, goodhitrange, randommove)
@@ -66,3 +87,4 @@ RangeHatay:AddBombingTargets(dict_hatay_bombtargets.names, 20)
 -- Start range.
 RangeHatay:Start()
 
+MENU_MISSION_COMMAND:New("Hatay Range WX", MenuSeler, Msg, {text_range_hatay_wx, 10})

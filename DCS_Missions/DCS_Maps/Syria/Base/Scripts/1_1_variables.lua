@@ -1,3 +1,6 @@
+_SETTINGS:SetImperial()
+_SETTINGS:SetPlayerMenuOn()
+
 FREQUENCIES = {
     AWACS = {
         darkstar = {244.25, "AWACS Darkstar UHF", "AM"},
@@ -59,7 +62,7 @@ YARDSTICKS = {
     --ninja_1 = {"NINJA TWO", 46, 109, "Y"},
 }
 
-_SETTINGS:SetPlayerMenuOff()
+
 
 --AIRWINGS
 -- Vaziani
