@@ -1,19 +1,31 @@
 local ordered_elements_freq = {
     FREQUENCIES.ELEMENTS.killer_uhf,
-    FREQUENCIES.ELEMENTS.killer_fm,
     FREQUENCIES.ELEMENTS.killer_vhf,
+    FREQUENCIES.ELEMENTS.killer_fm,
+    FREQUENCIES.ELEMENTS.prayer_uhf,
+    FREQUENCIES.ELEMENTS.prayer_vhf,
 }
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
     FREQUENCIES.FLIGHTS.apache_1_uhf,
-	FREQUENCIES.FLIGHTS.apache_1_fm,
     FREQUENCIES.FLIGHTS.apache_1_vhf,
+    FREQUENCIES.FLIGHTS.apache_1_fm,
+    FREQUENCIES.FLIGHTS.colt_1_fm,
+	FREQUENCIES.FLIGHTS.colt_2_uhf,
+    FREQUENCIES.FLIGHTS.colt_2_vhf,
+    FREQUENCIES.FLIGHTS.colt_2_fm,
+	FREQUENCIES.FLIGHTS.roman_1_uhf,
+    FREQUENCIES.FLIGHTS.roman_1_vhf,
+	FREQUENCIES.FLIGHTS.enfield_1_uhf,
+    FREQUENCIES.FLIGHTS.enfield_1_vhf,
 }
 local ordered_ground_freq = {
     FREQUENCIES.GROUND.tower_hatay_uhf,
     FREQUENCIES.GROUND.tower_hatay_vhf,
     FREQUENCIES.GROUND.atis_hatay_vhf,
     FREQUENCIES.GROUND.hatay_range_uhf,
+    FREQUENCIES.GROUND.farp_warsaw_uhf,
+    FREQUENCIES.GROUND.farp_warsaw_ndb,
 }
 local ordered_special_freq = {
     FREQUENCIES.SPECIAL.guard_hi,

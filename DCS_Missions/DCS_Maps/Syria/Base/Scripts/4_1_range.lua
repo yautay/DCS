@@ -53,17 +53,30 @@ function iterate_set(SetObject)
                     ["height_mtrs"] = object_coordinates_h,
                     ["height_ft"] = UTILS.MetersToFeet(object_coordinates_h)
             }
-            BASE:E(object_name)
             table.insert(set_data["names"], object_name)
         end)
     return set_data
+end
+
+function get_target_coordinates_report(list_from_iterate_set, string_report_title)
+    local ReportObject = REPORT:New(string_report_title)
+    for k, v in pairs(list_from_iterate_set) do
+        if not k == "names" then
+            ReportObject:Add(string.format("OBJECT: %s", k))
+            ReportObject:Add(string.format("--- LLDMS: %s", v.lldms))
+            ReportObject:Add(string.format("--- LLDDM: %s", v.llddm))
+            ReportObject:Add(string.format("--- MGRS: %s", v.mgrs))
+            ReportObject:Add(string.format("--- FT: %s", v.height_ft))
+        end
+    end
+    return ReportObject:Text()
 end
 
 local RangeHatay=RANGE:New("Range Hatay")
 
 local zone_range_hatay = ZONE_POLYGON:New("Zone Range Hatay", GROUP:FindByName("Zone Range Hatay"))
         :DrawZone(-1, CONST.RGB.range, 1, CONST.RGB.range, 1, 1, true)
-local zone_range_hatay_farp = ZONE:New("Zone FARP Hatay Range")
+local zone_range_hatay_farp = ZONE:New("Zone FARP Warsaw")
         :DrawZone(-1, CONST.RGB.farp, 1, CONST.RGB.farp, 1, 1, true)
 
 local set_range_hatay_strafepit_E = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit E"):FilterStart()
@@ -80,7 +93,7 @@ local dict_hatay_bombtarget_S = iterate_set(set_range_hatay_bombtarget_S)
 
 local text_range_hatay_wx = get_range_wx(zone_range_hatay, "HATAY RANGE METEO")
 save_to_file("hatay_range_wx", text_range_hatay_wx)
-
+save_to_file("hattay_range_bombtarget_C", get_target_coordinates_report(dict_hatay_bombtarget_C))
 
 --RANGE.AddStrafePitGroup(group, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
 RangeHatay:AddStrafePit(dict_range_hatay_strafepit_E.names, 3000, 300, 200, false, 10, 400)

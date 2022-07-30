@@ -1,5 +1,5 @@
 _SETTINGS:SetImperial()
-_SETTINGS:SetPlayerMenuOn()
+_SETTINGS:SetPlayerMenuOff()
 
 FREQUENCIES = {
     AWACS = {
@@ -16,11 +16,21 @@ FREQUENCIES = {
 		apache_1_uhf = {255.00, "APACHE ONE UHF", "AM"},
         apache_1_vhf = {115.00, "APACHE ONE VHF", "AM"},
         apache_1_fm = {30.01, "APACHE ONE FM", "FM"},
+        colt_1_fm = {25.70, "COLT ONE FM", "FM"},
+        colt_2_uhf = {255.50, "COLT TWO UHF", "FM"},
+        colt_2_vhf = {113.00, "COLT TWO VHF", "FM"},
+        colt_2_fm = {25.30, "COLT TWO FM", "FM"},
+        roman_1_uhf = {256.10, "ROMAN ONE UHF", "AM"},
+        roman_1_vhf = {129.25, "ROMAN ONE VHF", "AM"},
+        enfield_1_uhf = {257.10, "ROMAN ONE UHF", "AM"},
+        enfield_1_vhf = {130.25, "ROMAN ONE VHF", "AM"},
     },
     ELEMENTS = {
 	    killer_uhf = {230.00, "KILLER UHF", "AM"},
         killer_vhf = {120.00, "KILLER VHF", "AM"},
         killer_fm = {30.015, "KILLER FM", "FM"},
+        prayer_uhf = {230.00, "PRAYER UHF", "AM"},
+        prayer_vhf = {231.75, "PRAYER VHF", "AM"},
     },
 
     CV = {
@@ -31,7 +41,9 @@ FREQUENCIES = {
         tower_hatay_uhf = {250.25, "Tower Hatay UHF", "AM"},
         tower_hatay_vhf = {128.50, "Tower Hatay VHF", "AM"},
         hatay_range_uhf = {256.00, "Range Hatay UHF", "AM"},
-        farp_warsaw_uhf = {256.75, "FARP Warsaw UHF", "AM"}
+        farp_warsaw_uhf = {256.75, "FARP Warsaw UHF", "AM"},
+        farp_warsaw_ndb = {50.00, "FARP Warsaw NDB", "FM"}
+
     },
     SPECIAL = {
         guard_hi = {243.00, "Guard Freq UHF", "AM"},
