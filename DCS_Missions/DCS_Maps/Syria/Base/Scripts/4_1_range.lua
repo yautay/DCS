@@ -1,4 +1,5 @@
-RANGE:SetAutosaveOn()
+
+
 
 function get_range_wx(ZoneObject, string_report_title)
     local CoordinateObject = ZoneObject:GetCoordinate()
@@ -69,47 +70,62 @@ function get_target_coordinates_report(list_from_iterate_set, string_report_titl
             ReportObject:Add(string.format("--- FT: %s", v.height_ft))
         end
     end
-    return ReportObject:Text()
+    local text = ReportObject:Text()
+    env.info(text)
+    return text
 end
 
-local RangeHatay=RANGE:New("Range Hatay")
-
-local zone_range_hatay = ZONE_POLYGON:New("Zone Range Hatay", GROUP:FindByName("Zone Range Hatay"))
-        :DrawZone(-1, CONST.RGB.range, 1, CONST.RGB.range, 1, 1, true)
-local zone_range_hatay_farp = ZONE:New("Zone FARP Warsaw")
-        :DrawZone(-1, CONST.RGB.farp, 1, CONST.RGB.farp, 1, 1, true)
+--STRAFE RANGE
+local RangeHatayStrafe = RANGE:New("Range Hatay Strafe")
+local zone_range_hatay_strafe = ZONE_POLYGON:New("Zone Range Hatay Strafe", GROUP:FindByName("Zone Range Hatay Strafe"))
 
 local set_range_hatay_strafepit_E = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit E"):FilterStart()
 local set_range_hatay_strafepit_W = SET_STATIC:New():FilterPrefixes("Range Hatay Target Pit W"):FilterStart()
-local set_range_hatay_bombtarget_N = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb N"):FilterStart()
-local set_range_hatay_bombtarget_C = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb C"):FilterStart()
-local set_range_hatay_bombtarget_S = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb S"):FilterStart()
 
 local dict_range_hatay_strafepit_E = iterate_set(set_range_hatay_strafepit_E)
 local dict_range_hatay_strafepit_W = iterate_set(set_range_hatay_strafepit_W)
-local dict_hatay_bombtarget_N = iterate_set(set_range_hatay_bombtarget_N)
-local dict_hatay_bombtarget_C = iterate_set(set_range_hatay_bombtarget_C)
-local dict_hatay_bombtarget_S = iterate_set(set_range_hatay_bombtarget_S)
-
-local text_range_hatay_wx = get_range_wx(zone_range_hatay, "HATAY RANGE METEO")
-save_to_file("hatay_range_wx", text_range_hatay_wx)
-save_to_file("hattay_range_bombtarget_C", get_target_coordinates_report(dict_hatay_bombtarget_C))
 
 --RANGE.AddStrafePitGroup(group, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
-RangeHatay:AddStrafePit(dict_range_hatay_strafepit_E.names, 3000, 300, 200, false, 10, 400)
-RangeHatay:AddStrafePit(dict_range_hatay_strafepit_W.names, 3000, 300, 200, false, 10, 400)
+RangeHatayStrafe:AddStrafePit(dict_range_hatay_strafepit_E.names, 5000, 1200, 22, true, 10, 300)
+RangeHatayStrafe:AddStrafePit(dict_range_hatay_strafepit_W.names, 5000, 1200, 22, true, 10, 300)
+
+RangeHatayStrafe:SetRangeZone(zone_range_hatay_strafe)
+RangeHatayStrafe:SetRangeControl(FREQUENCIES.GROUND.hatay_range_uhf[1], "Range Hatay Relay")
+RangeHatayStrafe:SetInstructorRadio(FREQUENCIES.GROUND.hatay_range_uhf[1], "Range Hatay Relay")
+RangeHatayStrafe:Start()
+
+--BOMB RANGE
+local RangeHatayBomb = RANGE:New("Range Hatay Bomb")
+local zone_range_hatay_bomb = ZONE_POLYGON:New("Zone Range Hatay Bomb", GROUP:FindByName("Zone Range Hatay Bomb"))
+
+local set_range_hatay_bombtarget_N = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb N"):FilterStart()
+local set_range_hatay_bombtarget_S = SET_STATIC:New():FilterPrefixes("Range Hatay Target Bomb S"):FilterStart()
+
+local dict_hatay_bombtarget_N = iterate_set(set_range_hatay_bombtarget_N)
+local dict_hatay_bombtarget_S = iterate_set(set_range_hatay_bombtarget_S)
 
 --RANGE.AddBombingTargetGroup(group, goodhitrange, randommove)
-RangeHatay:AddBombingTargets(dict_hatay_bombtarget_N.names, 10)
-RangeHatay:AddBombingTargets(dict_hatay_bombtarget_C.names, 20)
-RangeHatay:AddBombingTargets(dict_hatay_bombtarget_S.names, 30)
+RangeHatayBomb:AddBombingTargets(dict_hatay_bombtarget_N.names, 20)
+RangeHatayBomb:AddBombingTargets(dict_hatay_bombtarget_S.names, 20)
 
-RangeHatay:AddBombingTargetGroup(GROUP:FindByName("Range Hatay Target Trucks"), 20)
-RangeHatay:AddBombingTargetGroup(GROUP:FindByName("Range Hatay Target Tanks"), 20)
-
-RangeHatay:SetRangeZone(zone_range_hatay)
-RangeHatay:SetRangeControl(FREQUENCIES.GROUND.hatay_range_uhf[1], "Range Hatay Relay")
-RangeHatay:Start()
+RangeHatayBomb:SetRangeZone(zone_range_hatay_bomb)
+RangeHatayBomb:SetRangeControl(FREQUENCIES.GROUND.hatay_range_uhf[1], "Range Hatay Relay")
+RangeHatayBomb:SetInstructorRadio(FREQUENCIES.GROUND.hatay_range_uhf[1], "Range Hatay Relay")
+RangeHatayBomb:Start()
 
 
+local text_range_hatay_wx = get_range_wx(zone_range_hatay_strafe, "HATAY RANGE METEO")
 MENU_MISSION_COMMAND:New("Hatay Range WX", MenuSeler, Msg, {text_range_hatay_wx, 10})
+
+save_to_file("hatay_range_wx", text_range_hatay_wx)
+save_to_file("hattay_range_bombtarget_n", get_target_coordinates_report(dict_hatay_bombtarget_N, "Bomb Targets North"))
+save_to_file("hattay_range_bombtarget_s", get_target_coordinates_report(dict_hatay_bombtarget_S, "Bomb Targets South"))
+
+RangeHatayBomb:SetAutosaveOn()
+RangeHatayBomb:SetMessageTimeDuration(5)
+RangeHatayBomb:SetSoundfilesPath("Range Soundfiles/")
+
+RangeHatayStrafe:SetAutosaveOn()
+RangeHatayStrafe:SetMaxStrafeAlt(5000)
+RangeHatayStrafe:SetMessageTimeDuration(5)
+RangeHatayStrafe:SetSoundfilesPath("Range Soundfiles/")

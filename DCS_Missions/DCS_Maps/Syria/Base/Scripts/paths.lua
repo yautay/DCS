@@ -1,4 +1,4 @@
-SERVER = true
+SERVER = false
 
 SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\DCS_Maps\\Syria\\Base\\Scripts\\"
 LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\Base\\Scripts\\"
