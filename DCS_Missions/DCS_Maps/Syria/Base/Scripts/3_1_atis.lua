@@ -1,5 +1,5 @@
 AtisHatay = ATIS:New(AIRBASE.Syria.Hatay, FREQUENCIES.GROUND.atis_hatay_vhf[1])
-AtisHatay:SetRadioRelayUnitName("RELAY-HATAY")
+AtisHatay:SetRadioRelayUnitName("Hatay Relay")
 AtisHatay:SetTowerFrequencies({FREQUENCIES.GROUND.tower_hatay_uhf[1], FREQUENCIES.GROUND.tower_hatay_vhf[1]})
 AtisHatay:AddILS(108.90, "04")
 AtisHatay:AddNDBinner(336.00)
