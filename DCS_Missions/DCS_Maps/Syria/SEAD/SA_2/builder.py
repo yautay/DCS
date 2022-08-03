@@ -1,7 +1,7 @@
 import string
 
 from lib import *
-from DCS_Maps.Syria.Base.Scripts import *
+from DCS_Maps.Syria.SEAD.SA_2.Scripts import *
 from collections import OrderedDict
 import os
 
@@ -29,10 +29,10 @@ scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 scripts_order["\n--4.1 - RANGE\n"] = PATH_SCRIPT_RANGE
 scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
 
+scripts_order["\n--AW.1 - AW RAMAT DAVID\n"] = PATH_SCRIPT_AW_RAMAT_DAVID
+scripts_order["\n--5.1 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
+
 # scripts_order["\n--7 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
-# scripts_order["\n--11.1 - AW VAZ\n"] = PATH_SCRIPT_AW_VAZIANI
-# scripts_order["\n--11.2 - AW KUT\n"] = PATH_SCRIPT_AW_KUTAISI
-# scripts_order["\n--13 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
 
 content_scripts = ""
 content_frameworks = ""

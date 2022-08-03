@@ -14,12 +14,15 @@ PATH_SCRIPT_ATIS = os.path.join(PATH_MISSION_SCRIPTS, "3_1_atis.lua")
 PATH_SCRIPT_RANGE = os.path.join(PATH_MISSION_SCRIPTS, "4_1_range.lua")
 PATH_SCRIPT_CSAR = os.path.join(PATH_MISSION_SCRIPTS, "4_2_csar.lua")
 
+PATH_SCRIPT_AW_RAMAT_DAVID = os.path.join(PATH_MISSION_SCRIPTS, "AW_Ramat_David.lua")
+
+PATH_SCRIPT_SCHEDULERS = os.path.join(PATH_MISSION_SCRIPTS, "5_1_schedulers.lua")
+
+
 
 # PATH_SCRIPT_ELINT = os.path.join(PATH_MISSION_SCRIPTS, "4_1_3_elint.lua")
 # PATH_SCRIPT_AIRBOSS = os.path.join(PATH_MISSION_SCRIPTS, "4_1_4_airbos.lua")
 #
 # PATH_SCRIPT_REDCHIEF = os.path.join(PATH_MISSION_SCRIPTS, "4_2_2_redchief.lua")
-# PATH_SCRIPT_SCHEDULERS = os.path.join(PATH_MISSION_SCRIPTS, "5_1_schedulers.lua")
-# PATH_SCRIPT_AW_KUTAISI = os.path.join(PATH_MISSION_SCRIPTS, "AW_Kutaisi.lua")
 # PATH_SCRIPT_AW_MOZDOK = os.path.join(PATH_MISSION_SCRIPTS, "AW_Mozdok.lua")
 # PATH_SCRIPT_AW_VAZIANI = os.path.join(PATH_MISSION_SCRIPTS, "AW_Vaziani.lua")
