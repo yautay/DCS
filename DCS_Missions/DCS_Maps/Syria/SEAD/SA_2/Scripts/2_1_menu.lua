@@ -1,23 +1,23 @@
 local ordered_elements_freq = {
-    FREQUENCIES.ELEMENTS.killer_uhf,
-    FREQUENCIES.ELEMENTS.killer_vhf,
-    FREQUENCIES.ELEMENTS.killer_fm,
-    FREQUENCIES.ELEMENTS.prayer_uhf,
-    FREQUENCIES.ELEMENTS.prayer_vhf,
+    --FREQUENCIES.ELEMENTS.killer_uhf,
+    --FREQUENCIES.ELEMENTS.killer_vhf,
+    --FREQUENCIES.ELEMENTS.killer_fm,
+    --FREQUENCIES.ELEMENTS.prayer_uhf,
+    --FREQUENCIES.ELEMENTS.prayer_vhf,
 }
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
-    FREQUENCIES.FLIGHTS.apache_1_uhf,
-    FREQUENCIES.FLIGHTS.apache_1_vhf,
-    FREQUENCIES.FLIGHTS.apache_1_fm,
-    FREQUENCIES.FLIGHTS.colt_1_fm,
-	FREQUENCIES.FLIGHTS.colt_2_uhf,
-    FREQUENCIES.FLIGHTS.colt_2_vhf,
-    FREQUENCIES.FLIGHTS.colt_2_fm,
-	FREQUENCIES.FLIGHTS.roman_1_uhf,
-    FREQUENCIES.FLIGHTS.roman_1_vhf,
-	FREQUENCIES.FLIGHTS.enfield_1_uhf,
-    FREQUENCIES.FLIGHTS.enfield_1_vhf,
+    --FREQUENCIES.FLIGHTS.apache_1_uhf,
+    --FREQUENCIES.FLIGHTS.apache_1_vhf,
+    --FREQUENCIES.FLIGHTS.apache_1_fm,
+    --FREQUENCIES.FLIGHTS.colt_1_fm,
+	--FREQUENCIES.FLIGHTS.colt_2_uhf,
+    --FREQUENCIES.FLIGHTS.colt_2_vhf,
+    --FREQUENCIES.FLIGHTS.colt_2_fm,
+	--FREQUENCIES.FLIGHTS.roman_1_uhf,
+    --FREQUENCIES.FLIGHTS.roman_1_vhf,
+	--FREQUENCIES.FLIGHTS.enfield_1_uhf,
+    --FREQUENCIES.FLIGHTS.enfield_1_vhf,
 }
 local ordered_ground_freq = {
     FREQUENCIES.GROUND.tower_hatay_uhf,
@@ -34,11 +34,11 @@ local ordered_special_freq = {
 }
 local ordered_tacan_data = {
     --TACAN.sc,
-    --TACAN.shell_e,
-    --TACAN.shell_c,
-    --TACAN.shell_w,
-    --TACAN.texaco_e,
-    --TACAN.texaco_w,
+    TACAN.shell_1,
+    TACAN.shell_2,
+    TACAN.shell_3,
+    --TACAN.texaco_1,
+    --TACAN.texaco_2,
 }
 local ordered_yardstick_data = {
     --ARDSTICKS.ninja_1,
@@ -119,7 +119,7 @@ MenuSeler = MENU_MISSION:New("Server Menu")
 if (menu_show_freqs) then
     MenuFreq = MENU_MISSION:New("DATA", MenuSeler)
     MENU_MISSION_COMMAND:New("SPECIAL", MenuFreq, Msg, {special_freqs_info, 10})
-    MENU_MISSION_COMMAND:New("FLIGHTS", MenuFreq, Msg, {elements_freqs_info, 10})
+    MENU_MISSION_COMMAND:New("ELEMENTS", MenuFreq, Msg, {elements_freqs_info, 10})
     MENU_MISSION_COMMAND:New("FLIGHTS", MenuFreq, Msg, {flight_freqs_info, 10})
     MENU_MISSION_COMMAND:New("GROUND", MenuFreq, Msg, {ground_freqs_info, 10})
     MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})

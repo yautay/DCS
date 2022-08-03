@@ -26,10 +26,10 @@ scripts_order["\n--1.2 - COMMON\n"] = PATH_SCRIPT_COMMON
 scripts_order["\n--2.1 - MENU\n"] = PATH_SCRIPT_MENU
 scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 
-scripts_order["\n--4.1 - RANGE\n"] = PATH_SCRIPT_RANGE
 scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
 
 scripts_order["\n--AW.1 - AW RAMAT DAVID\n"] = PATH_SCRIPT_AW_RAMAT_DAVID
+scripts_order["\n--AW.2 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
 scripts_order["\n--5.1 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
 
 # scripts_order["\n--7 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS

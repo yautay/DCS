@@ -82,8 +82,8 @@ aw_ramat_david = true
 debug_aw_ramat_david = true
 
 -- FEATURES
-debug_csar = true
-debug_awacs = true
+debug_csar = false
+debug_awacs = false
 --
 menu_dump_to_file = true
 menu_show_freqs = false

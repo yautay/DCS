@@ -11,10 +11,10 @@ PATH_SCRIPT_COMMON = os.path.join(PATH_MISSION_SCRIPTS, "1_2_common.lua")
 PATH_SCRIPT_MENU = os.path.join(PATH_MISSION_SCRIPTS, "2_1_menu.lua")
 PATH_SCRIPT_ATIS = os.path.join(PATH_MISSION_SCRIPTS, "3_1_atis.lua")
 
-PATH_SCRIPT_RANGE = os.path.join(PATH_MISSION_SCRIPTS, "4_1_range.lua")
 PATH_SCRIPT_CSAR = os.path.join(PATH_MISSION_SCRIPTS, "4_2_csar.lua")
 
 PATH_SCRIPT_AW_RAMAT_DAVID = os.path.join(PATH_MISSION_SCRIPTS, "AW_Ramat_David.lua")
+PATH_SCRIPT_AW_AKROTIRI = os.path.join(PATH_MISSION_SCRIPTS, "AW_Akrotiri.lua")
 
 PATH_SCRIPT_SCHEDULERS = os.path.join(PATH_MISSION_SCRIPTS, "5_1_schedulers.lua")
 
