@@ -37,12 +37,9 @@ FREQUENCIES = {
         --sc = {127.50, "CV-75 Tower VHF", "AM"}
     },
     GROUND = {
-        atis_hatay_vhf = {121.25, "ATIS Hatay VHF", "AM"},
-        tower_hatay_uhf = {250.25, "Tower Hatay UHF", "AM"},
-        tower_hatay_vhf = {128.50, "Tower Hatay VHF", "AM"},
-        hatay_range_uhf = {256.00, "Range Hatay UHF", "AM"},
-        farp_warsaw_uhf = {256.75, "FARP Warsaw UHF", "AM"},
-        farp_warsaw_ndb = {50.00, "FARP Warsaw NDB", "FM"}
+        atis_ramat_david_vhf = {121.75, "ATIS Ramat David VHF", "AM"},
+        tower_ramat_david_uhf = {251.05, "Tower Ramat David UHF", "AM"},
+        tower_ramat_david_vhf = {118.60, "Tower Ramat David VHF", "AM"},
 
     },
     SPECIAL = {
@@ -87,3 +84,9 @@ debug_awacs = false
 --
 menu_dump_to_file = true
 menu_show_freqs = false
+
+--MISSION SPECIFIC
+
+sam_ahmed = true
+sam_fakir = true
+sam_shamir = true

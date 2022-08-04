@@ -8,7 +8,6 @@ AW_LCRA:SetMarker(false)
 AW_LCRA:SetAirbase(AIRBASE:FindByName(AIRBASE.Syria.Akrotiri))
 AW_LCRA:SetRespawnAfterDestroyed(600)
 
-
 AW_LCRA_AAR = SQUADRON:New("ME AAR RD", 20, "AAR")
 AW_LCRA_AAR:AddMissionCapability({ AUFTRAG.Type.TANKER }, 100)
 AW_LCRA_AAR:SetTakeoffType("Air")

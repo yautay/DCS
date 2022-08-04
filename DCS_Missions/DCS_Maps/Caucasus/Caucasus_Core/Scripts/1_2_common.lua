@@ -26,6 +26,8 @@ function append_to_file(filename, content)
 	f:close()
 end
 
+
+
 function data_extractor_static_object(static_object)
     local name = static_object:GetName()
     local coordinate = static_object:GetCoordinate()
