@@ -1,3 +1,4 @@
+
 function save_to_file(filename, content)
 	local fdir = lfs.writedir() .. [[Logs\]] .. filename .. timer.getTime() .. ".txt"
 	local f,err = io.open(fdir,"w")
@@ -22,16 +23,17 @@ function append_to_file(filename, content)
 	f:close()
 end
 
-u = 0 -- don't delete
 function random(x, y)
-    u = u + 1
     if x ~= nil and y ~= nil then
-        return math.floor(x +(math.random(math.randomseed(os.time()+u))*999999 %y))
+		return math.floor(x +(math.random()*999999 %y))
     else
-        return math.floor((math.random(math.randomseed(os.time()+u))*100))
+        return math.floor((math.random()*100))
     end
 end
 
+for i=1, random(100,1000) do
+	random(1,3)
+end
 
 function data_extractor_static_object(static_object)
     local name = static_object:GetName()

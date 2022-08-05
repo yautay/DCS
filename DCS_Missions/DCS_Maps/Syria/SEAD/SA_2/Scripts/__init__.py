@@ -16,6 +16,8 @@ PATH_SCRIPT_CSAR = os.path.join(PATH_MISSION_SCRIPTS, "4_2_csar.lua")
 PATH_SCRIPT_AW_RAMAT_DAVID = os.path.join(PATH_MISSION_SCRIPTS, "AW_Ramat_David.lua")
 PATH_SCRIPT_AW_AKROTIRI = os.path.join(PATH_MISSION_SCRIPTS, "AW_Akrotiri.lua")
 
+PATH_SCRIPT_RED_IADS = os.path.join(PATH_MISSION_SCRIPTS, "Red_IADS.lua")
+PATH_SCRIPT_SCORING = os.path.join(PATH_MISSION_SCRIPTS, "Scorring.lua")
 PATH_SCRIPT_SCHEDULERS = os.path.join(PATH_MISSION_SCRIPTS, "5_1_schedulers.lua")
 
 

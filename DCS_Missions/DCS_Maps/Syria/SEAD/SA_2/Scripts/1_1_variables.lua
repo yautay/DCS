@@ -87,6 +87,6 @@ menu_show_freqs = false
 
 --MISSION SPECIFIC
 
-sam_ahmed = true
-sam_fakir = true
-sam_shamir = true
+sam_ahmed = false
+sam_fakir = false
+sam_shamir = false
