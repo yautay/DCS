@@ -83,29 +83,10 @@ spawn_sa2_site(red_sam_sites_templates.ahmed_site)
 
 --SAMs
 if sam_ahmed then
-    red_sam_sa2_ahmed = SPAWN:NewWithAlias('Red SAM SA-2 "Ahmed"', "SAM AHMED"):OnSpawnGroup(
-            function(SpawnGroup)
-                local group_name = SpawnGroup:GetName()
-                redIADS:addSAMSite(group_name)
-                SpawnGroup:E(string.format("%s - I am spawned", group_name))
-            end
-    )                        :Spawn()
-    red_sam_sa2_ahmed_generators = SPAWN:NewWithAlias('Red SAM SA-2 "Ahmed" Generators', "GENERATORS AHMED"):OnSpawnGroup(
-            function(SpawnGroup)
-                SpawnGroup:E("I am spawned")
-            end
-    )                                   :Spawn()
-    red_sam_sa2_ahmed_radio_link = SPAWN:NewWithAlias('Ahmed Radio Link', "LINK AHMED"):OnSpawnGroup(
-            function(SpawnGroup)
-                SpawnGroup:E("I am spawned")
-            end
-    )                                   :Spawn()
-    local aaa_zones = { ZONE:New("Achmed AAA 1"), ZONE:New("Achmed AAA 2"), ZONE:New("Achmed AAA 3") }
-    for i, v in pairs(aaa_zones) do
-        --red_aaa_templates[random(1, table.getn(red_aaa_templates))]:SpawnInZone(v, true)
-        red_aaa_templates[2]:SpawnInZone(v, true)
-    end
+    spawn_sa2_site(red_sam_sites_templates.ahmed_site)
+
 end
+
 
 if sam_fakir then
     red_sam_sa2_fakir = SPAWN:NewWithAlias('Red SAM SA-2 "Fakir"', "SAM FAKIR"):OnSpawnGroup(
