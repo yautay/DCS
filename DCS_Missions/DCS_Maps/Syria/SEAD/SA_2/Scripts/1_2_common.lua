@@ -35,6 +35,12 @@ for i=1, random(100,1000) do
 	random(1,3)
 end
 
+function sleep(n)  -- seconds
+   local t0 = os.clock()
+   while ((os.clock() - t0) <= n) do
+   end
+end
+
 function data_extractor_static_object(static_object)
     local name = static_object:GetName()
     local coordinate = static_object:GetCoordinate()

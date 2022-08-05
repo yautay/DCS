@@ -45,3 +45,46 @@ if (aw_ramat_david) then
     tanker_platform_updater(AW_LLRD)
 end
 
+function skynet_update(reference_object, iads_object)
+    --SAM UNITS
+    for k, v in pairs(reference_object) do
+        local sam = iads_object:addSAMSite(v["sam_name"])
+        for ig, vg in pairs(v["generators"]) do
+            sam:addPowerSource(Unit.getByName(vg:GetName()))
+            sam:addPowerSource(StaticObject.getByName(vg:GetName()))
+        end
+        for il, vl in pairs(v["links"]) do
+            sam:addConnectionNode(Unit.getByName(vl:GetName()))
+            sam:addConnectionNode(StaticObject.getByName(vl:GetName()))
+        end
+    end
+    --EWR's
+    redIADS:addEarlyWarningRadarsByPrefix('EWR')
+
+    --CC
+    local cc = redIADS:addCommandCenter(StaticObject.getByName("Command Center"))
+    cc:addConnectionNode(StaticObject.getByName("CC CON 1"))
+    cc:addConnectionNode(StaticObject.getByName("CC CON 2"))
+    --local iadsDebug = redIADS:getDebugSettings()
+    --iadsDebug.IADSStatus = true
+    --iadsDebug.contacts = true
+    --iadsDebug.jammerProbability = true
+    --
+    --iadsDebug.addedEWRadar = true
+    --iadsDebug.addedSAMSite = true
+    --iadsDebug.warnings = true
+    --iadsDebug.radarWentLive = true
+    --iadsDebug.radarWentDark = true
+    --iadsDebug.harmDefence = true
+    --
+    --iadsDebug.samSiteStatusEnvOutput = true
+    --iadsDebug.earlyWarningRadarStatusEnvOutput = true
+    --iadsDebug.commandCenterStatusEnvOutput = true
+    redIADS:activate()
+end
+
+SkynetScheduler = SCHEDULER:New(nil, skynet_update, { sam_alive_data , redIADS}, 10)
+
+
+
+
