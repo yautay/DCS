@@ -1,16 +1,17 @@
-ZONE:New("CV-1"):GetCoordinate(0):LineToAll(ZONE:New("CV-2"):GetCoordinate(0), -1, {0, 0, 1}, 1, 4, true)
 
 -- S-3B Recovery Tanker
-tanker = RECOVERYTANKER:New(UNIT:FindByName("CVN"), "ME CVN AAR")
-tanker:SetRacetrackDistances(15, 5)
-tanker:SetRadio(FREQUENCIES.AAR.arco[1])
-tanker:SetCallsign(CALLSIGN.Tanker.Arco)
-tanker:SetTACAN(TACAN.arco[1], TACAN.arco[3])
-tanker:Start()
+cvn73_tanker = RECOVERYTANKER:New(UNIT:FindByName("CVN 73"), "CVN TANKER")
+cvn73_tanker:SetSpeed(274)
+cvn73_tanker:SetAltitude(6000)
+cvn73_tanker:SetRacetrackDistances(6, 8)
+cvn73_tanker:SetRadio(FREQUENCIES.AAR.arco[1])
+cvn73_tanker:SetCallsign(CALLSIGN.Tanker.Arco)
+cvn73_tanker:SetTACANoff()
+cvn73_tanker:Start()
 
 -- E-2D AWACS_cv
 if (cvn_awacs) then
-    awacs_cv = RECOVERYTANKER:New("CVN", "ME CVN AWACS")
+    awacs_cv = RECOVERYTANKER:New("CVN 73", "CVN AWACS")
     awacs_cv:SetAWACS()
     awacs_cv:SetRadio(FREQUENCIES.AWACS.wizard[1])
     awacs_cv:SetAltitude(22000)
@@ -21,11 +22,11 @@ if (cvn_awacs) then
 end
 
 -- Rescue Helo
-rescuehelo = RESCUEHELO:New(UNIT:FindByName("CVN"), "ME CVN SAR")
+rescuehelo = RESCUEHELO:New(UNIT:FindByName("CVN 73"), "CVN SAR")
 rescuehelo:Start()
 
 -- AIRBOSS object.
-Airboss = AIRBOSS:New("CVN")
+Airboss = AIRBOSS:New("CSG 73")
 Airboss:SetTACAN(TACAN.sc[1], TACAN.sc[2], TACAN.sc[3])
 Airboss:SetICLS(ICLS.sc[1], ICLS.sc[2])
 Airboss:SetMarshalRadio(FREQUENCIES.CV.marshal[1], FREQUENCIES.CV.marshal[3])
