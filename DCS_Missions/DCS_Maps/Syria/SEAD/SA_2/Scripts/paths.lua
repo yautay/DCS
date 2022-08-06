@@ -1,7 +1,11 @@
 SERVER = false
 
-SERVER_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions\\DCS_Maps\\Syria\\Base\\Scripts\\"
-LOCAL_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\Base\\Scripts\\"
+SERVER_DCS_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions"
+LOCAL_DCS_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions"
+
+SCRIPTS_PATH = "\\DCS_Maps\\Syria\\Base\\Scripts\\"
+LIBS_PATH = "\\lib"
+
 
 SRS_PATH = nil
 SRS_PORT = nil
@@ -12,11 +16,13 @@ SRS_LOCAL_PATH = "E:\\Software\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
 if (SERVER) then
-	scripts_path = SERVER_PATH
+	scripts_path = SERVER_DCS_PATH .. SCRIPTS_PATH
+	lib_path = SERVER_DCS_PATH .. LIBS_PATH
 	SRS_PATH = SRS_SERVER_PATH
 	SRS_PORT = SRS_SERVER_PORT
 else
-	scripts_path = LOCAL_PATH
+	scripts_path = LOCAL_DCS_PATH .. SCRIPTS_PATH
+	lib_path = LOCAL_DCS_PATH .. LIBS_PATH
 	SRS_PATH = SRS_LOCAL_PATH
 	SRS_PORT = SRS_LOCAL_PORT
 end

@@ -24,8 +24,8 @@ local ordered_ground_freq = {
     FREQUENCIES.GROUND.tower_hatay_vhf,
     FREQUENCIES.GROUND.atis_hatay_vhf,
     FREQUENCIES.GROUND.hatay_range_uhf,
-    FREQUENCIES.GROUND.farp_warsaw_uhf,
-    FREQUENCIES.GROUND.farp_warsaw_ndb,
+    --FREQUENCIES.GROUND.farp_warsaw_uhf,
+    --FREQUENCIES.GROUND.farp_warsaw_ndb,
 }
 local ordered_special_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
