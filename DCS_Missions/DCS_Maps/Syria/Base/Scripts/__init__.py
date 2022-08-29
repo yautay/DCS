@@ -16,7 +16,7 @@ PATH_SCRIPT_CSAR = os.path.join(PATH_MISSION_SCRIPTS, "4_2_csar.lua")
 
 
 # PATH_SCRIPT_ELINT = os.path.join(PATH_MISSION_SCRIPTS, "4_1_3_elint.lua")
-# PATH_SCRIPT_AIRBOSS = os.path.join(PATH_MISSION_SCRIPTS, "4_1_4_airbos.lua")
+# PATH_SCRIPT_AIRBOSS = os.path.join(PATH_MISSION_SCRIPTS, "3_2_airboss.lua")
 #
 # PATH_SCRIPT_REDCHIEF = os.path.join(PATH_MISSION_SCRIPTS, "4_2_2_redchief.lua")
 # PATH_SCRIPT_SCHEDULERS = os.path.join(PATH_MISSION_SCRIPTS, "5_1_schedulers.lua")

@@ -3,38 +3,50 @@ _SETTINGS:SetPlayerMenuOff()
 
 FREQUENCIES = {
     AWACS = {
-        darkstar = {244.25, "AWACS Darkstar UHF", "AM"},
+        magic = {241.50, "AWACS HUMAN Magic UHF", "AM"},
+        darkstar = {244.00, "AWACS MOOSE Darkstar UHF", "AM"},
+        wizard = {241.80, "AWACS DCS Wizard UHF", "AM"},
     },
     AAR = {
-        shell_1 = {251.00, "Tanker Shell One UHF", "AM"},
-        shell_2 = {251.25, "Tanker Shell Two UHF", "AM"},
-        shell_3 = {251.50, "Tanker Shell Three UHF", "AM"},
-        texaco_1 = {252.00, "Tanker Texaco One UHF", "AM"},
-        texaco_2 = {252.25, "Tanker Texaco Two UHF", "AM"},
+        shell_1 = {250.20, "Tanker Shell One UHF", "AM"},
+        shell_2 = {250.40, "Tanker Shell Two UHF", "AM"},
+        shell_3 = {250.60, "Tanker Shell Three UHF", "AM"},
+        arco = {250.80, "CVN 73 Recovery Tanker UHF", "AM"},
     },
     FLIGHTS = {
-		--apache_1_uhf = {255.00, "APACHE ONE UHF", "AM"},
-        --apache_1_vhf = {115.00, "APACHE ONE VHF", "AM"},
-        --apache_1_fm = {30.01, "APACHE ONE FM", "FM"},
-        --colt_1_fm = {25.70, "COLT ONE FM", "FM"},
-        --colt_2_uhf = {255.50, "COLT TWO UHF", "FM"},
-        --colt_2_vhf = {113.00, "COLT TWO VHF", "FM"},
-        --colt_2_fm = {25.30, "COLT TWO FM", "FM"},
-        --roman_1_uhf = {256.10, "ROMAN ONE UHF", "AM"},
-        --roman_1_vhf = {129.25, "ROMAN ONE VHF", "AM"},
-        --enfield_1_uhf = {257.10, "ROMAN ONE UHF", "AM"},
-        --enfield_1_vhf = {130.25, "ROMAN ONE VHF", "AM"},
+        wombats_u = {255.50, "SQUADRON UHF", "AM"},
+        hornet_1_u = {251.30, "HORNET ONE UHF", "AM"},
+        hornet_2_u = {251.60, "HORNET TWO UHF", "AM"},
+        squid_1_u = {252.30, "SQUID ONE UHF", "AM"},
+        squid_2_u = {252.60, "SQUID TWO VHF", "AM"},
+        joker_1_u = {253.30, "JOKER ONE UHF", "AM"},
+        joker_2_u = {253.60, "JOKER TWO VHF", "AM"},
+        hornet_1_m = {"MIDS 11", "HORNET ONE MIDS", ""},
+		hornet_2_m = {"MIDS 12", "HORNET TWO MIDS", ""},
+        squid_1_m = {"MIDS 21", "SQUID ONE MIDS", ""},
+        squid_2_m = {"MIDS 22", "SQUID TWO MIDS", ""},
+		joker_1_m = {"MIDS 31", "JOKER ONE MIDS", ""},
+		joker_1_m = {"MIDS 32", "JOKER TWO MIDS", ""},
     },
     ELEMENTS = {
-	    --killer_uhf = {230.00, "KILLER UHF", "AM"},
-        --killer_vhf = {120.00, "KILLER VHF", "AM"},
-        --killer_fm = {30.015, "KILLER FM", "FM"},
-        --prayer_uhf = {230.00, "PRAYER UHF", "AM"},
-        --prayer_vhf = {231.75, "PRAYER VHF", "AM"},
+	    shamir_u = {251.00, "SHAMIR UHF", "AM"},
+        shamir_m = {"MIDS 1", "SHAMIR MIDS", ""},
+        ahmed_u = {252.00, "SHAMIR UHF", "AM"},
+        ahmed_m = {"MIDS 2", "SHAMIR MIDS", ""},
+        fakir_u = {253.00, "SHAMIR UHF", "AM"},
+        fakir_m = {"MIDS 3", "SHAMIR MIDS", ""},
     },
 
     CV = {
-        --sc = {127.50, "CV-75 Tower VHF", "AM"}
+        dcs_sc = {127.50, "CV 73 DCS VHF", "AM"},
+        paddles = {260.00, "CV 73 HUMAN Paddles UHF", "AM"},
+        marshal = {262.00, "CV 73 AIRBOSS/HUMAN Marshal/Stack UHF", "AM"},
+        red_crown = {258.20, "TF 73 HUMAN Red Crown UHF", "AM"},
+        strike = {257.70, "TF 73 HUMAN Strike UHF", "AM"},
+        catcc = {258.00, "TF 73 HUMAN CATCC UHF", "AM"},
+        departure = {258.30, "TF 73 HUMAN CATCC UHF", "AM"},
+        approach_1 = {258.50, "TF 73 HUMAN Approach 1 UHF", "AM"},
+        approach_2 = {258.70, "TF 73 HUMAN Approach 2 UHF", "AM"},
     },
     GROUND = {
         atis_ramat_david_vhf = {121.75, "ATIS Ramat David VHF", "AM"},
@@ -49,34 +61,28 @@ FREQUENCIES = {
     }
 }
 ICLS = {
-    --sc = {1, "CV", "ICLS CVN-75"},
+    sc = {11, "CV", "ICLS CVN-73"},
 }
 TACAN = {
-    --sc = {74, "X", "CVN", "CVN-75"},
+    sc = {74, "X", "CVN", "CVN-73"},
     shell_1 = {51, "Y", "SHE", "Tanker Shell One", false},
     shell_2 = {52, "Y", "SHE", "Tanker Shell Two", false},
     shell_3 = {53, "Y", "SHW", "Tanker Shell Three", false},
-    texaco_1 = {61, "Y", "TEE", "Tanker Texaco One", false},
-    texaco_2 = {62, "Y", "TEW", "Tanker Texaco Two", false},
+    arco = {69, "Y", "RCV", "Recovery Tanker CVN 73", false},
 }
 YARDSTICKS = {
-    --sting_1 = {"STING ONE", 37, 100, "Y"},
-    --joker_1 = {"JOKER TWO", 38, 101, "Y"},
-    --hawk_1 = {"HAWK ONE", 39, 102, "Y"},
-    --devil_1 = {"DEVIL TWO", 40, 103, "Y"},
-    --squid_1 = {"SQUID ONE", 41, 104, "Y"},
-    --check_1 = {"CHECK TWO", 42, 105, "Y"},
-    --viper_1 = {"VIPER ONE", 43, 106, "Y"},
-    --venom_1 = {"VENOM TWO", 44, 107, "Y"},
-    --jedi_1 = {"JEDI ONE", 45, 108, "Y"},
-    --ninja_1 = {"NINJA TWO", 46, 109, "Y"},
+    hornet_1 = {"HORNET ONE", 37, 100, "Y"},
+    hornet_2 = {"HORNET TWO", 38, 101, "Y"},
+    squid_1 = {"SQUID ONE", 39, 102, "Y"},
+    squid_2 = {"SQUID TWO", 40, 103, "Y"},
+    joker_1 = {"JOKER ONE", 41, 104, "Y"},
+    joker_2 = {"JOKER TWO", 42, 105, "Y"},
 }
 
 
 
 --AIRWINGS
 aw_ramat_david = true
-debug_aw_ramat_david = true
 
 -- FEATURES
 debug_csar = false

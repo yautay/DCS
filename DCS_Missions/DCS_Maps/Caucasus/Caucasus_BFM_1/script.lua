@@ -44,10 +44,10 @@ FREQUENCIES = {
     }
 }
 ICLS = {
-    sc = {1, "CV", "ICLS CVN-75"},
+    sc = {11, "CV", "ICLS CVN-73"},
 }
 TACAN = {
-    sc = {74, "X", "CVN", "CVN-75"},
+    sc = {74, "X", "CVN", "CVN-73"},
     arco = {1, "Y", "RCV", "Recovery Tanker CVN-75"},
     shell_e = {51, "Y", "SHE", "Tanker Shell East"},
     shell_c = {52, "Y", "SHE", "Tanker Shell Center"},

@@ -56,7 +56,7 @@ function spawn_sa2_site(dict_templates)
             :OnSpawnGroup(
                 function(SpawnGroup)
                     local sam_name = SpawnGroup:GetName()
-                    SpawnGroup:E(string.format("SAM Site -> ' %s ' spawned", sam_name))
+                    env.info(string.format("SAM Site -> ' %s ' spawned", sam_name))
                     sam_alive_data[dict_templates.sam.alias]["sam_name"] = sam_name
                 end):Spawn()
     --POWER SOURCES
@@ -66,7 +66,7 @@ function spawn_sa2_site(dict_templates)
                     local generators = SpawnGroup:GetUnits()
                     for i, v in pairs(generators) do
                         local unit_name = v:GetName()
-                        SpawnGroup:E(string.format("Power Source -> ' %s ' spawned", unit_name))
+                        env.info(string.format("Power Source -> ' %s ' spawned", unit_name))
                     end
                     sam_alive_data[dict_templates.sam.alias]["generators"] = generators
                 end):Spawn()
@@ -77,7 +77,7 @@ function spawn_sa2_site(dict_templates)
                     local links = SpawnGroup:GetUnits()
                     for i, v in pairs(links) do
                         local unit_name = v:GetName()
-                        SpawnGroup:E(string.format("Connection Node -> ' %s ' spawned", unit_name))
+                        env.info(string.format("Connection Node -> ' %s ' spawned", unit_name))
                     end
                     sam_alive_data[dict_templates.sam.alias]["links"] = links
                 end):Spawn()

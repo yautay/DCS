@@ -23,7 +23,7 @@ AW_LLRD:__Start(2)
 AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LLRD, "blue", AIRBASE.Syria.Ramat_David, "ZONE_DARKSTAR_AWACS", "ENGAGE", "PATROL", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
 
 AWACS_DARKSTAR:SetBullsEyeAlias("MIGHTY WOMBAT")
-AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 17000, 200, 020, 40)
+AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 35000, 330, 020, 40)
 AWACS_DARKSTAR:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
 AWACS_DARKSTAR:SetModernEraAgressive()
 
@@ -42,9 +42,3 @@ AWACS_DARKSTAR.WindowsTTSPadding = 2.5 -- seconds
 
 AWACS_DARKSTAR:SuppressScreenMessages(false)
 AWACS_DARKSTAR:__Start(5)
-
-if (debug_awacs) then
-    AWACS_DARKSTAR.debug = true -- set to true to produce more log output.
-else
-    AWACS_DARKSTAR.debug = false
-end

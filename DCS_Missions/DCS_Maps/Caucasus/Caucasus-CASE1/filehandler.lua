@@ -64,8 +64,8 @@ function loadScriptMenu(scripts_path)
 end
 
 function loadAirboss(scripts_path)
-	env.info("loading -> 4_1_4_airbos.lua")
-	dofile(scripts_path .. "4_1_4_airbos.lua")
+	env.info("loading -> 3_2_airboss.lua")
+	dofile(scripts_path .. "3_2_airboss.lua")
 end
 
 function loadElint(scripts_path)
