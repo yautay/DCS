@@ -1,7 +1,7 @@
 ZONE_SHELL_1_AAR = ZONE:New("SHELL_1_AAR")
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
-ZONE_PATROL = ZONE_POLYGON:NewFromGroupName("Patrol-Larnaca")
-ZONE_ENGAGE = ZONE_POLYGON:NewFromGroupName("ENGAGE")
+ZONE_PATROL = ZONE_POLYGON:NewFromGroupName("Patrol-Larnaca"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .5, 1, true)
+ZONE_ENGAGE = ZONE_POLYGON:NewFromGroupName("ENGAGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .5, 1, true)
 
 AW_LCRA = AIRWING:New("WH Akrotiri", "Akrotiri Air Wing")
 

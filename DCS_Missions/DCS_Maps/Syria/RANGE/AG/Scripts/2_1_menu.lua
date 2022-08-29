@@ -7,25 +7,18 @@ local ordered_elements_freq = {
 }
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
-    --FREQUENCIES.FLIGHTS.apache_1_uhf,
-    --FREQUENCIES.FLIGHTS.apache_1_vhf,
-    --FREQUENCIES.FLIGHTS.apache_1_fm,
-    --FREQUENCIES.FLIGHTS.colt_1_fm,
-	--FREQUENCIES.FLIGHTS.colt_2_uhf,
-    --FREQUENCIES.FLIGHTS.colt_2_vhf,
-    --FREQUENCIES.FLIGHTS.colt_2_fm,
-	--FREQUENCIES.FLIGHTS.roman_1_uhf,
-    --FREQUENCIES.FLIGHTS.roman_1_vhf,
-	--FREQUENCIES.FLIGHTS.enfield_1_uhf,
-    --FREQUENCIES.FLIGHTS.enfield_1_vhf,
+    FREQUENCIES.AAR.shell_1,
+    FREQUENCIES.AAR.arco,
+    FREQUENCIES.FLIGHTS.wombats_m,
+    FREQUENCIES.FLIGHTS.wombats_u
 }
 local ordered_ground_freq = {
     FREQUENCIES.GROUND.atis_lcra,
     FREQUENCIES.GROUND.gnd_lcra_v,
-    FREQUENCIES.GROUND.gnd_lcra_u,
     FREQUENCIES.GROUND.twr_lcra_v,
-    FREQUENCIES.GROUND.twr_lcra_u,
     FREQUENCIES.GROUND.app_lcra_v,
+    FREQUENCIES.GROUND.gnd_lcra_u,
+    FREQUENCIES.GROUND.twr_lcra_u,
     FREQUENCIES.GROUND.app_lcra_u
 }
 local ordered_special_freq = {
@@ -34,9 +27,9 @@ local ordered_special_freq = {
     FREQUENCIES.SPECIAL.ch_16
 }
 local ordered_tacan_data = {
-    TACAN.sc,
-    TACAN.arco,
     TACAN.shell_1,
+    TACAN.arco,
+    TACAN.sc,
 }
 local ordered_yardstick_data = {
     --ARDSTICKS.ninja_1,

@@ -51,7 +51,7 @@ mycsar.countryneutral = country.id.UN_PEACEKEEPERS
 
 mycsar.useSRS = true -- Set true to use FF\'s SRS integration
 mycsar.SRSPath = SRS_PATH -- adjust your own path in your SRS installation -- server(!)
-mycsar.SRSchannel = FREQUENCIES.SPECIAL.unicom[1] -- radio channel
+mycsar.SRSchannel = FREQUENCIES.SPECIAL.guard_lo -- radio channel
 mycsar.SRSModulation = radio.modulation.AM -- modulation
 mycsar.SRSport = SRS_PORT  -- and SRS Server port
 mycsar.SRSCulture = "en-GB" -- SRS voice culture

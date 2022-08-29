@@ -1,6 +1,7 @@
 FREQUENCIES = {
     AWACS = {
         darkstar = {244.00, "AWACS Darkstar UHF", "AM"},
+        wizard = {244.25, "AWACS Wizard UHF", "AM"},
     },
     AAR = {
         shell_1 = {251.00, "Tanker Shell One UHF", "AM"},
@@ -8,6 +9,7 @@ FREQUENCIES = {
     },
     FLIGHTS = {
         wombats_u = {255.50, "SQUADRON UHF", "AM"},
+        wombats_m = {"MIDS 117", "SQUADRON MIDS", ""},
         hornet_1_u = {251.30, "HORNET ONE UHF", "AM"},
         hornet_2_u = {251.60, "HORNET TWO UHF", "AM"},
         squid_1_u = {252.30, "SQUID ONE UHF", "AM"},
@@ -37,7 +39,7 @@ FREQUENCIES = {
         red_crown = {258.20, "TF 73 HUMAN Red Crown UHF", "AM"},
         strike = {257.70, "TF 73 HUMAN Strike UHF", "AM"},
         catcc = {258.00, "TF 73 HUMAN CATCC UHF", "AM"},
-        departure = {258.30, "TF 73 HUMAN CATCC UHF", "AM"},
+        departure = {258.30, "TF 73 HUMAN Departure UHF", "AM"},
         approach_1 = {258.50, "TF 73 HUMAN Approach 1 UHF", "AM"},
         approach_2 = {258.70, "TF 73 HUMAN Approach 2 UHF", "AM"},
     },
@@ -61,8 +63,8 @@ ICLS = {
 }
 TACAN = {
     sc = {74, "X", "CVN", "CVN-73"},
-    arco = {1, "Y", "RCV", "Recovery Tanker CVN-75"},
-    shell_1 = {51, "Y", "SHE", "Tanker Shell East"},
+    arco = {1, "Y", "RCV", "Recovery Tanker CVN-75", false},
+    shell_1 = {51, "Y", "SHE", "Tanker Shell East", false},
 }
 YARDSTICKS = {
     sting_1 = {"STING ONE", 37, 100, "Y"},
