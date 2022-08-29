@@ -1,17 +1,10 @@
-_SETTINGS:SetImperial()
-_SETTINGS:SetPlayerMenuOff()
-
 FREQUENCIES = {
     AWACS = {
-        magic = {241.50, "AWACS HUMAN Magic UHF", "AM"},
-        darkstar = {244.00, "AWACS MOOSE Darkstar UHF", "AM"},
-        wizard = {241.80, "AWACS DCS Wizard UHF", "AM"},
+        darkstar = {244.00, "AWACS Darkstar UHF", "AM"},
     },
     AAR = {
-        shell_1 = {250.20, "Tanker Shell One UHF", "AM"},
-        shell_2 = {250.40, "Tanker Shell Two UHF", "AM"},
-        shell_3 = {250.60, "Tanker Shell Three UHF", "AM"},
-        arco = {250.80, "CVN 73 Recovery Tanker UHF", "AM"},
+        shell_1 = {251.00, "Tanker Shell One UHF", "AM"},
+        arco = {243.50, "TANKER Arco UHF", "AM"}
     },
     FLIGHTS = {
         wombats_u = {255.50, "SQUADRON UHF", "AM"},
@@ -49,15 +42,18 @@ FREQUENCIES = {
         approach_2 = {258.70, "TF 73 HUMAN Approach 2 UHF", "AM"},
     },
     GROUND = {
-        atis_ramat_david_vhf = {121.75, "ATIS Ramat David VHF", "AM"},
-        tower_ramat_david_uhf = {251.05, "Tower Ramat David UHF", "AM"},
-        tower_ramat_david_vhf = {118.60, "Tower Ramat David VHF", "AM"},
-
+        atis_lcra = {125.000, "ATIS RAF Akrotiri VHF", "AM"},
+        twr_lcra_v = {130.075, "Tower RAF Akrotiri VHF", "AM"},
+        twr_lcra_u = {339.850, "Tower RAF Akrotiri UHF", "AM"},
+        app_lcra_v = {123.600, "Tower RAF Akrotiri VHF", "AM"},
+        app_lcra_u = {235.050, "Tower RAF Akrotiri UHF", "AM"},
+        gnd_lcra_v = {122.100, "Tower RAF Akrotiri VHF", "AM"},
+        gnd_lcra_u = {240.100, "Tower RAF Akrotiri UHF", "AM"},
     },
     SPECIAL = {
-        guard_hi = {243.00, "Guard Freq UHF", "AM"},
-        guard_lo = {121.50, "Guard Freq VHF", "AM"},
-        unicom =  {242.00, "Unicom UHF", "AM"},
+        guard_hi = {243.00, "Guard UHF", "AM"},
+        guard_lo = {121.50, "Guard VHF", "AM"},
+        ch_16 = {156.8, "Maritime Ch16 VHF", "AM"}
     }
 }
 ICLS = {
@@ -65,34 +61,18 @@ ICLS = {
 }
 TACAN = {
     sc = {74, "X", "CVN", "CVN-73"},
-    shell_1 = {51, "Y", "SHE", "Tanker Shell One", false},
-    shell_2 = {52, "Y", "SHE", "Tanker Shell Two", false},
-    shell_3 = {53, "Y", "SHW", "Tanker Shell Three", false},
-    arco = {69, "Y", "RCV", "Recovery Tanker CVN 73", false},
+    arco = {1, "Y", "RCV", "Recovery Tanker CVN-75"},
+    shell_1 = {51, "Y", "SHE", "Tanker Shell East"},
 }
 YARDSTICKS = {
-    hornet_1 = {"HORNET ONE", 37, 100, "Y"},
-    hornet_2 = {"HORNET TWO", 38, 101, "Y"},
-    squid_1 = {"SQUID ONE", 39, 102, "Y"},
-    squid_2 = {"SQUID TWO", 40, 103, "Y"},
-    joker_1 = {"JOKER ONE", 41, 104, "Y"},
-    joker_2 = {"JOKER TWO", 42, 105, "Y"},
+    sting_1 = {"STING ONE", 37, 100, "Y"},
+    joker_1 = {"JOKER TWO", 38, 101, "Y"},
+    hawk_1 = {"HAWK ONE", 39, 102, "Y"},
+    devil_1 = {"DEVIL TWO", 40, 103, "Y"},
+    squid_1 = {"SQUID ONE", 41, 104, "Y"},
+    check_1 = {"CHECK TWO", 42, 105, "Y"},
+    viper_1 = {"VIPER ONE", 43, 106, "Y"},
+    venom_1 = {"VENOM TWO", 44, 107, "Y"},
+    jedi_1 = {"JEDI ONE", 45, 108, "Y"},
+    ninja_1 = {"NINJA TWO", 46, 109, "Y"},
 }
-
-
-
---AIRWINGS
-aw_ramat_david = true
-
--- FEATURES
-debug_csar = false
-debug_awacs = false
---
-menu_dump_to_file = true
-menu_show_freqs = false
-
---MISSION SPECIFIC
-
-sam_ahmed = true
-sam_fakir = true
-sam_shamir = true

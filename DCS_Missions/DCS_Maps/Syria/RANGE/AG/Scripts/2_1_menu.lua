@@ -20,31 +20,29 @@ local ordered_flight_freq = {
     --FREQUENCIES.FLIGHTS.enfield_1_vhf,
 }
 local ordered_ground_freq = {
-    FREQUENCIES.GROUND.tower_hatay_uhf,
-    FREQUENCIES.GROUND.tower_hatay_vhf,
-    FREQUENCIES.GROUND.atis_hatay_vhf,
-    FREQUENCIES.GROUND.hatay_range_uhf,
-    --FREQUENCIES.GROUND.farp_warsaw_uhf,
-    --FREQUENCIES.GROUND.farp_warsaw_ndb,
+    FREQUENCIES.GROUND.atis_lcra,
+    FREQUENCIES.GROUND.gnd_lcra_v,
+    FREQUENCIES.GROUND.gnd_lcra_u,
+    FREQUENCIES.GROUND.twr_lcra_v,
+    FREQUENCIES.GROUND.twr_lcra_u,
+    FREQUENCIES.GROUND.app_lcra_v,
+    FREQUENCIES.GROUND.app_lcra_u
 }
 local ordered_special_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
     FREQUENCIES.SPECIAL.guard_lo,
-    FREQUENCIES.SPECIAL.unicom,
+    FREQUENCIES.SPECIAL.ch_16
 }
 local ordered_tacan_data = {
-    --TACAN.sc,
+    TACAN.sc,
+    TACAN.arco,
     TACAN.shell_1,
-    TACAN.shell_2,
-    TACAN.shell_3,
-    --TACAN.texaco_1,
-    --TACAN.texaco_2,
 }
 local ordered_yardstick_data = {
     --ARDSTICKS.ninja_1,
 }
 local ordered_icls_data = {
-    --ICLS.sc,
+    ICLS.sc,
 }
 
 function Msg(arg)
