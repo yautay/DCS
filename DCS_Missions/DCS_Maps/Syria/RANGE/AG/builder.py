@@ -31,10 +31,9 @@ scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
 
 scripts_order["\n--AW.2 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
-scripts_order["\n--SCR - SCORING\n"] = PATH_SCRIPT_SCORING
+# scripts_order["\n--SCR - SCORING\n"] = PATH_SCRIPT_SCORING
 scripts_order["\n--5.1 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
 
-scripts_order["\n--7 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 
 content_scripts = ""
 content_frameworks = ""

@@ -8,9 +8,8 @@ local ordered_elements_freq = {
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
     FREQUENCIES.AAR.shell_1,
+    FREQUENCIES.AAR.texaco_1,
     FREQUENCIES.AAR.arco,
-    FREQUENCIES.FLIGHTS.wombats_m,
-    FREQUENCIES.FLIGHTS.wombats_u
 }
 local ordered_ground_freq = {
     FREQUENCIES.GROUND.atis_lcra,
@@ -28,14 +27,17 @@ local ordered_special_freq = {
 }
 local ordered_tacan_data = {
     TACAN.shell_1,
+    TACAN.texaco_1,
     TACAN.arco,
     TACAN.sc,
+    TACAN.lha
 }
 local ordered_yardstick_data = {
     --ARDSTICKS.ninja_1,
 }
 local ordered_icls_data = {
     ICLS.sc,
+    ICLS.lha
 }
 
 function Msg(arg)
@@ -106,19 +108,6 @@ local icls_info = icls_text(ordered_icls_data)
 local freqs_info = elements_freqs_info .. flight_freqs_info .. ground_freqs_info .. special_freqs_info
 
 MenuSeler = MENU_MISSION:New("Server Menu")
-
-if (menu_show_freqs) then
-    MenuFreq = MENU_MISSION:New("DATA", MenuSeler)
-    MENU_MISSION_COMMAND:New("SPECIAL", MenuFreq, Msg, {special_freqs_info, 10})
-    MENU_MISSION_COMMAND:New("ELEMENTS", MenuFreq, Msg, {elements_freqs_info, 10})
-    MENU_MISSION_COMMAND:New("FLIGHTS", MenuFreq, Msg, {flight_freqs_info, 10})
-    MENU_MISSION_COMMAND:New("GROUND", MenuFreq, Msg, {ground_freqs_info, 10})
-    MENU_MISSION_COMMAND:New("TACAN", MenuFreq, Msg, {tacan_info, 10})
-    MENU_MISSION_COMMAND:New("YARDSTICK", MenuFreq, Msg, {yardsticks_info, 10})
-    MENU_MISSION_COMMAND:New("ICLS", MenuFreq, Msg, {icls_info, 10})
-end
-
-MenuFeatures = MENU_MISSION:New("Features", MenuSeler)
 
 if (menu_dump_to_file) then
     save_to_file("freqs_info", freqs_info)

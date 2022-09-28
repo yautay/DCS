@@ -1,4 +1,4 @@
-AtisHatay = ATIS:New(AIRBASE.Syria.Ramat_David, FREQUENCIES.GROUND.atis_lcra[1])
+AtisHatay = ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
 AtisHatay:SetRadioRelayUnitName("LCRA Relay")
 AtisHatay:SetTowerFrequencies({FREQUENCIES.GROUND.twr_lcra_v[1], FREQUENCIES.GROUND.twr_lcra_u[1]})
 AtisHatay:AddILS(109.70, "29")

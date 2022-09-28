@@ -24,16 +24,16 @@ function tanker_platform_updater(airwing)
                 --    unit_beacon:ActivateTACAN(TACAN.shell_3[1], TACAN.shell_3[2], TACAN.shell_3[3], TACAN.shell_3[5])
                 end
 
-            --elseif (mission.refuelSystem == 0) then
-            --    -- broom stick
-            --    callsign = CALLSIGN.Tanker.Texaco
-            --    if (string.find(mission:GetName(), "One")) then
-            --        index = 1
-            --        unit_beacon:ActivateTACAN(TACAN.texaco_1[1], TACAN.texaco_1[2], TACAN.texaco_1[3], TACAN.texaco_1[5])
+            elseif (mission.refuelSystem == 0) then
+                -- broom stick
+                callsign = CALLSIGN.Tanker.Texaco
+                if (string.find(mission:GetName(), "One")) then
+                    index = 1
+                    unit_beacon:ActivateTACAN(TACAN.texaco_1[1], TACAN.texaco_1[2], TACAN.texaco_1[3], TACAN.texaco_1[5])
             --    elseif (string.find(mission:GetName(), "Two")) then
             --        index = 2
             --        unit_beacon:ActivateTACAN(TACAN.texaco_2[1], TACAN.texaco_2[2], TACAN.texaco_2[3], TACAN.texaco_2[5])
-            --    end
+                end
             end
             env.info(string.format("TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
             unit_alive:CommandSetCallsign(callsign, index, 1)

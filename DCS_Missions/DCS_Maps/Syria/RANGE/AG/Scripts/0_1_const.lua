@@ -6,3 +6,5 @@ CONST = {
 
     }
 }
+
+menu_dump_to_file = true
