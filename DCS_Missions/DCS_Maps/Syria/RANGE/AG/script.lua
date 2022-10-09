@@ -17,25 +17,19 @@ FREQUENCIES = {
         wizard = {244.50, "AWACS Wizard UHF", "AM"},
     },
     AAR = {
-        shell_1 = {251.00, "Tanker Shell One UHF", "AM"},
-        texaco_1 = {252.00, "Tanker Texaco One UHF", "AM"},
-        arco = {243.50, "Tanker Arco UHF", "AM"}
+        shell_1 = {252.10, "Tanker Shell One UHF", "AM"},
+        texaco_1 = {252.30, "Tanker Texaco One UHF", "AM"},
+        arco = {252.90, "Tanker Arco UHF", "AM"}
     },
     FLIGHTS = {
-        wombats_u = {255.50, "SQUADRON UHF", "AM"},
-        wombats_m = {"MIDS 117", "SQUADRON MIDS", ""},
-        hornet_1_u = {251.30, "HORNET ONE UHF", "AM"},
-        hornet_2_u = {251.60, "HORNET TWO UHF", "AM"},
-        squid_1_u = {252.30, "SQUID ONE UHF", "AM"},
-        squid_2_u = {252.60, "SQUID TWO VHF", "AM"},
-        joker_1_u = {253.30, "JOKER ONE UHF", "AM"},
-        joker_2_u = {253.60, "JOKER TWO VHF", "AM"},
-        hornet_1_m = {"MIDS 11", "HORNET ONE MIDS", ""},
-		hornet_2_m = {"MIDS 12", "HORNET TWO MIDS", ""},
-        squid_1_m = {"MIDS 21", "SQUID ONE MIDS", ""},
-        squid_2_m = {"MIDS 22", "SQUID TWO MIDS", ""},
-		joker_1_m = {"MIDS 31", "JOKER ONE MIDS", ""},
-		joker_1_m = {"MIDS 32", "JOKER TWO MIDS", ""},
+        vfma212_1_u = {266.20, "SQUADRON VFMA-212 UHF", "AM"},
+        vfma212_2_u = {266.25, "SQUADRON VFMA-212 UHF", "AM"},
+        vfma212_3_u = {266.80, "SQUADRON VFMA-212 UHF", "AM"},
+        templar_u = {266.30, "TEMPLAR UHF", "AM"},
+        assasin_u = {266.35, "ASSASIN UHF", "AM"},
+        palladin_u = {266.40, "PALLADIN UHF", "AM"},
+        crusader_u = {266.70, "CRUSADER UHF", "AM"},
+        knight_u = {266.75, "KNIGHT UHF", "AM"},
     },
     ELEMENTS = {
 	    shamir_u = {251.00, "SHAMIR UHF", "AM"},
@@ -47,20 +41,19 @@ FREQUENCIES = {
     },
 
     CV = {
-        dcs_sc = {127.50, "CVN-75 DCS VHF", "AM"},
-        paddles = {260.00, "CVN-75 HUMAN Paddles UHF", "AM"},
-        marshal = {262.00, "CVN-75 AIRBOSS/HUMAN Marshal/Stack UHF", "AM"},
-        red_crown = {258.20, "TF-1 HUMAN Red Crown UHF", "AM"},
-        strike = {257.70, "TF-1 HUMAN Strike UHF", "AM"},
-        catcc = {258.00, "TF-1 HUMAN CATCC UHF", "AM"},
-        departure = {258.30, "TF-1 HUMAN Departure UHF", "AM"},
-        approach_1 = {258.50, "TF-1 HUMAN Approach 1 UHF", "AM"},
-        approach_2 = {258.70, "TF-1 HUMAN Approach 2 UHF", "AM"},
+        dcs_sc = {127.50, "DCS SC ATC VHF", "AM"},
+        btn1 = {260.00, "HUMAN Paddles/Tower C1 UHF", "AM"},
+        btn2 = {260.10, "HUMAN Departure C2/C3 UHF", "AM"},
+        btn3 = {249.10, "HUMAN Strike UHF", "AM"},
+        btn4 = {258.20, "HUMAN Red Crown UHF", "AM"},
+        btn15 = {260.20, "HUMAN CCA Fianal A", "AM"},
+        btn16 = {260.30, "AIRBOSS/HUMAN Marshal UHF", "AM"},
+        btn17 = {260.40, "HUMAN CCA Fianal B", "AM"},
     },
     LHA = {
         dcs_sc = {127.8, "LHA-1 DCS VHF", "AM"},
-        paddles = {267.00, "LHA-1 HUMAN Tower UHF", "AM"},
-        marshal = {267.5, "LHA-1 AIRBOSS/HUMAN Marshal UHF", "AM"},
+        tower = {267.00, "LHA-1 HUMAN Tower UHF", "AM"},
+        radar = {267.50, "LHA-1 AIRBOSS/HUMAN Marshal UHF", "AM"},
     },
     GROUND = {
         atis_lcra = {125.000, "ATIS RAF Akrotiri VHF", "AM"},
@@ -145,16 +138,10 @@ function sleep(n)  -- seconds
    end
 end
 
-function data_extractor_static_object(static_object)
-    local name = static_object:GetName()
-    local coordinate = static_object:GetCoordinate()
-    local lldms = coordinate:ToStringLLDMS()
-    local llddm = coordinate:ToStringLLDMS()
-    local mgrs = coordinate:ToStringMGRS()
-    local height = coordinate:GetLandHeight()
-    local msg = string.format("Target: %s\n   LLDMS -> %s\n   LLDDM -> %s\n   MGRS -> %s\n   HEIGHT[Ft] -> %d\n", name, lldms, llddm, mgrs, height)
-    env.info(msg)
-	return msg
+function calculateCoordinateFromRoute(startCoordObject, course, distance)
+    local start_coord = startCoordObject
+    local end_coord = start_coord:Translate(distance, course, false, false)
+	return end_coord
 end
 --2.1 - MENU
 local ordered_elements_freq = {
@@ -266,7 +253,7 @@ local icls_info = icls_text(ordered_icls_data)
 
 local freqs_info = elements_freqs_info .. flight_freqs_info .. ground_freqs_info .. special_freqs_info
 
-MenuSeler = MENU_MISSION:New("Server Menu")
+MenuSrver = MENU_MISSION:New("Server Menu")
 
 if (menu_dump_to_file) then
     save_to_file("freqs_info", freqs_info)
@@ -329,7 +316,7 @@ cvn_75_sar:Start()
 cvn_75_airboss = AIRBOSS:New(name_CVN_75)
 cvn_75_airboss:SetTACAN(TACAN.sc[1], TACAN.sc[2], TACAN.sc[3])
 cvn_75_airboss:SetICLS(ICLS.sc[1], ICLS.sc[2])
-cvn_75_airboss:SetMarshalRadio(FREQUENCIES.CV.marshal[1], FREQUENCIES.CV.marshal[3])
+cvn_75_airboss:SetMarshalRadio(FREQUENCIES.CV.btn16[1], FREQUENCIES.CV.btn16[3])
 cvn_75_airboss:SetRadioRelayMarshal(name_CVN_75_RALAY_MARSHAL)
 cvn_75_airboss:SetQueueUpdateTime(20)
 
@@ -385,7 +372,7 @@ lha_1_sar:Start()
 lha_1_airboss = AIRBOSS:New(name_LHA_1)
 lha_1_airboss:SetTACAN(TACAN.lha[1], TACAN.lha[2], TACAN.lha[3])
 lha_1_airboss:SetICLS(ICLS.lha[1], ICLS.lha[2])
-lha_1_airboss:SetMarshalRadio(FREQUENCIES.LHA.marshal[1], FREQUENCIES.LHA.marshal[3])
+lha_1_airboss:SetMarshalRadio(FREQUENCIES.LHA.radar[1], FREQUENCIES.LHA.radar[3])
 lha_1_airboss:SetRadioRelayMarshal(name_LHA_1_RALAY_MARSHAL)
 lha_1_airboss:SetQueueUpdateTime(30)
 lha_1_airboss:SetDefaultPlayerSkill("Naval Aviator")
@@ -464,6 +451,10 @@ mycsar.csarUsePara = false -- If set to true, will use the LandingAfterEjection 
 
 
 --AW.2 - AW AKROTIRI
+function orbit_mark(route, text)
+    route[1]:LineToAll(calculateCoordinateFromRoute(route[1], route[4], route[5], false, false), 2, CONST.RGB.range, 1, 2, true, text)
+end
+
 ZONE_SHELL_1_AAR = ZONE:New("SHELL_1_AAR")
 ZONE_TEXACO_1_AAR = ZONE:New("TEXACO_1_AAR")
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
@@ -495,13 +486,19 @@ AW_LCRA_AAR:SetTurnoverTime(30, 5)
 AW_LCRA:AddSquadron(AW_LCRA_AAR)
 AW_LCRA:NewPayload("ME AAR", -1, { AUFTRAG.Type.TANKER }, 100)
 
-MISSION_Shell_1 = AUFTRAG:NewTANKER(ZONE_SHELL_1_AAR:GetCoordinate(), 25000, 415, 45, 20, 1)
+local Shell_1_1_route = {ZONE_SHELL_1_AAR:GetCoordinate(), 25000, 415, 45, 20}
+orbit_mark(Shell_1_1_route, "SHELL 1-1")
+
+MISSION_Shell_1 = AUFTRAG:NewTANKER(Shell_1_1_route[1], Shell_1_1_route[2], Shell_1_1_route[3], Shell_1_1_route[4], Shell_1_1_route[5], 1)
 MISSION_Shell_1:AssignSquadrons({ AW_LCRA_AAR_MPRS })
 MISSION_Shell_1:SetRadio(FREQUENCIES.AAR.shell_1[1])
 MISSION_Shell_1:SetName("Shell One")
 AW_LCRA:AddMission(MISSION_Shell_1)
 
-MISSION_Texaco_1 = AUFTRAG:NewTANKER(ZONE_TEXACO_1_AAR:GetCoordinate(), 23000, 405, 45, 20, 0)
+local Texaco_1_1_route = {ZONE_TEXACO_1_AAR:GetCoordinate(), 23000, 405, 45, 20}
+orbit_mark(Texaco_1_1_route, "TEXACO 1-1")
+
+MISSION_Texaco_1 = AUFTRAG:NewTANKER(Texaco_1_1_route[1], Texaco_1_1_route[2], Texaco_1_1_route[3], Texaco_1_1_route[4], Texaco_1_1_route[5], 0)
 MISSION_Texaco_1:AssignSquadrons({ AW_LCRA_AAR })
 MISSION_Texaco_1:SetRadio(FREQUENCIES.AAR.texaco_1[1])
 MISSION_Texaco_1:SetName("Texaco One")
@@ -518,10 +515,12 @@ AW_LCRA:AddSquadron(AW_LCRA_AWACS)
 AW_LCRA:NewPayload("ME AWACS RJ", -1, { AUFTRAG.Type.ORBIT }, 100)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "KILLBOX", "LARNACA_PARTOL", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
+local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS, 30000, 330, 180, 80}
+orbit_mark(Darkstar_1_1_route, "DARKSTAR 1-1")
 
+AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "KILLBOX", "LARNACA_PARTOL", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
 AWACS_DARKSTAR:SetBullsEyeAlias("CRUSADER")
-AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, 30000, 330, 180, 80)
+AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, Darkstar_1_1_route[2], Darkstar_1_1_route[3], Darkstar_1_1_route[4], Darkstar_1_1_route[5])
 AWACS_DARKSTAR:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
 AWACS_DARKSTAR:SetModernEraAggressive()
 
@@ -539,7 +538,7 @@ AWACS_DARKSTAR.GoogleTTSPadding = 1 -- seconds
 AWACS_DARKSTAR.WindowsTTSPadding = 2.5 -- seconds
 
 AWACS_DARKSTAR:SuppressScreenMessages(false)
-AWACS_DARKSTAR:__Start(1)
+AWACS_DARKSTAR:__Start(2)
 
 --5.1 - SCHEDULER
 function tanker_platform_updater(airwing)

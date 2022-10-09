@@ -4,50 +4,38 @@ FREQUENCIES = {
         wizard = {244.50, "AWACS Wizard UHF", "AM"},
     },
     AAR = {
-        shell_1 = {251.00, "Tanker Shell One UHF", "AM"},
-        texaco_1 = {252.00, "Tanker Texaco One UHF", "AM"},
-        arco = {243.50, "Tanker Arco UHF", "AM"}
+        shell_1 = {252.10, "Tanker Shell One UHF", "AM"},
+        texaco_1 = {252.30, "Tanker Texaco One UHF", "AM"},
+        arco = {252.90, "Tanker Arco UHF", "AM"}
     },
     FLIGHTS = {
-        wombats_u = {255.50, "SQUADRON UHF", "AM"},
-        wombats_m = {"MIDS 117", "SQUADRON MIDS", ""},
-        hornet_1_u = {251.30, "HORNET ONE UHF", "AM"},
-        hornet_2_u = {251.60, "HORNET TWO UHF", "AM"},
-        squid_1_u = {252.30, "SQUID ONE UHF", "AM"},
-        squid_2_u = {252.60, "SQUID TWO VHF", "AM"},
-        joker_1_u = {253.30, "JOKER ONE UHF", "AM"},
-        joker_2_u = {253.60, "JOKER TWO VHF", "AM"},
-        hornet_1_m = {"MIDS 11", "HORNET ONE MIDS", ""},
-		hornet_2_m = {"MIDS 12", "HORNET TWO MIDS", ""},
-        squid_1_m = {"MIDS 21", "SQUID ONE MIDS", ""},
-        squid_2_m = {"MIDS 22", "SQUID TWO MIDS", ""},
-		joker_1_m = {"MIDS 31", "JOKER ONE MIDS", ""},
-		joker_1_m = {"MIDS 32", "JOKER TWO MIDS", ""},
+        vfma212_1_u = {266.20, "SQUADRON VFMA-212 UHF", "AM"},
+        vfma212_2_u = {266.25, "SQUADRON VFMA-212 UHF", "AM"},
+        vfma212_3_u = {266.80, "SQUADRON VFMA-212 UHF", "AM"},
+        templar_u = {266.30, "TEMPLAR UHF", "AM"},
+        assasin_u = {266.35, "ASSASIN UHF", "AM"},
+        palladin_u = {266.40, "PALLADIN UHF", "AM"},
+        crusader_u = {266.70, "CRUSADER UHF", "AM"},
+        knight_u = {266.75, "KNIGHT UHF", "AM"},
+        viper = {270.10, "VIPER ONE UHF", "AM"},
+        viper = {270.20, "VIPER ONE UHF", "AM"},
+        viper_3 = {270.30, "VIPER ONE UHF", "AM"},
+        viper_4 = {270.40, "VIPER ONE UHF", "AM"}
     },
-    ELEMENTS = {
-	    shamir_u = {251.00, "SHAMIR UHF", "AM"},
-        shamir_m = {"MIDS 1", "SHAMIR MIDS", ""},
-        ahmed_u = {252.00, "SHAMIR UHF", "AM"},
-        ahmed_m = {"MIDS 2", "SHAMIR MIDS", ""},
-        fakir_u = {253.00, "SHAMIR UHF", "AM"},
-        fakir_m = {"MIDS 3", "SHAMIR MIDS", ""},
-    },
-
     CV = {
-        dcs_sc = {127.50, "CVN-75 DCS VHF", "AM"},
-        paddles = {260.00, "CVN-75 HUMAN Paddles UHF", "AM"},
-        marshal = {262.00, "CVN-75 AIRBOSS/HUMAN Marshal/Stack UHF", "AM"},
-        red_crown = {258.20, "TF-1 HUMAN Red Crown UHF", "AM"},
-        strike = {257.70, "TF-1 HUMAN Strike UHF", "AM"},
-        catcc = {258.00, "TF-1 HUMAN CATCC UHF", "AM"},
-        departure = {258.30, "TF-1 HUMAN Departure UHF", "AM"},
-        approach_1 = {258.50, "TF-1 HUMAN Approach 1 UHF", "AM"},
-        approach_2 = {258.70, "TF-1 HUMAN Approach 2 UHF", "AM"},
+        dcs_sc = {127.50, "DCS SC ATC VHF", "AM"},
+        btn1 = {260.00, "HUMAN Paddles/Tower C1 UHF", "AM"},
+        btn2 = {260.10, "HUMAN Departure C2/C3 UHF", "AM"},
+        btn3 = {249.10, "HUMAN Strike UHF", "AM"},
+        btn4 = {258.20, "HUMAN Red Crown UHF", "AM"},
+        btn15 = {260.20, "HUMAN CCA Fianal A", "AM"},
+        btn16 = {260.30, "AIRBOSS/HUMAN Marshal UHF", "AM"},
+        btn17 = {260.40, "HUMAN CCA Fianal B", "AM"},
     },
     LHA = {
         dcs_sc = {127.8, "LHA-1 DCS VHF", "AM"},
-        paddles = {267.00, "LHA-1 HUMAN Tower UHF", "AM"},
-        marshal = {267.5, "LHA-1 AIRBOSS/HUMAN Marshal UHF", "AM"},
+        tower = {267.00, "LHA-1 HUMAN Tower UHF", "AM"},
+        radar = {267.50, "LHA-1 AIRBOSS/HUMAN Marshal UHF", "AM"},
     },
     GROUND = {
         atis_lcra = {125.000, "ATIS RAF Akrotiri VHF", "AM"},
@@ -61,7 +49,7 @@ FREQUENCIES = {
     SPECIAL = {
         guard_hi = {243.00, "Guard UHF", "AM"},
         guard_lo = {121.50, "Guard VHF", "AM"},
-        ch_16 = {156.8, "Maritime Ch16 VHF", "AM"}
+        ch_16 = {156.8, "Maritime Ch16 VHF", "FM"}
     }
 }
 ICLS = {
