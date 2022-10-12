@@ -5,7 +5,8 @@ CONST = {
         range = {1,.5,0},
         farp = {.5,.5,1},
         zone_red = {1, 0 ,0},
-
+        zone_patrol = {1, 1, 0},
+        zone_bvr = {1, .5, 1}
     }
 }
 
@@ -313,7 +314,7 @@ cvn_75_airboss:SetTACAN(TACAN.sc[1], TACAN.sc[2], TACAN.sc[3])
 cvn_75_airboss:SetICLS(ICLS.sc[1], ICLS.sc[2])
 cvn_75_airboss:SetMarshalRadio(FREQUENCIES.CV.btn16[1], FREQUENCIES.CV.btn16[3])
 cvn_75_airboss:SetRadioRelayMarshal(name_CVN_75_RALAY_MARSHAL)
-cvn_75_airboss:SetQueueUpdateTime(20)
+cvn_75_airboss:SetQueueUpdateTime(30)
 
 --local case1 = cvn_75_airboss:AddRecoveryWindow("18:17", "19:00", 1, nil, true, 25)
 --local case2_2 = cvn_75_airboss:AddRecoveryWindow("19:05", "19:30", 2, nil, true, 25)
@@ -322,7 +323,7 @@ cvn_75_airboss:SetQueueUpdateTime(20)
 --local case1_2 = cvn_75_airboss:AddRecoveryWindow("06:35+1", "19:00+1", 1, nil, true, 25)
 
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")
-cvn_75_airboss:SetMenuRecovery(30, 25, false)
+cvn_75_airboss:SetMenuRecovery(30, 28, false)
 cvn_75_airboss:SetDespawnOnEngineShutdown()
 cvn_75_airboss:Load()
 cvn_75_airboss:SetAutoSave()
@@ -373,7 +374,7 @@ lha_1_airboss:SetQueueUpdateTime(30)
 lha_1_airboss:SetDefaultPlayerSkill("Naval Aviator")
 lha_1_airboss:SetMenuRecovery(30, 7, false)
 lha_1_airboss:SetDespawnOnEngineShutdown()
-lha_1_airboss:SetHandleAIOFF()
+lha_1_airboss:SetHandleAION()
 lha_1_airboss:Start()
 
 function lha_1_airboss:OnAfterStart(From, Event, To)
@@ -453,8 +454,8 @@ end
 ZONE_SHELL_1_AAR = ZONE:New("SHELL_1_AAR")
 ZONE_TEXACO_1_AAR = ZONE:New("TEXACO_1_AAR")
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
-ZONE_PATROL = ZONE_POLYGON:NewFromGroupName("LARNACA_PARTOL"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .5, 1, true)
-ZONE_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .5, 1, true)
+ZONE_PATROL = ZONE_POLYGON:NewFromGroupName("LARNACA_PARTOL"):DrawZone(2, CONST.RGB.zone_patrol, 1, CONST.RGB.zone_patrol, .5, 1, true)
+ZONE_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX"):DrawZone(2, CONST.RGB.zone_bvr, 1, CONST.RGB.zone_bvr, .5, 1, true)
 
 AW_LCRA = AIRWING:New("WH Akrotiri", "Akrotiri Air Wing")
 
@@ -481,7 +482,7 @@ AW_LCRA_AAR:SetTurnoverTime(30, 5)
 AW_LCRA:AddSquadron(AW_LCRA_AAR)
 AW_LCRA:NewPayload("ME AAR", -1, { AUFTRAG.Type.TANKER }, 100)
 
-local Shell_1_1_route = {ZONE_SHELL_1_AAR:GetCoordinate(), 25000, 415, 45, 20}
+local Shell_1_1_route = {ZONE_SHELL_1_AAR:GetCoordinate(), 28000, 480, 135, 40}
 orbit_mark(Shell_1_1_route, "SHELL 1-1")
 
 MISSION_Shell_1 = AUFTRAG:NewTANKER(Shell_1_1_route[1], Shell_1_1_route[2], Shell_1_1_route[3], Shell_1_1_route[4], Shell_1_1_route[5], 1)
@@ -490,7 +491,7 @@ MISSION_Shell_1:SetRadio(FREQUENCIES.AAR.shell_1[1])
 MISSION_Shell_1:SetName("Shell One")
 AW_LCRA:AddMission(MISSION_Shell_1)
 
-local Texaco_1_1_route = {ZONE_TEXACO_1_AAR:GetCoordinate(), 23000, 405, 45, 20}
+local Texaco_1_1_route = {ZONE_TEXACO_1_AAR:GetCoordinate(), 30000, 480, 0, 40}
 orbit_mark(Texaco_1_1_route, "TEXACO 1-1")
 
 MISSION_Texaco_1 = AUFTRAG:NewTANKER(Texaco_1_1_route[1], Texaco_1_1_route[2], Texaco_1_1_route[3], Texaco_1_1_route[4], Texaco_1_1_route[5], 0)
@@ -510,7 +511,7 @@ AW_LCRA:AddSquadron(AW_LCRA_AWACS)
 AW_LCRA:NewPayload("ME AWACS RJ", -1, { AUFTRAG.Type.ORBIT }, 100)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 30000, 330, 180, 80}
+local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 35000, 450, 180, 80}
 orbit_mark(Darkstar_1_1_route, "DARKSTAR 1-1")
 
 AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "KILLBOX", "LARNACA_PARTOL", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
@@ -558,7 +559,7 @@ AW_LCLK_AAR_C130:SetTurnoverTime(30, 5)
 AW_LCLK:AddSquadron(AW_LCLK_AAR_C130)
 AW_LCLK:NewPayload("ME AAR C130", -1, { AUFTRAG.Type.TANKER }, 100)
 
-local Shell_2_1_route = {ZONE_SHELL_2_AAR:GetCoordinate(), 15000, 300, 0, 20}
+local Shell_2_1_route = {ZONE_SHELL_2_AAR:GetCoordinate(), 20000, 290, 0, 40}
 orbit_mark(Shell_2_1_route, "SHELL 2-1")
 
 MISSION_Shell_2 = AUFTRAG:NewTANKER(Shell_2_1_route[1], Shell_2_1_route[2], Shell_2_1_route[3], Shell_2_1_route[4], Shell_2_1_route[5], 1)
@@ -567,9 +568,73 @@ MISSION_Shell_2:SetRadio(FREQUENCIES.AAR.shell_2[1])
 MISSION_Shell_2:SetName("Shell Two")
 AW_LCLK:AddMission(MISSION_Shell_2)
 
+--AW.3 - AW ASSAD
+ZONE_RED_AAR = ZONE:New("RED_AAR")
+ZONE_RED_AWACS = ZONE:New("RED_AWACS")
+ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PARTOL")
+ZONE_RED_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX")
+
+AW_Assad = AIRWING:New("Static Warehouse-4", "Assad Air Wing")
+
+AW_Assad:SetMarker(false)
+AW_Assad:SetAirbase(AIRBASE:FindByName(AIRBASE.Syria.Bassel_Al_Assad))
+AW_Assad:SetRespawnAfterDestroyed(600)
+AW_Assad:__Start(2)
+
+AW_Assad_AAR = SQUADRON:New("Red AAR", 3, "Red AAR Squadron")
+AW_Assad_AAR:AddMissionCapability({ AUFTRAG.Type.TANKER }, 100)
+AW_Assad_AAR:SetTakeoffType("Hot")
+AW_Assad_AAR:SetFuelLowRefuel(false)
+AW_Assad_AAR:SetFuelLowThreshold(0.3)
+AW_Assad_AAR:SetTurnoverTime(30, 5)
+AW_Assad:AddSquadron(AW_Assad_AAR)
+AW_Assad:NewPayload("Red AAR", -1, { AUFTRAG.Type.TANKER }, 100)
+
+local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
+
+MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
+MISSION_Red_AAR:AssignSquadrons({ AW_Assad_AAR })
+MISSION_Red_AAR:SetRadio(251)
+MISSION_Red_AAR:SetName("Red MAGIC")
+AW_Assad:AddMission(MISSION_Red_AAR)
+
+AW_Assad_AWACS = SQUADRON:New("Red AWACS", 2, "Red AWACS Squadron")
+AW_Assad_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
+AW_Assad_AWACS:SetTakeoffType("Hot")
+AW_Assad_AWACS:SetFuelLowRefuel(true)
+AW_Assad_AWACS:SetFuelLowThreshold(0.4)
+AW_Assad_AWACS:SetTurnoverTime(30, 5)
+AW_Assad_AWACS:SetRadio(251)
+AW_Assad:AddSquadron(AW_Assad_AWACS)
+AW_Assad:NewPayload("Red AWACS", -1, { AUFTRAG.Type.ORBIT }, 100)
+
+-- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
+local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}
+
+AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PARTOL", 251, radio.modulation.AM)
+AWACS_IVAN:SetBullsEyeAlias("SASHA")
+AWACS_IVAN:SetAwacsDetails(CALLSIGN.AWACS.Magic, 1, Assad_AWACS_route[2], Assad_AWACS_route[3], Assad_AWACS_route[4], Assad_AWACS_route[5])
+AWACS_IVAN:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
+AWACS_IVAN:SetModernEraAggressive()
+
+AWACS_IVAN.PlayerGuidance = true -- allow missile warning call-outs.
+AWACS_IVAN.NoGroupTags = true -- use group tags like Alpha, Bravo .. etc in call outs.
+AWACS_IVAN.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
+AWACS_IVAN.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
+AWACS_IVAN.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
+AWACS_IVAN.maxassigndistance = 150 -- Don't assign targets further out than this, in NM.
+AWACS_IVAN.NoMissileCalls = true -- suppress missile callouts
+AWACS_IVAN.PlayerCapAssigment = true -- no task assignment for players
+AWACS_IVAN.invisible = false -- set AWACS to be invisible to hostiles
+AWACS_IVAN.immortal = false -- set AWACS to be immortal
+AWACS_IVAN.GoogleTTSPadding = 1 -- seconds
+AWACS_IVAN.WindowsTTSPadding = 2.5 -- seconds
+
+AWACS_IVAN:SuppressScreenMessages(true)
+AWACS_IVAN:__Start(2)
+
 --MANTIS - Red IADS
-red_mantis = MANTIS:New("red_mantis","Red SAM","Red EWR",nil,"red",false)
-red_mantis:Debug(on)
+red_mantis = MANTIS:New("red_mantis","Red SAM","Red EWR","Red C3i","red",false)
 red_mantis:Start()
 
 --5.1 - SCHEDULER

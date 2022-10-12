@@ -1,0 +1,63 @@
+ZONE_RED_AAR = ZONE:New("RED_AAR")
+ZONE_RED_AWACS = ZONE:New("RED_AWACS")
+ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PARTOL")
+ZONE_RED_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX")
+
+AW_Assad = AIRWING:New("Static Warehouse-4-1", "Assad Air Wing")
+
+AW_Assad:SetMarker(false)
+AW_Assad:SetAirbase(AIRBASE:FindByName(AIRBASE.Syria.Bassel_Al_Assad))
+AW_Assad:SetRespawnAfterDestroyed(600)
+AW_Assad:__Start(2)
+
+AW_Assad_AAR = SQUADRON:New("Red AAR", 3, "Red AAR Squadron")
+AW_Assad_AAR:AddMissionCapability({ AUFTRAG.Type.TANKER }, 100)
+AW_Assad_AAR:SetTakeoffType("Hot")
+AW_Assad_AAR:SetFuelLowRefuel(false)
+AW_Assad_AAR:SetFuelLowThreshold(0.3)
+AW_Assad_AAR:SetTurnoverTime(30, 5)
+AW_Assad:AddSquadron(AW_Assad_AAR)
+AW_Assad:NewPayload("Red AAR", -1, { AUFTRAG.Type.TANKER }, 100)
+
+local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
+
+MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
+MISSION_Red_AAR:AssignSquadrons({ AW_Assad_AAR })
+MISSION_Red_AAR:SetRadio(251)
+MISSION_Red_AAR:SetName("Red MAGIC")
+AW_Assad:AddMission(MISSION_Red_AAR)
+
+AW_Assad_AWACS = SQUADRON:New("Red AWACS", 2, "Red AWACS Squadron")
+AW_Assad_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
+AW_Assad_AWACS:SetTakeoffType("Hot")
+AW_Assad_AWACS:SetFuelLowRefuel(true)
+AW_Assad_AWACS:SetFuelLowThreshold(0.4)
+AW_Assad_AWACS:SetTurnoverTime(30, 5)
+AW_Assad_AWACS:SetRadio(251)
+AW_Assad:AddSquadron(AW_Assad_AWACS)
+AW_Assad:NewPayload("Red AWACS", -1, { AUFTRAG.Type.ORBIT }, 100)
+
+-- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
+local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}
+
+AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PARTOL", 251, radio.modulation.AM)
+AWACS_IVAN:SetBullsEyeAlias("SASHA")
+AWACS_IVAN:SetAwacsDetails(CALLSIGN.AWACS.Magic, 1, Assad_AWACS_route[2], Assad_AWACS_route[3], Assad_AWACS_route[4], Assad_AWACS_route[5])
+AWACS_IVAN:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
+AWACS_IVAN:SetModernEraAggressive()
+
+AWACS_IVAN.PlayerGuidance = true -- allow missile warning call-outs.
+AWACS_IVAN.NoGroupTags = true -- use group tags like Alpha, Bravo .. etc in call outs.
+AWACS_IVAN.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
+AWACS_IVAN.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
+AWACS_IVAN.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
+AWACS_IVAN.maxassigndistance = 150 -- Don't assign targets further out than this, in NM.
+AWACS_IVAN.NoMissileCalls = true -- suppress missile callouts
+AWACS_IVAN.PlayerCapAssigment = true -- no task assignment for players
+AWACS_IVAN.invisible = false -- set AWACS to be invisible to hostiles
+AWACS_IVAN.immortal = false -- set AWACS to be immortal
+AWACS_IVAN.GoogleTTSPadding = 1 -- seconds
+AWACS_IVAN.WindowsTTSPadding = 2.5 -- seconds
+
+AWACS_IVAN:SuppressScreenMessages(true)
+AWACS_IVAN:__Start(2)

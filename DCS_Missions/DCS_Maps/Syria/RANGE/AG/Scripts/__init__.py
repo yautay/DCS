@@ -16,6 +16,7 @@ PATH_SCRIPT_CSAR = os.path.join(PATH_MISSION_SCRIPTS, "4_2_csar.lua")
 
 PATH_SCRIPT_AW_AKROTIRI = os.path.join(PATH_MISSION_SCRIPTS, "AW_Akrotiri.lua")
 PATH_SCRIPT_AW_LARNACA = os.path.join(PATH_MISSION_SCRIPTS, "AW_Larnaca.lua")
+PATH_SCRIPT_AW_ASSAD = os.path.join(PATH_MISSION_SCRIPTS, "AW_Assad.lua")
 
 PATH_SCRIPT_MANTIS_RED = os.path.join(PATH_MISSION_SCRIPTS, "MANTIS_Red.lua")
 
