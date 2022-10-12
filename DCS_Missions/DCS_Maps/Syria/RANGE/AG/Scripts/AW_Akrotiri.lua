@@ -5,8 +5,8 @@ end
 ZONE_SHELL_1_AAR = ZONE:New("SHELL_1_AAR")
 ZONE_TEXACO_1_AAR = ZONE:New("TEXACO_1_AAR")
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
-ZONE_PATROL = ZONE_POLYGON:NewFromGroupName("LARNACA_PARTOL"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .5, 1, true)
-ZONE_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .5, 1, true)
+ZONE_PATROL = ZONE_POLYGON:NewFromGroupName("LARNACA_PARTOL"):DrawZone(2, CONST.RGB.zone_patrol, 1, CONST.RGB.zone_patrol, .5, 1, true)
+ZONE_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX"):DrawZone(2, CONST.RGB.zone_bvr, 1, CONST.RGB.zone_bvr, .5, 1, true)
 
 AW_LCRA = AIRWING:New("WH Akrotiri", "Akrotiri Air Wing")
 
@@ -33,7 +33,7 @@ AW_LCRA_AAR:SetTurnoverTime(30, 5)
 AW_LCRA:AddSquadron(AW_LCRA_AAR)
 AW_LCRA:NewPayload("ME AAR", -1, { AUFTRAG.Type.TANKER }, 100)
 
-local Shell_1_1_route = {ZONE_SHELL_1_AAR:GetCoordinate(), 25000, 415, 45, 20}
+local Shell_1_1_route = {ZONE_SHELL_1_AAR:GetCoordinate(), 28000, 480, 135, 40}
 orbit_mark(Shell_1_1_route, "SHELL 1-1")
 
 MISSION_Shell_1 = AUFTRAG:NewTANKER(Shell_1_1_route[1], Shell_1_1_route[2], Shell_1_1_route[3], Shell_1_1_route[4], Shell_1_1_route[5], 1)
@@ -42,7 +42,7 @@ MISSION_Shell_1:SetRadio(FREQUENCIES.AAR.shell_1[1])
 MISSION_Shell_1:SetName("Shell One")
 AW_LCRA:AddMission(MISSION_Shell_1)
 
-local Texaco_1_1_route = {ZONE_TEXACO_1_AAR:GetCoordinate(), 23000, 405, 45, 20}
+local Texaco_1_1_route = {ZONE_TEXACO_1_AAR:GetCoordinate(), 30000, 480, 0, 40}
 orbit_mark(Texaco_1_1_route, "TEXACO 1-1")
 
 MISSION_Texaco_1 = AUFTRAG:NewTANKER(Texaco_1_1_route[1], Texaco_1_1_route[2], Texaco_1_1_route[3], Texaco_1_1_route[4], Texaco_1_1_route[5], 0)
@@ -62,7 +62,7 @@ AW_LCRA:AddSquadron(AW_LCRA_AWACS)
 AW_LCRA:NewPayload("ME AWACS RJ", -1, { AUFTRAG.Type.ORBIT }, 100)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 30000, 330, 180, 80}
+local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 35000, 450, 180, 80}
 orbit_mark(Darkstar_1_1_route, "DARKSTAR 1-1")
 
 AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "KILLBOX", "LARNACA_PARTOL", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)

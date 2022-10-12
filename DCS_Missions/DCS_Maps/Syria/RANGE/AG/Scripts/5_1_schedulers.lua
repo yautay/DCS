@@ -16,9 +16,9 @@ function tanker_platform_updater(airwing)
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
                     unit_beacon:ActivateTACAN(TACAN.shell_1[1], TACAN.shell_1[2], TACAN.shell_1[3], TACAN.shell_1[5])
-                --elseif (string.find(mission:GetName(), "Two")) then
-                --    index = 2
-                --    unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
+                elseif (string.find(mission:GetName(), "Two")) then
+                    index = 2
+                    unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
                 --elseif (string.find(mission:GetName(), "Three")) then
                 --    index = 3
                 --    unit_beacon:ActivateTACAN(TACAN.shell_3[1], TACAN.shell_3[2], TACAN.shell_3[3], TACAN.shell_3[5])

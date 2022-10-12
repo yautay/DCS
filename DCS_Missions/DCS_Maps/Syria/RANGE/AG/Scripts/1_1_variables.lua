@@ -1,12 +1,13 @@
 FREQUENCIES = {
     AWACS = {
-        darkstar = {244.00, "AWACS Darkstar UHF", "AM"},
-        wizard = {244.50, "AWACS Wizard UHF", "AM"},
+        darkstar = {249.00, "AWACS Darkstar UHF", "AM"},
+        wizard = {250.00, "AWACS Wizard UHF", "AM"},
     },
     AAR = {
         shell_1 = {252.10, "Tanker Shell One UHF", "AM"},
+        shell_2 = {252.20, "Tanker Shell Two UHF", "AM"},
         texaco_1 = {252.30, "Tanker Texaco One UHF", "AM"},
-        arco = {252.90, "Tanker Arco UHF", "AM"}
+        arco = {252.50, "Tanker Arco UHF", "AM"}
     },
     FLIGHTS = {
         vfma212_1_u = {266.20, "SQUADRON VFMA-212 UHF", "AM"},
@@ -61,6 +62,7 @@ TACAN = {
     lha = {66, "X", "LHA", "LHA-1"},
     arco = {1, "Y", "RCV", "Recovery Tanker CVN-75", false},
     shell_1 = {51, "Y", "SHE", "Tanker Shell One", false},
+    shell_2 = {53, "Y", "SCO", "Tanker Shell Two", false},
     texaco_1 = {52, "Y", "TEX", "Tanker Texaco One", false},
 }
 YARDSTICKS = {

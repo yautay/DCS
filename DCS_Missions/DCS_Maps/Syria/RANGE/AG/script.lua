@@ -13,13 +13,14 @@ menu_dump_to_file = true
 --1.1 - VARIABLES
 FREQUENCIES = {
     AWACS = {
-        darkstar = {244.00, "AWACS Darkstar UHF", "AM"},
-        wizard = {244.50, "AWACS Wizard UHF", "AM"},
+        darkstar = {249.00, "AWACS Darkstar UHF", "AM"},
+        wizard = {250.00, "AWACS Wizard UHF", "AM"},
     },
     AAR = {
         shell_1 = {252.10, "Tanker Shell One UHF", "AM"},
+        shell_2 = {252.20, "Tanker Shell Two UHF", "AM"},
         texaco_1 = {252.30, "Tanker Texaco One UHF", "AM"},
-        arco = {252.90, "Tanker Arco UHF", "AM"}
+        arco = {252.50, "Tanker Arco UHF", "AM"}
     },
     FLIGHTS = {
         vfma212_1_u = {266.20, "SQUADRON VFMA-212 UHF", "AM"},
@@ -30,16 +31,11 @@ FREQUENCIES = {
         palladin_u = {266.40, "PALLADIN UHF", "AM"},
         crusader_u = {266.70, "CRUSADER UHF", "AM"},
         knight_u = {266.75, "KNIGHT UHF", "AM"},
+        viper = {270.10, "VIPER ONE UHF", "AM"},
+        viper = {270.20, "VIPER ONE UHF", "AM"},
+        viper_3 = {270.30, "VIPER ONE UHF", "AM"},
+        viper_4 = {270.40, "VIPER ONE UHF", "AM"}
     },
-    ELEMENTS = {
-	    shamir_u = {251.00, "SHAMIR UHF", "AM"},
-        shamir_m = {"MIDS 1", "SHAMIR MIDS", ""},
-        ahmed_u = {252.00, "SHAMIR UHF", "AM"},
-        ahmed_m = {"MIDS 2", "SHAMIR MIDS", ""},
-        fakir_u = {253.00, "SHAMIR UHF", "AM"},
-        fakir_m = {"MIDS 3", "SHAMIR MIDS", ""},
-    },
-
     CV = {
         dcs_sc = {127.50, "DCS SC ATC VHF", "AM"},
         btn1 = {260.00, "HUMAN Paddles/Tower C1 UHF", "AM"},
@@ -67,7 +63,7 @@ FREQUENCIES = {
     SPECIAL = {
         guard_hi = {243.00, "Guard UHF", "AM"},
         guard_lo = {121.50, "Guard VHF", "AM"},
-        ch_16 = {156.8, "Maritime Ch16 VHF", "AM"}
+        ch_16 = {156.8, "Maritime Ch16 VHF", "FM"}
     }
 }
 ICLS = {
@@ -79,6 +75,7 @@ TACAN = {
     lha = {66, "X", "LHA", "LHA-1"},
     arco = {1, "Y", "RCV", "Recovery Tanker CVN-75", false},
     shell_1 = {51, "Y", "SHE", "Tanker Shell One", false},
+    shell_2 = {53, "Y", "SCO", "Tanker Shell Two", false},
     texaco_1 = {52, "Y", "TEX", "Tanker Texaco One", false},
 }
 YARDSTICKS = {
@@ -139,9 +136,7 @@ function sleep(n)  -- seconds
 end
 
 function calculateCoordinateFromRoute(startCoordObject, course, distance)
-    local start_coord = startCoordObject
-    local end_coord = start_coord:Translate(distance, course, false, false)
-	return end_coord
+	return startCoordObject:Translate(UTILS.NMToMeters(distance), course, false, false)
 end
 --2.1 - MENU
 local ordered_elements_freq = {
@@ -450,7 +445,7 @@ mycsar.csarUsePara = false -- If set to true, will use the LandingAfterEjection 
 -- mycsar.wetfeettemplate = "man in floating thingy" -- if you use a mod to have a pilot in a rescue float, put the template name in here for wet feet spawns. Note: in conjunction with csarUsePara this might create dual ejected pilots in edge cases.
 
 
---AW.2 - AW AKROTIRI
+--AW.1 - AW AKROTIRI
 function orbit_mark(route, text)
     route[1]:LineToAll(calculateCoordinateFromRoute(route[1], route[4], route[5], false, false), 2, CONST.RGB.range, 1, 2, true, text)
 end
@@ -515,7 +510,7 @@ AW_LCRA:AddSquadron(AW_LCRA_AWACS)
 AW_LCRA:NewPayload("ME AWACS RJ", -1, { AUFTRAG.Type.ORBIT }, 100)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS, 30000, 330, 180, 80}
+local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 30000, 330, 180, 80}
 orbit_mark(Darkstar_1_1_route, "DARKSTAR 1-1")
 
 AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "KILLBOX", "LARNACA_PARTOL", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
@@ -525,7 +520,7 @@ AWACS_DARKSTAR:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
 AWACS_DARKSTAR:SetModernEraAggressive()
 
 AWACS_DARKSTAR.PlayerGuidance = true -- allow missile warning call-outs.
-AWACS_DARKSTAR.NoGroupTags = false -- use group tags like Alpha, Bravo .. etc in call outs.
+AWACS_DARKSTAR.NoGroupTags = true -- use group tags like Alpha, Bravo .. etc in call outs.
 AWACS_DARKSTAR.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
 AWACS_DARKSTAR.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
 AWACS_DARKSTAR.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
@@ -537,8 +532,45 @@ AWACS_DARKSTAR.immortal = true -- set AWACS to be immortal
 AWACS_DARKSTAR.GoogleTTSPadding = 1 -- seconds
 AWACS_DARKSTAR.WindowsTTSPadding = 2.5 -- seconds
 
-AWACS_DARKSTAR:SuppressScreenMessages(false)
+AWACS_DARKSTAR:SuppressScreenMessages(true)
 AWACS_DARKSTAR:__Start(2)
+
+--AW.2 - AW LARNACA
+function orbit_mark(route, text)
+    route[1]:LineToAll(calculateCoordinateFromRoute(route[1], route[4], route[5], false, false), 2, CONST.RGB.range, 1, 2, true, text)
+end
+
+ZONE_SHELL_2_AAR = ZONE:New("SHELL_2_AAR")
+
+AW_LCLK = AIRWING:New("WH Larnaca", "Larnaca Air Wing")
+
+AW_LCLK:SetMarker(false)
+AW_LCLK:SetAirbase(AIRBASE:FindByName(AIRBASE.Syria.Larnaca))
+AW_LCLK:SetRespawnAfterDestroyed(600)
+AW_LCLK:__Start(2)
+
+AW_LCLK_AAR_C130 = SQUADRON:New("ME AAR C130", 6, "AAR Squadron C130")
+AW_LCLK_AAR_C130:AddMissionCapability({ AUFTRAG.Type.TANKER }, 100)
+AW_LCLK_AAR_C130:SetTakeoffType("Hot")
+AW_LCLK_AAR_C130:SetFuelLowRefuel(false)
+AW_LCLK_AAR_C130:SetFuelLowThreshold(0.4)
+AW_LCLK_AAR_C130:SetTurnoverTime(30, 5)
+AW_LCLK:AddSquadron(AW_LCLK_AAR_C130)
+AW_LCLK:NewPayload("ME AAR C130", -1, { AUFTRAG.Type.TANKER }, 100)
+
+local Shell_2_1_route = {ZONE_SHELL_2_AAR:GetCoordinate(), 15000, 300, 0, 20}
+orbit_mark(Shell_2_1_route, "SHELL 2-1")
+
+MISSION_Shell_2 = AUFTRAG:NewTANKER(Shell_2_1_route[1], Shell_2_1_route[2], Shell_2_1_route[3], Shell_2_1_route[4], Shell_2_1_route[5], 1)
+MISSION_Shell_2:AssignSquadrons({ AW_LCLK_AAR_C130 })
+MISSION_Shell_2:SetRadio(FREQUENCIES.AAR.shell_2[1])
+MISSION_Shell_2:SetName("Shell Two")
+AW_LCLK:AddMission(MISSION_Shell_2)
+
+--MANTIS - Red IADS
+red_mantis = MANTIS:New("red_mantis","Red SAM","Red EWR",nil,"red",false)
+red_mantis:Debug(on)
+red_mantis:Start()
 
 --5.1 - SCHEDULER
 function tanker_platform_updater(airwing)
@@ -559,9 +591,9 @@ function tanker_platform_updater(airwing)
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
                     unit_beacon:ActivateTACAN(TACAN.shell_1[1], TACAN.shell_1[2], TACAN.shell_1[3], TACAN.shell_1[5])
-                --elseif (string.find(mission:GetName(), "Two")) then
-                --    index = 2
-                --    unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
+                elseif (string.find(mission:GetName(), "Two")) then
+                    index = 2
+                    unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
                 --elseif (string.find(mission:GetName(), "Three")) then
                 --    index = 3
                 --    unit_beacon:ActivateTACAN(TACAN.shell_3[1], TACAN.shell_3[2], TACAN.shell_3[3], TACAN.shell_3[5])
