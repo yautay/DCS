@@ -82,7 +82,7 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("CUSTOM: Player %s scored %.1f", name, score))
+    env.info(string.format("LSO REPORT! : Player %s scored %.1f", name, score))
 end
 
 name_LHA_1 = "LHA-1"
