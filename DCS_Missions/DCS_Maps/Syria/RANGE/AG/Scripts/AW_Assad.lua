@@ -33,7 +33,7 @@ local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
 MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
 MISSION_Red_AAR:AssignSquadrons({ AW_Assad_AAR })
 MISSION_Red_AAR:SetRadio(251)
-MISSION_Red_AAR:SetName("Red MAGIC")
+MISSION_Red_AAR:SetName("Red AAR")
 --AW_Assad:AddMission(MISSION_Red_AAR)
 
 AW_Assad_AWACS = SQUADRON:New("Red AWACS", 2, "Red AWACS Squadron")

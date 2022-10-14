@@ -56,7 +56,7 @@ cvn_75_airboss:SetMenuRecovery(30, 28, false)
 cvn_75_airboss:SetDespawnOnEngineShutdown()
 cvn_75_airboss:Load()
 cvn_75_airboss:SetAutoSave()
-cvn_75_airboss:SetTrapSheet()
+cvn_75_airboss:SetTrapSheet(nil, "TRAP-")
 cvn_75_airboss:SetHandleAION()
 cvn_75_airboss:Start()
 
