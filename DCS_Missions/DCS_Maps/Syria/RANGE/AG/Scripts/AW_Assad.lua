@@ -1,6 +1,6 @@
-ZONE_RED_AAR = ZONE:New("RED_AAR")
+
 ZONE_RED_AWACS = ZONE:New("RED_AWACS")
-ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PARTOL")
+ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PATROL")
 ZONE_RED_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX")
 
 AW_Assad = AIRWING:New("Static Warehouse-4-1", "Assad Air Wing")
@@ -28,14 +28,6 @@ AW_Assad_AAR:SetTurnoverTime(30, 5)
 AW_Assad:AddSquadron(AW_Assad_AAR)
 AW_Assad:NewPayload("Red AAR", -1, { AUFTRAG.Type.TANKER }, 100)
 
-local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
-
-MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
-MISSION_Red_AAR:AssignSquadrons({ AW_Assad_AAR })
-MISSION_Red_AAR:SetRadio(251)
-MISSION_Red_AAR:SetName("Red AAR")
---AW_Assad:AddMission(MISSION_Red_AAR)
-
 AW_Assad_AWACS = SQUADRON:New("Red AWACS", 2, "Red AWACS Squadron")
 AW_Assad_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
 AW_Assad_AWACS:SetTakeoffType("Hot")
@@ -49,7 +41,7 @@ AW_Assad:NewPayload("Red AWACS", -1, { AUFTRAG.Type.ORBIT }, 100)
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
 local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}
 
-AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PARTOL", 251, radio.modulation.AM)
+AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PATROL", 251, radio.modulation.AM)
 AWACS_IVAN:SetBullsEyeAlias("SASHA")
 AWACS_IVAN:SetAwacsDetails(CALLSIGN.AWACS.Magic, 1, Assad_AWACS_route[2], Assad_AWACS_route[3], Assad_AWACS_route[4], Assad_AWACS_route[5])
 AWACS_IVAN:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)

@@ -3,11 +3,14 @@
 --- Created by yauta.
 --- DateTime: 13.10.2022 08:19
 ---
-ZONE_RED_BORDER_1 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_1"):DrawZone(-1, CONST.RGB.red_border, .05, CONST.RGB.red_border, .05, 0, true)
-ZONE_RED_BORDER_2 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_2"):DrawZone(-1, CONST.RGB.red_border, .05, CONST.RGB.red_border, .05, 0, true)
-ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1"):DrawZone(-1, CONST.RGB.red_conflict, .05, CONST.RGB.red_conflict, .05, 0, true)
+ZONE_RED_BORDER_1 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_1")
+ZONE_RED_BORDER_2 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_2")
+ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1")
+
+ZONE_RED_AAR = ZONE:New("RED_AAR")
+ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PATROL")
+
 ZONE_TARGET_LCRA = ZONE:New("TARGET_LCRA")
---ZONE_RED_REFUEL = ZONE_POLYGON:NewFromGroupName("RED_REFUEL_ZONE")
 -- ###########################################################
 -- ###                      RED CHIEF                      ###
 -- ###########################################################
@@ -36,11 +39,18 @@ RedChief:SetStrategy(CHIEF.Strategy.OFFENSIVE)
 -- RESOURCES
 
 RedChief:AddAirwing(AW_Assad)
---RedChief:AddRefuellingZone(ZONE_RED_AAR, 25000, 470, 0, 40)
-RedChief:AddTankerZone(ZONE_RED_AAR, 25000, 470, 0, 40, 1)
-RedChief:AddAwacsZone(ZONE_RED_AWACS, 30000, 320, 225, 20)
 RedChief:AddCapZone(ZONE_RED_PATROL, 30000, 470, 180, 20)
 RedChief:AddGciCapZone(ZONE_RED_PATROL, 30000, 470, 180, 30)
+
+local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
+MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
+MISSION_Red_AAR:SetRadio(251)
+MISSION_Red_AAR:SetName("Red AAR")
+
+RedChief:AddMission(MISSION_Red_AAR)
+
+MISSION_Red_CAP = AUFTRAG:NewCAP(ZONE_RED_PATROL)
+RedChief:AddMission(MISSION_Red_CAP)
 
 RedChief:SetTacticalOverviewOn()
 RedChief:__Start(5)

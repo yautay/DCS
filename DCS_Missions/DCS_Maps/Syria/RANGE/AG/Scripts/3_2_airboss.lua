@@ -16,7 +16,7 @@ cvn_75_tanker:SetTakeoffHot()
 cvn_75_tanker:Start()
 
 function cvn_75_tanker:OnAfterStart(From, Event, To)
-    env.info(string.format("RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("YAUTAY RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
     local unit = UNIT:FindByName(cvn_75_tanker:GetUnit())
     local beacon = unit:GetBeacon()
     beacon:ActivateTACAN(TACAN.arco[1], TACAN.arco[2], TACAN.arco[3], TACAN.arco[5])
@@ -61,7 +61,7 @@ cvn_75_airboss:SetHandleAION()
 cvn_75_airboss:Start()
 
 function cvn_75_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
 
 --- Function called when a player gets graded by the LSO.
@@ -82,7 +82,7 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("LSO REPORT! : Player %s scored %.1f", name, score))
+    env.info(string.format("YAUTAY LSO REPORT! : Player %s scored %.1f", name, score))
 end
 
 name_LHA_1 = "LHA-1"
@@ -107,5 +107,5 @@ lha_1_airboss:SetHandleAION()
 lha_1_airboss:Start()
 
 function lha_1_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
