@@ -14,8 +14,8 @@ menu_dump_to_file = true
 --1.1 - VARIABLES
 FREQUENCIES = {
     AWACS = {
-        darkstar = {249.00, "AWACS Darkstar UHF", "AM"},
-        wizard = {250.00, "AWACS Wizard UHF", "AM"},
+        darkstar = {249.00, "AWACS @MOOSE Darkstar UHF", "AM"},
+        wizard = {250.00, "AWACS @ DCS Wizard UHF", "AM"},
     },
     AAR = {
         shell_1 = {252.10, "Tanker Shell One UHF", "AM"},
@@ -39,13 +39,13 @@ FREQUENCIES = {
     },
     CV = {
         dcs_sc = {127.50, "DCS SC ATC VHF", "AM"},
-        btn1 = {260.00, "HUMAN Paddles/Tower C1 UHF", "AM"},
-        btn2 = {260.10, "HUMAN Departure C2/C3 UHF", "AM"},
-        btn3 = {249.10, "HUMAN Strike UHF", "AM"},
-        btn4 = {258.20, "HUMAN Red Crown UHF", "AM"},
-        btn15 = {260.20, "HUMAN CCA Fianal A", "AM"},
-        btn16 = {260.30, "AIRBOSS/HUMAN Marshal UHF", "AM"},
-        btn17 = {260.40, "HUMAN CCA Fianal B", "AM"},
+        btn1 = {260.00, "B-1 HUMAN Paddles/Tower C1 UHF", "AM"},
+        btn2 = {260.10, "B-2 HUMAN Departure C2/C3 UHF", "AM"},
+        btn3 = {249.10, "B-3 HUMAN Strike UHF", "AM"},
+        btn4 = {258.20, "B-4 HUMAN Red Crown UHF", "AM"},
+        btn15 = {260.20, "B-15 HUMAN CCA Fianal A", "AM"},
+        btn16 = {260.30, "B-16 AIRBOSS/HUMAN Marshal UHF", "AM"},
+        btn17 = {260.40, "B-17 HUMAN CCA Fianal B", "AM"},
     },
     LHA = {
         dcs_sc = {127.8, "LHA-1 DCS VHF", "AM"},
@@ -91,6 +91,7 @@ YARDSTICKS = {
     jedi_1 = {"JEDI ONE", 45, 108, "Y"},
     ninja_1 = {"NINJA TWO", 46, 109, "Y"},
 }
+
 
 --1.2 - COMMON
 
@@ -140,18 +141,30 @@ function calculateCoordinateFromRoute(startCoordObject, course, distance)
 	return startCoordObject:Translate(UTILS.NMToMeters(distance), course, false, false)
 end
 --2.1 - MENU
-local ordered_elements_freq = {
-    --FREQUENCIES.ELEMENTS.killer_uhf,
-    --FREQUENCIES.ELEMENTS.killer_vhf,
-    --FREQUENCIES.ELEMENTS.killer_fm,
-    --FREQUENCIES.ELEMENTS.prayer_uhf,
-    --FREQUENCIES.ELEMENTS.prayer_vhf,
-}
 local ordered_flight_freq = {
     FREQUENCIES.AWACS.darkstar,
+    FREQUENCIES.AWACS.wizard,
     FREQUENCIES.AAR.shell_1,
+    FREQUENCIES.AAR.shell_2,
     FREQUENCIES.AAR.texaco_1,
     FREQUENCIES.AAR.arco,
+}
+local ordered_cvn = {
+    FREQUENCIES.CV.dcs_sc,
+    FREQUENCIES.CV.btn1,
+    FREQUENCIES.CV.btn2,
+    FREQUENCIES.CV.btn3,
+    FREQUENCIES.CV.btn4,
+    FREQUENCIES.CV.btn15,
+    FREQUENCIES.CV.btn16,
+    FREQUENCIES.CV.btn17,
+    FREQUENCIES.CV.darkstar,
+
+}
+local ordered_lha = {
+    FREQUENCIES.LHA.dcs_sc,
+    FREQUENCIES.LHA.tower,
+    FREQUENCIES.LHA.radar,
 }
 local ordered_ground_freq = {
     FREQUENCIES.GROUND.atis_lcra,
@@ -168,11 +181,12 @@ local ordered_special_freq = {
     FREQUENCIES.SPECIAL.ch_16
 }
 local ordered_tacan_data = {
-    TACAN.shell_1,
-    TACAN.texaco_1,
-    TACAN.arco,
     TACAN.sc,
-    TACAN.lha
+    TACAN.lha,
+    TACAN.arco,
+    TACAN.shell_1,
+    TACAN.shell_2,
+    TACAN.texaco_1
 }
 local ordered_yardstick_data = {
     --ARDSTICKS.ninja_1,
@@ -239,7 +253,9 @@ local function icls_text(general_icls)
     return final_msg .. "\n"
 end
 
-local elements_freqs_info = freq_text(ordered_elements_freq)
+local cvn_freqs_info = freq_text(ordered_cvn)
+local lha_freqs_info = freq_text(ordered_lha)
+
 local flight_freqs_info = freq_text(ordered_flight_freq)
 local ground_freqs_info = freq_text(ordered_ground_freq)
 local special_freqs_info = freq_text(ordered_special_freq)
@@ -247,7 +263,7 @@ local tacan_info = tacans_text(ordered_tacan_data)
 local yardsticks_info = yardsticks_text(ordered_yardstick_data)
 local icls_info = icls_text(ordered_icls_data)
 
-local freqs_info = elements_freqs_info .. flight_freqs_info .. ground_freqs_info .. special_freqs_info
+local freqs_info = flight_freqs_info .. ground_freqs_info .. special_freqs_info .. cvn_freqs_info .. lha_freqs_info
 
 MenuSrver = MENU_MISSION:New("Server Menu")
 
@@ -257,6 +273,11 @@ if (menu_dump_to_file) then
     save_to_file("yardstick_info", yardsticks_info)
     save_to_file("icls_info", icls_info)
 end
+
+info_msg=SOCKET:New()
+info_msg:SendText(tacan_info)
+info_msg:SendText(icls_info)
+info_msg:SendText(freqs_info)
 
 --3.1 - ATIS
 AtisHatay = ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
@@ -287,7 +308,7 @@ cvn_75_tanker:SetTakeoffHot()
 cvn_75_tanker:Start()
 
 function cvn_75_tanker:OnAfterStart(From, Event, To)
-    env.info(string.format("RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("YAUTAY RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
     local unit = UNIT:FindByName(cvn_75_tanker:GetUnit())
     local beacon = unit:GetBeacon()
     beacon:ActivateTACAN(TACAN.arco[1], TACAN.arco[2], TACAN.arco[3], TACAN.arco[5])
@@ -332,7 +353,7 @@ cvn_75_airboss:SetHandleAION()
 cvn_75_airboss:Start()
 
 function cvn_75_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
 
 --- Function called when a player gets graded by the LSO.
@@ -348,12 +369,12 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
-
+    cvn_75_airboss:SetFunkManOn()
     -- BotSay(string.format("Player %s scored %.1f \n", name, score))
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("LSO REPORT! : Player %s scored %.1f", name, score))
+    env.info(string.format("YAUTAY CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
 name_LHA_1 = "LHA-1"
@@ -378,7 +399,27 @@ lha_1_airboss:SetHandleAION()
 lha_1_airboss:Start()
 
 function lha_1_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
+end
+--- Function called when a player gets graded by the LSO.
+function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
+    local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
+    local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
+    local score = tonumber(Grade.points)
+    local gradeLso = tostring(Grade.grade)
+    local timeInGrove = tonumber(Grade.Tgroove)
+    local wire = tonumber(Grade.wire)
+    local name = tostring(PlayerData.name)
+
+    ----------------------------------------
+    --- Interface your Discord bot here! ---
+    ----------------------------------------
+    lha_1_airboss:SetFunkManOn()
+    -- BotSay(string.format("Player %s scored %.1f \n", name, score))
+    -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
+
+    -- Report LSO grade to dcs.log file.
+    env.info(string.format("YAUTAY LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 --4.2 - CSAR
 -- Instantiate and start a CSAR for the blue side, with template "Downed Pilot" and alias "Luftrettung"
@@ -569,9 +610,9 @@ MISSION_Shell_2:SetName("Shell Two")
 AW_LCLK:AddMission(MISSION_Shell_2)
 
 --AW.3 - AW ASSAD
-ZONE_RED_AAR = ZONE:New("RED_AAR")
+
 ZONE_RED_AWACS = ZONE:New("RED_AWACS")
-ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PARTOL")
+ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PATROL")
 ZONE_RED_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX")
 
 AW_Assad = AIRWING:New("Static Warehouse-4-1", "Assad Air Wing")
@@ -599,14 +640,6 @@ AW_Assad_AAR:SetTurnoverTime(30, 5)
 AW_Assad:AddSquadron(AW_Assad_AAR)
 AW_Assad:NewPayload("Red AAR", -1, { AUFTRAG.Type.TANKER }, 100)
 
-local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
-
-MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
-MISSION_Red_AAR:AssignSquadrons({ AW_Assad_AAR })
-MISSION_Red_AAR:SetRadio(251)
-MISSION_Red_AAR:SetName("Red AAR")
---AW_Assad:AddMission(MISSION_Red_AAR)
-
 AW_Assad_AWACS = SQUADRON:New("Red AWACS", 2, "Red AWACS Squadron")
 AW_Assad_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
 AW_Assad_AWACS:SetTakeoffType("Hot")
@@ -620,7 +653,7 @@ AW_Assad:NewPayload("Red AWACS", -1, { AUFTRAG.Type.ORBIT }, 100)
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
 local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}
 
-AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PARTOL", 251, radio.modulation.AM)
+AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PATROL", 251, radio.modulation.AM)
 AWACS_IVAN:SetBullsEyeAlias("SASHA")
 AWACS_IVAN:SetAwacsDetails(CALLSIGN.AWACS.Magic, 1, Assad_AWACS_route[2], Assad_AWACS_route[3], Assad_AWACS_route[4], Assad_AWACS_route[5])
 AWACS_IVAN:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
@@ -648,11 +681,14 @@ AWACS_IVAN:__Start(2)
 --- Created by yauta.
 --- DateTime: 13.10.2022 08:19
 ---
-ZONE_RED_BORDER_1 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_1"):DrawZone(-1, CONST.RGB.red_border, .05, CONST.RGB.red_border, .05, 0, true)
-ZONE_RED_BORDER_2 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_2"):DrawZone(-1, CONST.RGB.red_border, .05, CONST.RGB.red_border, .05, 0, true)
-ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1"):DrawZone(-1, CONST.RGB.red_conflict, .05, CONST.RGB.red_conflict, .05, 0, true)
+ZONE_RED_BORDER_1 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_1")
+ZONE_RED_BORDER_2 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_2")
+ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1")
+
+ZONE_RED_AAR = ZONE:New("RED_AAR")
+ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PATROL")
+
 ZONE_TARGET_LCRA = ZONE:New("TARGET_LCRA")
---ZONE_RED_REFUEL = ZONE_POLYGON:NewFromGroupName("RED_REFUEL_ZONE")
 -- ###########################################################
 -- ###                      RED CHIEF                      ###
 -- ###########################################################
@@ -681,11 +717,18 @@ RedChief:SetStrategy(CHIEF.Strategy.OFFENSIVE)
 -- RESOURCES
 
 RedChief:AddAirwing(AW_Assad)
---RedChief:AddRefuellingZone(ZONE_RED_AAR, 25000, 470, 0, 40)
-RedChief:AddTankerZone(ZONE_RED_AAR, 25000, 470, 0, 40, 1)
-RedChief:AddAwacsZone(ZONE_RED_AWACS, 30000, 320, 225, 20)
 RedChief:AddCapZone(ZONE_RED_PATROL, 30000, 470, 180, 20)
 RedChief:AddGciCapZone(ZONE_RED_PATROL, 30000, 470, 180, 30)
+
+local Assad_AAR_route = {ZONE_RED_AAR:GetCoordinate(), 25000, 470, 0, 40}
+MISSION_Red_AAR = AUFTRAG:NewTANKER(Assad_AAR_route[1], Assad_AAR_route[2], Assad_AAR_route[3], Assad_AAR_route[4], Assad_AAR_route[5], 1)
+MISSION_Red_AAR:SetRadio(251)
+MISSION_Red_AAR:SetName("Red AAR")
+
+RedChief:AddMission(MISSION_Red_AAR)
+
+MISSION_Red_CAP = AUFTRAG:NewCAP(ZONE_RED_PATROL)
+RedChief:AddMission(MISSION_Red_CAP)
 
 RedChief:SetTacticalOverviewOn()
 RedChief:__Start(5)
@@ -696,7 +739,6 @@ red_mantis:Start()
 --5.1 - SCHEDULER
 function tanker_platform_updater(airwing)
     function airwing:OnAfterFlightOnMission(From, Event, To, FlightGroup, Mission)
-
         local flightgroup = FlightGroup --Ops.FlightGroup#FLIGHTGROUP
         local mission = Mission --Ops.Auftrag#AUFTRAG
         local callsign = "nil"
