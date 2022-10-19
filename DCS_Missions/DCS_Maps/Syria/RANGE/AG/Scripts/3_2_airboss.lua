@@ -77,12 +77,12 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
-
+    cvn_75_airboss:SetFunkManOn()
     -- BotSay(string.format("Player %s scored %.1f \n", name, score))
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("YAUTAY LSO REPORT! : Player %s scored %.1f", name, score))
+    env.info(string.format("YAUTAY CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
 name_LHA_1 = "LHA-1"
@@ -108,4 +108,24 @@ lha_1_airboss:Start()
 
 function lha_1_airboss:OnAfterStart(From, Event, To)
     env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
+end
+--- Function called when a player gets graded by the LSO.
+function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
+    local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
+    local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
+    local score = tonumber(Grade.points)
+    local gradeLso = tostring(Grade.grade)
+    local timeInGrove = tonumber(Grade.Tgroove)
+    local wire = tonumber(Grade.wire)
+    local name = tostring(PlayerData.name)
+
+    ----------------------------------------
+    --- Interface your Discord bot here! ---
+    ----------------------------------------
+    lha_1_airboss:SetFunkManOn()
+    -- BotSay(string.format("Player %s scored %.1f \n", name, score))
+    -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
+
+    -- Report LSO grade to dcs.log file.
+    env.info(string.format("YAUTAY LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
