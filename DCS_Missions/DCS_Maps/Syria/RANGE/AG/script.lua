@@ -350,6 +350,9 @@ cvn_75_airboss:Load()
 cvn_75_airboss:SetAutoSave()
 cvn_75_airboss:SetTrapSheet(nil, "TRAP-")
 cvn_75_airboss:SetHandleAION()
+if SERVER then
+    cvn_75_airboss:SetMPWireCorrection()
+end
 cvn_75_airboss:Start()
 
 function cvn_75_airboss:OnAfterStart(From, Event, To)
