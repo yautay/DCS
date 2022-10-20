@@ -49,7 +49,7 @@ cvn_75_airboss:SetQueueUpdateTime(30)
 --local case2_2 = cvn_75_airboss:AddRecoveryWindow("19:05", "19:30", 2, nil, true, 25)
 --local case3 = cvn_75_airboss:AddRecoveryWindow("19:45", "05:30+1", 3, 30, true, 25)
 --local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:35+1", "06:30+1", 2, nil, true, 25)
---local case1_2 = cvn_75_airboss:AddRecoveryWindow("06:35+1", "19:00+1", 1, nil, true, 25)
+local case1_2 = cvn_75_airboss:AddRecoveryWindow("05:35", "19:00", 1, nil, true, 30)
 
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")
 cvn_75_airboss:SetMenuRecovery(30, 28, false)
@@ -132,3 +132,25 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- Report LSO grade to dcs.log file.
     env.info(string.format("YAUTAY LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
+
+-- EM LANDING AUTOMATION
+
+function recheck_activation_zone(airbos_object)
+    local radial = airbos_object:GetRadial( 1, false, false, false )
+    local coords = airbos_object:GetCoordinate()
+    local activation_zone = ZONE_POLYGON_BASE:New( "Em. Landing Auto Activation Zone" )
+
+    local c1 = coords:Translate( UTILS.NMToMeters( .2 ), radial - 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) --  0.0  0.5 starboard
+    local c2 = coords:Translate( UTILS.NMToMeters( 1.5 ), radial + 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) -- -3.0  1.3 starboard, astern
+    local c3 = coords:Translate( UTILS.NMToMeters( 1.5), radial + 90 ):Translate( UTILS.NMToMeters( 3 ), radial ) -- -3.0 -0.4 port, astern
+    local c4 = coords:Translate( UTILS.NMToMeters( 1 ), radial - 90 ):Translate( UTILS.NMToMeters( 3 ), radial )
+
+    local vec2 = { c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2()}
+
+    activation_zone:UpdateFromVec2( vec2 )
+    activation_zone:SmokeZone(SMOKECOLOR.White)
+end
+
+
+
+scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )

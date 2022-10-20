@@ -279,6 +279,76 @@ info_msg:SendText(tacan_info)
 info_msg:SendText(icls_info)
 info_msg:SendText(freqs_info)
 
+--2.2 - CLIENT
+CLIENTS = {
+    "LOBO-1",
+    "LOBO-2",
+    "FAGOT-1",
+    "FAGOT-2",
+    "FARMER-1",
+    "FARMER-2",
+    "FISHBED-1",
+    "FISHBED-2",
+    "FULCRUM-1",
+    "FULCRUM-2",
+    "RED-16-S",
+    "RED-16-N",
+    "RED-27-N",
+    "RED-27-S",
+    "RED-29-N",
+    "RED-29-S",
+    "BLUE-16-N",
+    "BLUE-16-S",
+    "BLUE-27-N",
+    "BLUE-27-S",
+    "BLUE-29-N",
+    "BLUE-29-S",
+    "CASE 1 TRAINER A",
+    "CASE 1 TRAINER B",
+    "CASE 1 TRAINER C",
+    "CASE 1 TRAINER D",
+}
+NAVY_CLIENTS = {
+    "UZI-1",
+    "UZI-2",
+    "HORNET-1",
+    "HORNET-2",
+    "HORNET-212",
+    "HORNET-237",
+    "DEVIL-1",
+    "DEVIL-2",
+    "DEVIL-3",
+    "DEVIL-4",
+    "RED-18-N",
+    "RED-18-S",
+    "BLUE-18-N",
+    "BLUE-18-S",
+}
+
+navy_in_air = {}
+
+ClientSet = SET_CLIENT:New():FilterOnce()
+
+function SetEventHandler()
+    ClientBirth = ClientSet:HandleEvent(EVENTS.PlayerEnterAircraft)
+end
+
+function ClientSet:OnEventPlayerEnterAircraft(event_data)
+    local unit_name = event_data.IniUnitName
+    local group = event_data.IniGroup
+    local player_name = event_data.IniPlayerName
+
+    env.info("Client connected!")
+    env.info(unit_name)
+    env.info(player_name)
+
+    MESSAGE:New("Welcome, " .. player_name):ToGroup(group)
+    --MESSAGE:New(GUAM_GENERAL_BRIEFING, 20):ToGroup(group)
+end
+
+SetEventHandler()
+
+scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )
 --3.1 - ATIS
 AtisHatay = ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
 AtisHatay:SetRadioRelayUnitName("LCRA Relay")
@@ -341,7 +411,7 @@ cvn_75_airboss:SetQueueUpdateTime(30)
 --local case2_2 = cvn_75_airboss:AddRecoveryWindow("19:05", "19:30", 2, nil, true, 25)
 --local case3 = cvn_75_airboss:AddRecoveryWindow("19:45", "05:30+1", 3, 30, true, 25)
 --local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:35+1", "06:30+1", 2, nil, true, 25)
---local case1_2 = cvn_75_airboss:AddRecoveryWindow("06:35+1", "19:00+1", 1, nil, true, 25)
+local case1_2 = cvn_75_airboss:AddRecoveryWindow("05:35", "19:00", 1, nil, true, 30)
 
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")
 cvn_75_airboss:SetMenuRecovery(30, 28, false)
@@ -424,6 +494,31 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- Report LSO grade to dcs.log file.
     env.info(string.format("YAUTAY LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
+
+-- EM LANDING AUTOMATION
+
+function recheck_activation_zone(airbos_object)
+    local radial = airbos_object:GetRadial( 1, false, false, false )
+    local coords = airbos_object:GetCoordinate()
+    local activation_zone = ZONE_POLYGON_BASE:New( "Em. Landing Auto Activation Zone" )
+
+    local c1 = coords:Translate( UTILS.NMToMeters( .2 ), radial - 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) --  0.0  0.5 starboard
+    local c2 = coords:Translate( UTILS.NMToMeters( 1.5 ), radial + 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) -- -3.0  1.3 starboard, astern
+    local c3 = coords:Translate( UTILS.NMToMeters( 1.5), radial + 90 ):Translate( UTILS.NMToMeters( 3 ), radial ) -- -3.0 -0.4 port, astern
+    local c4 = coords:Translate( UTILS.NMToMeters( 1 ), radial - 90 ):Translate( UTILS.NMToMeters( 3 ), radial )
+
+    localvec2 = { c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2()}
+
+    activation_zone:UpdateFromVec2( vec2 )
+    activation_zone:SmokeZone(SMOKECOLOR.White)
+
+
+
+end
+
+
+scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )
+
 --4.2 - CSAR
 -- Instantiate and start a CSAR for the blue side, with template "Downed Pilot" and alias "Luftrettung"
 mycsar = CSAR:New(coalition.side.BLUE,"Downed Pilot","MIA")

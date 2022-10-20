@@ -25,6 +25,7 @@ scripts_order["\n--0.1 - CONST\n"] = PATH_SCRIPT_CONST
 scripts_order["\n--1.1 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--1.2 - COMMON\n"] = PATH_SCRIPT_COMMON
 scripts_order["\n--2.1 - MENU\n"] = PATH_SCRIPT_MENU
+scripts_order["\n--2.2 - CLIENT\n"] = PATH_SCRIPT_CLIENTS
 scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 
