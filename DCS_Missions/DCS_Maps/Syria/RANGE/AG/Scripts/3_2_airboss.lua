@@ -66,45 +66,49 @@ end
 cvn_75_airboss:Start()
 
 -- FUNKMAN INTEGRATION
-function recheck_activation_zone(args)
-    local radial = args[2]:GetRadial( 1, false, false, false )
-    local coords = args[2]:GetCoordinate()
-
-    local c1 = coords:Translate( UTILS.NMToMeters( .2 ), radial - 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) --  0.0  0.5 starboard
-    local c2 = coords:Translate( UTILS.NMToMeters( 1.5 ), radial + 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) -- -3.0  1.3 starboard, astern
-    local c3 = coords:Translate( UTILS.NMToMeters( 1.5), radial + 90 ):Translate( UTILS.NMToMeters( 3 ), radial ) -- -3.0 -0.4 port, astern
-    local c4 = coords:Translate( UTILS.NMToMeters( 1 ), radial - 90 ):Translate( UTILS.NMToMeters( 3 ), radial )
-
-    local vec2 = {c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2()}
-
-    args[1]:UpdateFromVec2( vec2 )
-end
-
-function activate_em_landing_for_unit(args)
-    env.info("CUSTOM DEBUG EN LANDING")
-    BASE:E(navy_in_air)
-    for element in pairs(navy_in_air) do
-        local client = CLIENT:FindByName(element)
-        if client.isAlive() then
-            if client:IsInZone(args[1]) then
-                env.info("CUSTOM DEBUG EM LANDING IN ZONE AND ALIVE ".. element)
-                local unit_alt = unit:GetAltitude()
-                if unit_alt < UTILS.FeetToMeters(800) then
-                    env.info("CUSTOM unit " .. element .. " in zone " .. args[1]:GetName())
-                    args[2]:_RequestEmergency(unit:GetName())
-                end
-            end
-        end
-    end
-end
-
-cvn_75_auto_activation_zone = ZONE_POLYGON_BASE:New( "CVN-75 LSO Auto Activation Zone" )
-cvn_75_auto_activation_zone:UpdateFromVec2(cvn_75_airboss:GetCoordinate():GetVec2())
-
-
-cvn_75_auto_activation_zone_mo = SCHEDULER:New( self )
-scheduler_cvn_zone_positioning = cvn_75_auto_activation_zone_mo:Schedule(self, recheck_activation_zone, {{cvn_75_auto_activation_zone, cvn_75_airboss}}, 10, 60 )
-scheduler_cvn_zone_evaluation = cvn_75_auto_activation_zone_mo:Schedule(self, activate_em_landing_for_unit, {{cvn_75_auto_activation_zone, cvn_75_airboss}}, 13, 5 )
+--function recheck_activation_zone(args)
+--    local radial = args[2]:GetRadial( 1, false, false, false )
+--    local coords = args[2]:GetCoordinate()
+--
+--    local c1 = coords:Translate( UTILS.NMToMeters( .2 ), radial - 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) --  0.0  0.5 starboard
+--    local c2 = coords:Translate( UTILS.NMToMeters( 1.5 ), radial + 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) -- -3.0  1.3 starboard, astern
+--    local c3 = coords:Translate( UTILS.NMToMeters( 1.5), radial + 90 ):Translate( UTILS.NMToMeters( 3 ), radial ) -- -3.0 -0.4 port, astern
+--    local c4 = coords:Translate( UTILS.NMToMeters( 1 ), radial - 90 ):Translate( UTILS.NMToMeters( 3 ), radial )
+--
+--    local vec2 = {c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2()}
+--
+--    args[1]:UpdateFromVec2( vec2 )
+--end
+--
+--function activate_em_landing_for_unit(args)
+--    env.info("CUSTOM DEBUG EM LANDING - LOOP")
+--    BASE:E(cvn_75_airboss:_CheckPlayerStatus())
+--    --for index, value in ipairs(navy_in_air) do
+--    for index, value in ipairs(NAVY_CLIENTS) do
+--        local client = CLIENT:FindByName(value)
+--        BASE:E(client)
+--        BASE:E(client.IsAlive())
+--        if client.IsAlive() then
+--            env.info("CUSTOM DEBUG EM LANDING - " .. client:GetPlayer() .. " IS ALIVE!")
+--            if client:IsInZone(args[1]) then
+--                env.info("CUSTOM DEBUG EM LANDING - CLIENT IN ZONE")
+--                local unit_alt = client:GetAltitude()
+--                if unit_alt < UTILS.FeetToMeters(800) then
+--                    env.info("CUSTOM unit " .. element .. " in zone " .. args[1]:GetName())
+--                    args[2]:_RequestEmergency(client:GetName())
+--                end
+--            end
+--        end
+--    end
+--end
+--
+--cvn_75_auto_activation_zone = ZONE_POLYGON_BASE:New( "CVN-75 LSO Auto Activation Zone" )
+--cvn_75_auto_activation_zone:UpdateFromVec2(cvn_75_airboss:GetCoordinate():GetVec2())
+--
+--
+--cvn_75_auto_activation_zone_mo = SCHEDULER:New( self )
+--scheduler_cvn_zone_positioning = cvn_75_auto_activation_zone_mo:Schedule(self, recheck_activation_zone, {{cvn_75_auto_activation_zone, cvn_75_airboss}}, 10, 60 )
+--scheduler_cvn_zone_evaluation = cvn_75_auto_activation_zone_mo:Schedule(self, activate_em_landing_for_unit, {{cvn_75_auto_activation_zone, cvn_75_airboss}}, 13, 5 )
 
 
 function cvn_75_airboss:OnAfterStart(From, Event, To)

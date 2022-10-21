@@ -52,14 +52,7 @@ function SetEventHandler()
 end
 
 function ClientSet:OnEventPlayerEnterAircraft(event_data)
-    local function has_value (tab, val)
-    for index, value in ipairs(tab) do
-        if value == val then
-            return true
-        end
-    end
-    return false
-end
+
     local unit_name = event_data.IniUnitName
     local group = event_data.IniGroup
     local player_name = event_data.IniPlayerName
@@ -67,7 +60,7 @@ end
     if has_value(NAVY_CLIENTS, unit_name) then
         env.info("CUSTOM Aviator Connected " .. unit_name)
         info_msg:SendText("Aviator " .. player_name .. " Connected!")
-        env.info("CUSTOM Client " .. element .. " added to book of living")
+        env.info("CUSTOM Client " .. unit_name .. " added to book of living")
         table.insert(navy_in_air, unit_name)
     else
         env.info("CUSTOM Pilot Connected " .. unit_name)
@@ -80,13 +73,13 @@ end
 
 SetEventHandler()
 
-function hearth_beet_check(list_object)
-    for element in pairs(list_object) do
-        if not CLIENT:FindByName(element):IsAlive() then
-            env.info("CUSTOM Client " .. element .. " removed from book of living")
-            table.remove(element)
-        end
-    end
-end
+--function hearth_beet_check(list_object)
+--    for index, value in ipairs(list_object) do
+--        if not CLIENT:FindByName(value):IsAlive() then
+--            env.info("CUSTOM Client " .. value .. " removed from book of living")
+--            table.remove(value)
+--        end
+--    end
+--end
 scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )
-garbage_remover = SCHEDULER:New( navy_in_air, hearth_beet_check, self, 27, 120 )
+--garbage_remover = SCHEDULER:New( navy_in_air, hearth_beet_check, self, 27, 120 )
