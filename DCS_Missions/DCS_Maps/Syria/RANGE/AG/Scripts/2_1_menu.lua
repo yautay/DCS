@@ -30,7 +30,9 @@ local ordered_ground_freq = {
     FREQUENCIES.GROUND.app_lcra_v,
     FREQUENCIES.GROUND.gnd_lcra_u,
     FREQUENCIES.GROUND.twr_lcra_u,
-    FREQUENCIES.GROUND.app_lcra_u
+    FREQUENCIES.GROUND.app_lcra_u,
+    FREQUENCIES.RANGE.bluewater_con,
+    FREQUENCIES.RANGE.bluewater_inst,
 }
 local ordered_special_freq = {
     FREQUENCIES.SPECIAL.guard_hi,
