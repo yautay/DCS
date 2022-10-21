@@ -51,6 +51,10 @@ FREQUENCIES = {
         guard_hi = {243.00, "Guard UHF", "AM"},
         guard_lo = {121.50, "Guard VHF", "AM"},
         ch_16 = {156.8, "Maritime Ch16 VHF", "FM"}
+    },
+    RANGE = {
+        bluewater_con = {130.10, "Bluewater RANGE CONTROL VHF", "AM"},
+        bluewater_inst = {399.00, "Bluewater RANGE INSTRUCTOR VHF", "AM"}
     }
 }
 ICLS = {

@@ -28,6 +28,7 @@ scripts_order["\n--2.1 - MENU\n"] = PATH_SCRIPT_MENU
 scripts_order["\n--2.2 - CLIENT\n"] = PATH_SCRIPT_CLIENTS
 scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
+scripts_order["\n--3.3 - RANGE\n"] = PATH_SCRIPT_RANGE
 
 scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
 
