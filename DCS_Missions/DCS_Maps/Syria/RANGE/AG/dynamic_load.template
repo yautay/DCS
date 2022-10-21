@@ -1,4 +1,4 @@
-env.info( '*** DYNAMIC LOAD SCRIPTS *** ' )
+env.info( 'CUSTOM *** DYNAMIC LOAD SCRIPTS *** ' )
 local base = _G
 
 FRAMEWORKS_PLACEHOLDER

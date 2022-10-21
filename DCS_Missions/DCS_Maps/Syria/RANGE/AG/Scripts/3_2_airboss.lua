@@ -16,7 +16,7 @@ cvn_75_tanker:SetTakeoffHot()
 cvn_75_tanker:Start()
 
 function cvn_75_tanker:OnAfterStart(From, Event, To)
-    env.info(string.format("YAUTAY RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("CUSTOM RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
     local unit = UNIT:FindByName(cvn_75_tanker:GetUnit())
     local beacon = unit:GetBeacon()
     beacon:ActivateTACAN(TACAN.arco[1], TACAN.arco[2], TACAN.arco[3], TACAN.arco[5])
@@ -45,26 +45,70 @@ cvn_75_airboss:SetMarshalRadio(FREQUENCIES.CV.btn16[1], FREQUENCIES.CV.btn16[3])
 cvn_75_airboss:SetRadioRelayMarshal(name_CVN_75_RALAY_MARSHAL)
 cvn_75_airboss:SetQueueUpdateTime(30)
 
+-- RECOVERIES
 --local case1 = cvn_75_airboss:AddRecoveryWindow("18:17", "19:00", 1, nil, true, 25)
 --local case2_2 = cvn_75_airboss:AddRecoveryWindow("19:05", "19:30", 2, nil, true, 25)
 --local case3 = cvn_75_airboss:AddRecoveryWindow("19:45", "05:30+1", 3, 30, true, 25)
 --local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:35+1", "06:30+1", 2, nil, true, 25)
 local case1_2 = cvn_75_airboss:AddRecoveryWindow("05:35", "19:00", 1, nil, true, 30)
 
+-- AIRBOSS SET'UP
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")
 cvn_75_airboss:SetMenuRecovery(30, 28, false)
 cvn_75_airboss:SetDespawnOnEngineShutdown()
 cvn_75_airboss:Load()
 cvn_75_airboss:SetAutoSave()
-cvn_75_airboss:SetTrapSheet(nil, "TRAP-")
+--cvn_75_airboss:SetTrapSheet(nil, "TRAP-")
 cvn_75_airboss:SetHandleAION()
 if SERVER then
     cvn_75_airboss:SetMPWireCorrection()
 end
 cvn_75_airboss:Start()
 
+-- FUNKMAN INTEGRATION
+function recheck_activation_zone(args)
+    local radial = args[2]:GetRadial( 1, false, false, false )
+    local coords = args[2]:GetCoordinate()
+
+    local c1 = coords:Translate( UTILS.NMToMeters( .2 ), radial - 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) --  0.0  0.5 starboard
+    local c2 = coords:Translate( UTILS.NMToMeters( 1.5 ), radial + 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) -- -3.0  1.3 starboard, astern
+    local c3 = coords:Translate( UTILS.NMToMeters( 1.5), radial + 90 ):Translate( UTILS.NMToMeters( 3 ), radial ) -- -3.0 -0.4 port, astern
+    local c4 = coords:Translate( UTILS.NMToMeters( 1 ), radial - 90 ):Translate( UTILS.NMToMeters( 3 ), radial )
+
+    local vec2 = {c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2()}
+
+    args[1]:UpdateFromVec2( vec2 )
+end
+
+function activate_em_landing_for_unit(args)
+    env.info("CUSTOM DEBUG EN LANDING")
+    BASE:E(navy_in_air)
+    for element in pairs(navy_in_air) do
+        local client = CLIENT:FindByName(element)
+        if client.isAlive() then
+            if client:IsInZone(args[1]) then
+                env.info("CUSTOM DEBUG EM LANDING IN ZONE AND ALIVE ".. element)
+                local unit_alt = unit:GetAltitude()
+                if unit_alt < UTILS.FeetToMeters(800) then
+                    env.info("CUSTOM unit " .. element .. " in zone " .. args[1]:GetName())
+                    args[2]:_RequestEmergency(unit:GetName())
+                end
+            end
+        end
+    end
+end
+
+cvn_75_auto_activation_zone = ZONE_POLYGON_BASE:New( "CVN-75 LSO Auto Activation Zone" )
+cvn_75_auto_activation_zone:UpdateFromVec2(cvn_75_airboss:GetCoordinate():GetVec2())
+
+
+cvn_75_auto_activation_zone_mo = SCHEDULER:New( self )
+scheduler_cvn_zone_positioning = cvn_75_auto_activation_zone_mo:Schedule(self, recheck_activation_zone, {{cvn_75_auto_activation_zone, cvn_75_airboss}}, 10, 60 )
+scheduler_cvn_zone_evaluation = cvn_75_auto_activation_zone_mo:Schedule(self, activate_em_landing_for_unit, {{cvn_75_auto_activation_zone, cvn_75_airboss}}, 13, 5 )
+
+
 function cvn_75_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
 
 --- Function called when a player gets graded by the LSO.
@@ -85,7 +129,7 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("YAUTAY CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
+    env.info(string.format("CUSTOM CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
 name_LHA_1 = "LHA-1"
@@ -109,8 +153,10 @@ lha_1_airboss:SetDespawnOnEngineShutdown()
 lha_1_airboss:SetHandleAION()
 lha_1_airboss:Start()
 
+
+
 function lha_1_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
 --- Function called when a player gets graded by the LSO.
 function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
@@ -130,27 +176,12 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("YAUTAY LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
-end
-
--- EM LANDING AUTOMATION
-
-function recheck_activation_zone(airbos_object)
-    local radial = airbos_object:GetRadial( 1, false, false, false )
-    local coords = airbos_object:GetCoordinate()
-    local activation_zone = ZONE_POLYGON_BASE:New( "Em. Landing Auto Activation Zone" )
-
-    local c1 = coords:Translate( UTILS.NMToMeters( .2 ), radial - 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) --  0.0  0.5 starboard
-    local c2 = coords:Translate( UTILS.NMToMeters( 1.5 ), radial + 90 ):Translate( UTILS.NMToMeters( -.5 ), radial ) -- -3.0  1.3 starboard, astern
-    local c3 = coords:Translate( UTILS.NMToMeters( 1.5), radial + 90 ):Translate( UTILS.NMToMeters( 3 ), radial ) -- -3.0 -0.4 port, astern
-    local c4 = coords:Translate( UTILS.NMToMeters( 1 ), radial - 90 ):Translate( UTILS.NMToMeters( 3 ), radial )
-
-    local vec2 = { c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2()}
-
-    activation_zone:UpdateFromVec2( vec2 )
-    activation_zone:SmokeZone(SMOKECOLOR.White)
+    env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
 
 
-scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )
+
+
+
+

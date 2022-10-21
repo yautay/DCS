@@ -338,9 +338,7 @@ function ClientSet:OnEventPlayerEnterAircraft(event_data)
     local group = event_data.IniGroup
     local player_name = event_data.IniPlayerName
 
-    env.info("Client connected!")
-    env.info(unit_name)
-    env.info(player_name)
+    env.info("CUSTOM " .. player_name .. " Client connected!")
 
     MESSAGE:New("Welcome, " .. player_name):ToGroup(group)
     --MESSAGE:New(GUAM_GENERAL_BRIEFING, 20):ToGroup(group)
@@ -378,7 +376,7 @@ cvn_75_tanker:SetTakeoffHot()
 cvn_75_tanker:Start()
 
 function cvn_75_tanker:OnAfterStart(From, Event, To)
-    env.info(string.format("YAUTAY RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("CUSTOM RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
     local unit = UNIT:FindByName(cvn_75_tanker:GetUnit())
     local beacon = unit:GetBeacon()
     beacon:ActivateTACAN(TACAN.arco[1], TACAN.arco[2], TACAN.arco[3], TACAN.arco[5])
@@ -426,7 +424,7 @@ end
 cvn_75_airboss:Start()
 
 function cvn_75_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
 
 --- Function called when a player gets graded by the LSO.
@@ -447,7 +445,7 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("YAUTAY CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
+    env.info(string.format("CUSTOM CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
 name_LHA_1 = "LHA-1"
@@ -472,7 +470,7 @@ lha_1_airboss:SetHandleAION()
 lha_1_airboss:Start()
 
 function lha_1_airboss:OnAfterStart(From, Event, To)
-    env.info(string.format("YAUTAY ARIBOSS EVENT %S from %s to %s", Event, From, To))
+    env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
 --- Function called when a player gets graded by the LSO.
 function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
@@ -492,7 +490,7 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
-    env.info(string.format("YAUTAY LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
+    env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
 -- EM LANDING AUTOMATION
@@ -851,11 +849,11 @@ function tanker_platform_updater(airwing)
                 callsign = CALLSIGN.Tanker.Shell
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
-                    env.info(string.format("YAUTAY BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.shell_1[1], TACAN.shell_1[2], TACAN.shell_1[3], TACAN.shell_1[5])
                 elseif (string.find(mission:GetName(), "Two")) then
                     index = 2
-                    env.info(string.format("YAUTAY BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
                 --elseif (string.find(mission:GetName(), "Three")) then
                 --    index = 3
@@ -867,14 +865,14 @@ function tanker_platform_updater(airwing)
                 callsign = CALLSIGN.Tanker.Texaco
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
-                    env.info(string.format("YAUTAY BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.texaco_1[1], TACAN.texaco_1[2], TACAN.texaco_1[3], TACAN.texaco_1[5])
             --    elseif (string.find(mission:GetName(), "Two")) then
             --        index = 2
             --        unit_beacon:ActivateTACAN(TACAN.texaco_2[1], TACAN.texaco_2[2], TACAN.texaco_2[3], TACAN.texaco_2[5])
                 end
             end
-            env.info(string.format("YAUTAY TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
+            env.info(string.format("CUSTOM TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
             unit_alive:CommandSetCallsign(callsign, index, 1)
         end
     end

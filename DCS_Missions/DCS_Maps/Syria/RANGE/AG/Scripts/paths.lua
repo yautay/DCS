@@ -28,9 +28,9 @@ else
 	SRS_PORT = SRS_LOCAL_PORT
 end
 
-env.info("### PATH SETUP ###")
-env.info(string.format("SERVER->%s", tostring(SERVER)))
-env.info(string.format("SCRIPTS PATH->%s", scripts_path))
-env.info(string.format("SRS PATH->%s", SRS_PATH))
-env.info(string.format("SRS PORT->%s", SRS_PORT))
-env.info("### PATH SETUP ###")
+env.info("CUSTOM ### PATH SETUP ###")
+env.info(string.format("CUSTOM SERVER->%s", tostring(SERVER)))
+env.info(string.format("CUSTOM SCRIPTS PATH->%s", scripts_path))
+env.info(string.format("CUSTOM SRS PATH->%s", SRS_PATH))
+env.info(string.format("CUSTOM SRS PORT->%s", SRS_PORT))
+env.info("CUSTOM ### PATH SETUP ###")

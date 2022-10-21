@@ -21,10 +21,6 @@ CLIENTS = {
     "BLUE-27-S",
     "BLUE-29-N",
     "BLUE-29-S",
-    "CASE 1 TRAINER A",
-    "CASE 1 TRAINER B",
-    "CASE 1 TRAINER C",
-    "CASE 1 TRAINER D",
 }
 NAVY_CLIENTS = {
     "UZI-1",
@@ -41,6 +37,10 @@ NAVY_CLIENTS = {
     "RED-18-S",
     "BLUE-18-N",
     "BLUE-18-S",
+    "CASE 1 TRAINER A",
+    "CASE 1 TRAINER B",
+    "CASE 1 TRAINER C",
+    "CASE 1 TRAINER D",
 }
 
 navy_in_air = {}
@@ -65,12 +65,13 @@ end
     local player_name = event_data.IniPlayerName
 
     if has_value(NAVY_CLIENTS, unit_name) then
-        env.info("Aviator Connected" .. unit_name)
+        env.info("CUSTOM Aviator Connected " .. unit_name)
         info_msg:SendText("Aviator " .. player_name .. " Connected!")
+        env.info("CUSTOM Client " .. element .. " added to book of living")
         table.insert(navy_in_air, unit_name)
     else
+        env.info("CUSTOM Pilot Connected " .. unit_name)
         info_msg:SendText("Pilot " .. player_name .. " Connected!")
-        env.info("Pilot Connected" .. unit_name)
     end
 
     MESSAGE:New("Welcome, " .. player_name):ToGroup(group)
@@ -79,4 +80,13 @@ end
 
 SetEventHandler()
 
+function hearth_beet_check(list_object)
+    for element in pairs(list_object) do
+        if not CLIENT:FindByName(element):IsAlive() then
+            env.info("CUSTOM Client " .. element .. " removed from book of living")
+            table.remove(element)
+        end
+    end
+end
 scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )
+garbage_remover = SCHEDULER:New( navy_in_air, hearth_beet_check, self, 27, 120 )

@@ -1,4 +1,4 @@
-env.info( '*** DYNAMIC LOAD SCRIPTS *** ' )
+env.info( 'CUSTOM *** DYNAMIC LOAD SCRIPTS *** ' )
 local base = _G
 
 local FRAMEWORKS = {"E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\paths.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\lib\\Moose.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\lib\\DCS-SimpleTextToSpeech.lua", }
@@ -12,7 +12,7 @@ __Script.Include = function(IncludeFile)
 		if f == nil then
 			error ("Could not load Script file " .. IncludeFile )
 		else
-			env.info( IncludeFile .. " dynamically loaded." )
+			env.info( "CUSTOM ".. IncludeFile .. " dynamically loaded." )
 			return f()
 		end
 	end
@@ -29,4 +29,4 @@ for i, v in pairs(SCRIPTS) do
 end
 
 BASE:TraceOnOff(true)
-env.info( '*** DYNAMIC LOAD END *** ' )
+env.info( 'CUSTOM *** DYNAMIC LOAD END *** ' )

@@ -14,11 +14,11 @@ function tanker_platform_updater(airwing)
                 callsign = CALLSIGN.Tanker.Shell
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
-                    env.info(string.format("YAUTAY BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.shell_1[1], TACAN.shell_1[2], TACAN.shell_1[3], TACAN.shell_1[5])
                 elseif (string.find(mission:GetName(), "Two")) then
                     index = 2
-                    env.info(string.format("YAUTAY BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
                 --elseif (string.find(mission:GetName(), "Three")) then
                 --    index = 3
@@ -30,14 +30,14 @@ function tanker_platform_updater(airwing)
                 callsign = CALLSIGN.Tanker.Texaco
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
-                    env.info(string.format("YAUTAY BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.texaco_1[1], TACAN.texaco_1[2], TACAN.texaco_1[3], TACAN.texaco_1[5])
             --    elseif (string.find(mission:GetName(), "Two")) then
             --        index = 2
             --        unit_beacon:ActivateTACAN(TACAN.texaco_2[1], TACAN.texaco_2[2], TACAN.texaco_2[3], TACAN.texaco_2[5])
                 end
             end
-            env.info(string.format("YAUTAY TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
+            env.info(string.format("CUSTOM TANKER PLATFORM UPDATE %s -> %s-%d", unit_alive:GetName(), callsign, index))
             unit_alive:CommandSetCallsign(callsign, index, 1)
         end
     end
