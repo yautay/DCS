@@ -2,7 +2,7 @@ env.info( 'CUSTOM *** DYNAMIC LOAD SCRIPTS *** ' )
 local base = _G
 
 local FRAMEWORKS = {"E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\paths.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\lib\\Moose.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\lib\\DCS-SimpleTextToSpeech.lua", }
-local SCRIPTS = {"E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\0_1_const.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\1_1_variables.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\1_2_common.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\2_1_menu.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\2_2_clients.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\3_1_atis.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\3_2_airboss.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\4_2_csar.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\AW_Akrotiri.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\AW_Larnaca.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\AW_Assad.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\CHIEF Red.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\MANTIS_Red.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\5_1_schedulers.lua", }
+local SCRIPTS = {"E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\0_1_const.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\1_1_variables.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\1_2_common.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\2_1_menu.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\2_2_clients.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\3_1_atis.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\3_2_airboss.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\3_3_range.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\4_2_csar.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\AW_Akrotiri.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\AW_Larnaca.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\AW_Assad.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\CHIEF Red.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\MANTIS_Red.lua", "E:\\repos\\DCS_MISSIONS\\DCS_Missions\\DCS_Maps\\Syria\\RANGE\\AG\\Scripts\\5_1_schedulers.lua", }
 
 __Script = {}
 __Script.Include = function(IncludeFile)
@@ -12,7 +12,7 @@ __Script.Include = function(IncludeFile)
 		if f == nil then
 			error ("Could not load Script file " .. IncludeFile )
 		else
-			env.info( "CUSTOM ".. IncludeFile .. " dynamically loaded." )
+			env.info( IncludeFile .. " dynamically loaded." )
 			return f()
 		end
 	end
@@ -29,4 +29,4 @@ for i, v in pairs(SCRIPTS) do
 end
 
 BASE:TraceOnOff(true)
-env.info( 'CUSTOM *** DYNAMIC LOAD END *** ' )
+env.info( '*** DYNAMIC LOAD END *** ' )

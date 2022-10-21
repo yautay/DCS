@@ -1,6 +1,6 @@
 
 ZONE_RED_AWACS = ZONE:New("RED_AWACS")
-ZONE_RED_PATROL = ZONE_POLYGON:NewFromGroupName("RED_PATROL")
+ZONE_RED_PATROL = ZONE:New("RED_PATROL")
 ZONE_RED_ENGAGE = ZONE_POLYGON:NewFromGroupName("KILLBOX")
 
 AW_Assad = AIRWING:New("Static Warehouse-4-1", "Assad Air Wing")
@@ -11,12 +11,13 @@ AW_Assad:SetRespawnAfterDestroyed(600)
 AW_Assad:__Start(2)
 
 AW_Assad_CAP = SQUADRON:New("Red Su33 BVR", 12, "Red Su33 BVR")
-AW_Assad_CAP:AddMissionCapability({ AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE }, 100)
+AW_Assad_CAP:SetSkill(AI.Skill.EXCELLENT)
 AW_Assad_CAP:SetTakeoffType("Hot")
+AW_Assad_CAP:AddMissionCapability({ AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE }, 100)
 AW_Assad_CAP:SetFuelLowRefuel(true)
-AW_Assad_CAP:SetFuelLowThreshold(0.5)
-AW_Assad_CAP:SetTurnoverTime(15, 5)
+AW_Assad_CAP:SetFuelLowThreshold(0.4)
 AW_Assad:AddSquadron(AW_Assad_CAP)
+
 AW_Assad:NewPayload("Red Su33 BVR", -1, { AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE }, 100)
 
 AW_Assad_AAR = SQUADRON:New("Red AAR", 3, "Red AAR Squadron")
@@ -37,6 +38,18 @@ AW_Assad_AWACS:SetTurnoverTime(30, 5)
 AW_Assad_AWACS:SetRadio(251)
 AW_Assad:AddSquadron(AW_Assad_AWACS)
 AW_Assad:NewPayload("Red AWACS", -1, { AUFTRAG.Type.ORBIT }, 100)
+
+function AW_Assad:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission)  --We'll use this to expand functionality later.  Not strictly necessary now, but helpful.
+  local flightgroup = Flightgroup -- Ops.FlightGroup#FLIGHTGROUP
+  local mission = Mission -- Ops.Auftrag#AUFTRAG
+
+  -- Info message.
+  local text=string.format("AIRWING Group %s on mission %s [%s]", flightgroup:GetName(), mission:GetName(), mission:GetType())
+  MESSAGE:New(text, 120):ToAll()
+  env.info(text)
+
+end
+
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
 local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}
