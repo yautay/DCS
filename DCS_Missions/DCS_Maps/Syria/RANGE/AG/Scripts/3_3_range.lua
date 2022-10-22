@@ -62,4 +62,5 @@ function report_target_coordinates(list_targets_names)
     return final_msg
 end
 
+sleep(5)
 info_msg:SendText(report_target_coordinates(bombtargets))
