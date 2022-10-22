@@ -10,9 +10,9 @@ __Script.Include = function(IncludeFile)
 		__Script.Includes[IncludeFile] = IncludeFile
 		local f = assert(base.loadfile(IncludeFile))
 		if f == nil then
-			error ("Could not load Script file " .. IncludeFile )
+			error ("ERROR Could not load Script file " .. IncludeFile )
 		else
-			env.info( IncludeFile .. " dynamically loaded." )
+			env.info( "CUSTOM file -> " .. IncludeFile .. " dynamically loaded." )
 			return f()
 		end
 	end
@@ -29,4 +29,4 @@ for i, v in pairs(SCRIPTS) do
 end
 
 BASE:TraceOnOff(true)
-env.info( '*** DYNAMIC LOAD END *** ' )
+env.info( 'CUSTOM *** DYNAMIC LOAD END *** ' )

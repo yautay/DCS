@@ -6,19 +6,20 @@ function tanker_platform_updater(airwing)
         local index = 99
 
         if (mission:GetType() == AUFTRAG.Type.TANKER) then
+            env.info("CUSTOM BEACON UPDATE - TANKERS")
             local unit_alive = flightgroup:GetGroup():GetFirstUnitAlive()
             local unit_beacon = unit_alive:GetBeacon()
 
             if (mission.refuelSystem == 1) then
                 -- garden hose
-                callsign = CALLSIGN.Tanker.Shell
+                callsign = "SHELL"
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
-                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s ", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.shell_1[1], TACAN.shell_1[2], TACAN.shell_1[3], TACAN.shell_1[5])
                 elseif (string.find(mission:GetName(), "Two")) then
                     index = 2
-                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s ", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.shell_2[1], TACAN.shell_2[2], TACAN.shell_2[3], TACAN.shell_2[5])
                 --elseif (string.find(mission:GetName(), "Three")) then
                 --    index = 3
@@ -27,10 +28,10 @@ function tanker_platform_updater(airwing)
 
             elseif (mission.refuelSystem == 0) then
                 -- broom stick
-                callsign = CALLSIGN.Tanker.Texaco
+                callsign = "TEXACO"
                 if (string.find(mission:GetName(), "One")) then
                     index = 1
-                    env.info(string.format("CUSTOM BEACON UPDATE ON %s %s", mission:GetName()))
+                    env.info(string.format("CUSTOM BEACON UPDATE ON %s ", mission:GetName()))
                     unit_beacon:ActivateTACAN(TACAN.texaco_1[1], TACAN.texaco_1[2], TACAN.texaco_1[3], TACAN.texaco_1[5])
             --    elseif (string.find(mission:GetName(), "Two")) then
             --        index = 2

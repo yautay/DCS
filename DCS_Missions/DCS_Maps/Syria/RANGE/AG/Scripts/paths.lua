@@ -1,4 +1,4 @@
-SERVER = true
+SERVER = false
 
 SERVER_DCS_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions"
 LOCAL_DCS_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions"
@@ -16,16 +16,21 @@ SRS_SERVER_PORT = 5002
 SRS_LOCAL_PATH = "E:\\Software\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
+SERVER_SAVE_SHEET_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Sheets"
+LOCAL_SAVE_SHEET_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Sheets"
+
 if (SERVER) then
 	scripts_path = SERVER_DCS_PATH .. SCRIPTS_PATH
 	lib_path = SERVER_DCS_PATH .. LIBS_PATH
 	SRS_PATH = SRS_SERVER_PATH
 	SRS_PORT = SRS_SERVER_PORT
+	SHEET_PATH = SERVER_SAVE_SHEET_PATH
 else
 	scripts_path = LOCAL_DCS_PATH .. SCRIPTS_PATH
 	lib_path = LOCAL_DCS_PATH .. LIBS_PATH
 	SRS_PATH = SRS_LOCAL_PATH
 	SRS_PORT = SRS_LOCAL_PORT
+	SHEET_PATH = LOCAL_SAVE_SHEET_PATH
 end
 
 env.info("CUSTOM ### PATH SETUP ###")

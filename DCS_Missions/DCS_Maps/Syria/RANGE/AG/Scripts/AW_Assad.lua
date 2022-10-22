@@ -13,12 +13,12 @@ AW_Assad:__Start(2)
 AW_Assad_CAP = SQUADRON:New("Red Su33 BVR", 12, "Red Su33 BVR")
 AW_Assad_CAP:SetSkill(AI.Skill.EXCELLENT)
 AW_Assad_CAP:SetTakeoffType("Hot")
-AW_Assad_CAP:AddMissionCapability({ AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE }, 100)
+AW_Assad_CAP:AddMissionCapability({ AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.PATROLZONE }, 100)
 AW_Assad_CAP:SetFuelLowRefuel(true)
 AW_Assad_CAP:SetFuelLowThreshold(0.4)
 AW_Assad:AddSquadron(AW_Assad_CAP)
 
-AW_Assad:NewPayload("Red Su33 BVR", -1, { AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE }, 100)
+AW_Assad:NewPayload("Red Su33 BVR", -1, { AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.PATROLZONE }, 100)
 
 AW_Assad_AAR = SQUADRON:New("Red AAR", 3, "Red AAR Squadron")
 AW_Assad_AAR:AddMissionCapability({ AUFTRAG.Type.TANKER }, 100)
@@ -45,11 +45,9 @@ function AW_Assad:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission) 
 
   -- Info message.
   local text=string.format("AIRWING Group %s on mission %s [%s]", flightgroup:GetName(), mission:GetName(), mission:GetType())
-  MESSAGE:New(text, 120):ToAll()
   env.info(text)
 
 end
-
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
 local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}

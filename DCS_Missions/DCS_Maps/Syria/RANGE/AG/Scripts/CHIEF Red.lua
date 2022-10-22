@@ -9,13 +9,11 @@ ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1")
 
 ZONE_RED_AAR = ZONE:New("RED_AAR")
 ZONE_RED_PATROL = ZONE:New("RED_PATROL")
+--ZONE_TARGET_LCRA = ZONE:New("TARGET_LCRA")
 
-ZONE_TARGET_LCRA = ZONE:New("TARGET_LCRA")
 -- ###########################################################
 -- ###                      RED CHIEF                      ###
 -- ###########################################################
-
-
 
 RedAgentSet = SET_GROUP:New():FilterCoalitions("red"):FilterStart()
 
@@ -26,41 +24,22 @@ RedBorderZoneSet:AddZone(ZONE_RED_BORDER_2)
 ConflictZoneSet = SET_ZONE:New()
 ConflictZoneSet:AddZone(ZONE_RED_CONFLICT)
 
-AtackZoneSet = SET_ZONE:New()
-AtackZoneSet:AddZone(ZONE_TARGET_LCRA)
+--AtackZoneSet = SET_ZONE:New()
+--AtackZoneSet:AddZone(ZONE_TARGET_LCRA)
 
 RedChief = CHIEF:New("red", RedAgentSet, "Comrade RedChief")
 -- ZONES
 RedChief:SetBorderZones(RedBorderZoneSet)
 RedChief:SetConflictZones(ConflictZoneSet)
-RedChief:SetAttackZones(AtackZoneSet)
+--RedChief:SetAttackZones(AtackZoneSet)
 -- STRATEGY
-RedChief:SetStrategy(CHIEF.Strategy.DEFFENSIVE)
+RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
 -- LIMITS
-RedChief:SetLimitMission(1, AUFTRAG.Type.INTERCEPT)
-RedChief:SetLimitMission(1, AUFTRAG.Type.ALERT5)
-RedChief:SetLimitMission(1, AUFTRAG.Type.CAP)
-RedChief:SetLimitMission(1, AUFTRAG.Type.GCICAP)
+RedChief:SetLimitMission(1, AUFTRAG.Type.TANKER)
+RedChief:SetLimitMission(2, AUFTRAG.Type.CAP)
 
 -- RESOURCES
 RedChief:AddAirwing(AW_Assad)
 RedChief:AddCapZone(ZONE_RED_PATROL, 30000, 275, 180, 20)
-RedChief:AddGciCapZone(ZONE_RED_PATROL, 30000, 275, 180, 30)
-
-
-local InterceptAlert5=AUFTRAG:NewALERT5(AUFTRAG.Type.INTERCEPT)
-InterceptAlert5:SetRequiredAssets(1)
-
--- Add the mission to the airwing.
--- NOTE: We could also add the mission to the CHIEF. But then we would not know which airwing he choses if he has more than one. Here it does not matter.
---AW_Assad:AddMission(InterceptAlert5)
-
---Set out 2 Groups of Ground-Controlled CAP fighters.
-local GCICAPAlert5s=AUFTRAG:NewALERT5(AUFTRAG.Type.GCICAP)
-GCICAPAlert5s:SetRequiredAssets(1)
-
--- Add mission to airwing.
---AW_Assad:AddMission(GCICAPAlert5s)
-
---RedChief:SetTacticalOverviewOn()
+RedChief:AddTankerZone(ZONE_RED_AAR, 25000, 340, 0, 30, 1)
 RedChief:__Start(5)

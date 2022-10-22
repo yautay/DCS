@@ -14,11 +14,7 @@ DYNAMIC_LOAD_LUA = "dynamic_load.lua"
 frameworks_order = OrderedDict()
 frameworks_order["\n--1 - PATHS\n"] = PATH_SCRIPT_PATHS
 frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE
-# frameworks_order["\n--3 - MIST\n"] = PATH_LIBS_MIST
 frameworks_order["\n--4 - STTS\n"] = PATH_LIBS_STTS
-# frameworks_order["\n--5 - SKYNET\n"] = PATH_LIBS_SKYNET
-# frameworks_order["\n--6 - HOUND\n"] = PATH_LIBS_HOUND
-
 
 scripts_order = OrderedDict()
 scripts_order["\n--0.1 - CONST\n"] = PATH_SCRIPT_CONST

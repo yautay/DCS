@@ -11,16 +11,9 @@ cvn_75_tanker:SetAltitude(6000)
 cvn_75_tanker:SetRacetrackDistances(6, 8)
 cvn_75_tanker:SetRadio(FREQUENCIES.AAR.arco[1])
 cvn_75_tanker:SetCallsign(CALLSIGN.Tanker.Arco)
-cvn_75_tanker:SetTACANoff()
+cvn_75_tanker:SetTACAN(TACAN.arco[1], TACAN.arco[3], TACAN.arco[2])
 cvn_75_tanker:SetTakeoffHot()
 cvn_75_tanker:Start()
-
-function cvn_75_tanker:OnAfterStart(From, Event, To)
-    env.info(string.format("CUSTOM RECOVERY TANKER EVENT %S from %s to %s", Event, From, To))
-    local unit = UNIT:FindByName(cvn_75_tanker:GetUnit())
-    local beacon = unit:GetBeacon()
-    beacon:ActivateTACAN(TACAN.arco[1], TACAN.arco[2], TACAN.arco[3], TACAN.arco[5])
-end
 
 -- E-2D AWACS
 cvn_75_awacs = RECOVERYTANKER:New(name_CVN_75, name_CVN_75_AWACS)
@@ -46,11 +39,14 @@ cvn_75_airboss:SetRadioRelayMarshal(name_CVN_75_RALAY_MARSHAL)
 cvn_75_airboss:SetQueueUpdateTime(30)
 
 -- RECOVERIES
---local case1 = cvn_75_airboss:AddRecoveryWindow("18:17", "19:00", 1, nil, true, 25)
---local case2_2 = cvn_75_airboss:AddRecoveryWindow("19:05", "19:30", 2, nil, true, 25)
---local case3 = cvn_75_airboss:AddRecoveryWindow("19:45", "05:30+1", 3, 30, true, 25)
---local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:35+1", "06:30+1", 2, nil, true, 25)
-local case1_2 = cvn_75_airboss:AddRecoveryWindow("05:35", "19:00", 1, nil, true, 30)
+local case3_1 = cvn_75_airboss:AddRecoveryWindow("04:30", "05:00", 3, 30, true, 30)
+local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:30", "06:30", 2, 30, true, 30)
+local case1_1 = cvn_75_airboss:AddRecoveryWindow("07:00", "07:20", 1, nil, true, 30)
+local case1_2 = cvn_75_airboss:AddRecoveryWindow("08:00", "08:20", 1, nil, true, 30)
+local case1_3 = cvn_75_airboss:AddRecoveryWindow("09:00", "09:20", 1, nil, true, 30)
+local case1_4 = cvn_75_airboss:AddRecoveryWindow("10:00", "10:20", 1, nil, true, 30)
+local case1_5 = cvn_75_airboss:AddRecoveryWindow("11:00", "11:20", 1, nil, true, 30)
+local case1_6 = cvn_75_airboss:AddRecoveryWindow("12:00", "12:20", 1, nil, true, 30)
 
 -- AIRBOSS SET'UP
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")

@@ -3,6 +3,7 @@ function orbit_mark(route, text)
 end
 
 ZONE_SHELL_2_AAR = ZONE:New("SHELL_2_AAR")
+ZONE_SEA_PATROL = ZONE:New("SEA PATROL")
 
 AW_LCLK = AIRWING:New("WH Larnaca", "Larnaca Air Wing")
 
@@ -28,3 +29,19 @@ MISSION_Shell_2:AssignSquadrons({ AW_LCLK_AAR_C130 })
 MISSION_Shell_2:SetRadio(FREQUENCIES.AAR.shell_2[1])
 MISSION_Shell_2:SetName("Shell Two")
 AW_LCLK:AddMission(MISSION_Shell_2)
+
+AW_LCLK_P8A = SQUADRON:New("ME SEA CONTROL", 6, "Poseidon Squadron")
+AW_LCLK_P8A:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
+AW_LCLK_P8A:SetTakeoffType("Hot")
+AW_LCLK_P8A:SetFuelLowRefuel(true)
+AW_LCLK_P8A:SetFuelLowThreshold(0.4)
+AW_LCLK_P8A:SetTurnoverTime(30, 5)
+AW_LCLK:AddSquadron(AW_LCLK_P8A)
+AW_LCLK:NewPayload("ME SEA CONTROL", -1, { AUFTRAG.Type.PATROLZONE }, 100)
+
+local sea_patrol_route = {ZONE_SEA_PATROL:GetCoordinate(), 14000, 370, 35, 60}
+MISSION_Sea_Control= AUFTRAG:NewORBIT_RACETRACK(sea_patrol_route[1], sea_patrol_route[2], sea_patrol_route[3], sea_patrol_route[4], sea_patrol_route[5])
+MISSION_Sea_Control:AssignSquadrons({ AW_LCLK_P8A })
+MISSION_Sea_Control:SetRadio(FREQUENCIES.AWACS.wizard[1])
+MISSION_Sea_Control:SetName("Poseidon")
+AW_LCLK:AddMission(MISSION_Sea_Control)
