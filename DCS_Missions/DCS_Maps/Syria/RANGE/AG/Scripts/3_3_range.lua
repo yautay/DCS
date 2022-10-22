@@ -50,7 +50,7 @@ function report_target_coordinates(list_targets_names)
     table.insert(msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
     table.insert(msg, "targets positioned\n")
     for index, value in ipairs(list_targets_names) do
-        local unit = UNIT:FindByName(value)
+        local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
         local coords = unit:GetCoordinate()
         local mgrs = coords:ToStringMGRS()
