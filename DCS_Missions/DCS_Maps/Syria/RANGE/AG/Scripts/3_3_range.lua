@@ -41,3 +41,25 @@ range_bluewater:SetAutosaveOn()
 range_bluewater:SetMessageTimeDuration(10)
 range_bluewater:SetFunkManOn()
 range_bluewater:Start()
+
+function report_target_coordinates(list_targets_names)
+    local msg = {}
+    table.insert(msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
+    table.insert(msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .."\n")
+    table.insert(msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
+    table.insert(msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
+    table.insert(msg, "targets positioned\n")
+    for index, value in ipairs(list_targets_names) do
+        local unit = UNIT:FindByName(value)
+        local unit_type = unit:GetTypeName()
+        local coords = unit:GetCoordinate()
+        local mgrs = coords:ToStringMGRS()
+        table.insert(msg, mgrs .. "\n")
+    end
+    table.insert(msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
+    local final_msg = table.concat(msg)
+    env.info("CUSTOM\n" .. final_msg)
+    return final_msg
+end
+
+info_msg:SendText(report_target_coordinates(bombtargets))
