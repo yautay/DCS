@@ -8,8 +8,8 @@ ZONE_RED_BORDER_2 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_2")
 ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1")
 
 ZONE_RED_AAR = ZONE:New("RED_AAR")
-ZONE_RED_PATROL = ZONE:New("RED_PATROL")
---ZONE_TARGET_LCRA = ZONE:New("TARGET_LCRA")
+ZONE_RED_PATROL_1 = ZONE:New("RED_PATROL_1")
+ZONE_RED_PATROL_2 = ZONE:New("RED_PATROL_2")
 
 -- ###########################################################
 -- ###                      RED CHIEF                      ###
@@ -24,22 +24,20 @@ RedBorderZoneSet:AddZone(ZONE_RED_BORDER_2)
 ConflictZoneSet = SET_ZONE:New()
 ConflictZoneSet:AddZone(ZONE_RED_CONFLICT)
 
---AtackZoneSet = SET_ZONE:New()
---AtackZoneSet:AddZone(ZONE_TARGET_LCRA)
-
 RedChief = CHIEF:New("red", RedAgentSet, "Comrade RedChief")
 -- ZONES
 RedChief:SetBorderZones(RedBorderZoneSet)
 RedChief:SetConflictZones(ConflictZoneSet)
---RedChief:SetAttackZones(AtackZoneSet)
 -- STRATEGY
-RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
+RedChief:SetStrategy(CHIEF.Strategy.OFFENSIVE)
 -- LIMITS
 RedChief:SetLimitMission(1, AUFTRAG.Type.TANKER)
+RedChief:SetLimitMission(1, AUFTRAG.Type.INTERCEPT)
 RedChief:SetLimitMission(2, AUFTRAG.Type.CAP)
 
 -- RESOURCES
 RedChief:AddAirwing(AW_Assad)
-RedChief:AddCapZone(ZONE_RED_PATROL, 30000, 275, 180, 20)
+RedChief:AddCapZone(ZONE_RED_PATROL_1, 25000, 275, 025, 20)
+RedChief:AddCapZone(ZONE_RED_PATROL_2, 20000, 275, 180, 20)
 RedChief:AddTankerZone(ZONE_RED_AAR, 25000, 340, 0, 30, 1)
 RedChief:__Start(5)

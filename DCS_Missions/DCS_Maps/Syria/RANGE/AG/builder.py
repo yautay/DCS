@@ -32,6 +32,7 @@ scripts_order["\n--AW.1 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
 scripts_order["\n--AW.2 - AW LARNACA\n"] = PATH_SCRIPT_AW_LARNACA
 scripts_order["\n--AW.3 - AW ASSAD\n"] = PATH_SCRIPT_AW_ASSAD
 scripts_order["\n--CHIEF.1 - CHIEF RED\n"] = PATH_SCRIPT_RED_CHIEF
+scripts_order["\n--RAT\n"] = PATH_SCRIPT_RAT
 
 scripts_order["\n--MANTIS - Red IADS\n"] = PATH_SCRIPT_MANTIS_RED
 # scripts_order["\n--SCR - SCORING\n"] = PATH_SCRIPT_SCORING

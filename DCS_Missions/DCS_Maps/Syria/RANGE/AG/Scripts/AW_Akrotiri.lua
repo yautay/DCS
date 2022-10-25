@@ -51,7 +51,7 @@ MISSION_Texaco_1:SetRadio(FREQUENCIES.AAR.texaco_1[1])
 MISSION_Texaco_1:SetName("Texaco One")
 AW_LCRA:AddMission(MISSION_Texaco_1)
 
-AW_LCRA_AWACS = SQUADRON:New("ME AWACS RJ", 2, "AWACS")
+AW_LCRA_AWACS = SQUADRON:New("ME AWACS E3", 2, "AWACS")
 AW_LCRA_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
 AW_LCRA_AWACS:SetTakeoffType("Hot")
 AW_LCRA_AWACS:SetFuelLowRefuel(true)
@@ -59,7 +59,7 @@ AW_LCRA_AWACS:SetFuelLowThreshold(0.4)
 AW_LCRA_AWACS:SetTurnoverTime(30, 5)
 AW_LCRA_AWACS:SetRadio(FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
 AW_LCRA:AddSquadron(AW_LCRA_AWACS)
-AW_LCRA:NewPayload("ME AWACS RJ", -1, { AUFTRAG.Type.ORBIT }, 100)
+AW_LCRA:NewPayload("ME AWACS E3", -1, { AUFTRAG.Type.ORBIT }, 100)
 
 -- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
 local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 35000, 450, 180, 80}
