@@ -50,15 +50,18 @@ local case1_6 = cvn_75_airboss:AddRecoveryWindow("12:00", "12:20", 1, nil, true,
 
 -- AIRBOSS SET'UP
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")
-cvn_75_airboss:SetMenuRecovery(30, 28, false)
+cvn_75_airboss:SetMenuRecovery(30, 28, true)
 cvn_75_airboss:SetDespawnOnEngineShutdown()
 cvn_75_airboss:Load()
 cvn_75_airboss:SetAutoSave()
---cvn_75_airboss:SetTrapSheet(nil, "TRAP-")
+cvn_75_airboss:SetTrapSheet(SHEET_PATH, nil)
 cvn_75_airboss:SetHandleAION()
 if SERVER then
     cvn_75_airboss:SetMPWireCorrection()
 end
+cvn_75_airboss:SetSoundfilesFolder("Airboss Soundfiles/")
+cvn_75_airboss:SetVoiceOversMarshalByGabriella("Airboss Soundfiles/Airboss Soundpack Marshal Gabriella")
+cvn_75_airboss:SetVoiceOversLSOByRaynor("Airboss Soundfiles/Airboss Soundpack LSO Raynor")
 cvn_75_airboss:Start()
 
 -- FUNKMAN INTEGRATION
@@ -125,10 +128,6 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     --- Interface your Discord bot here! ---
     ----------------------------------------
     cvn_75_airboss:SetFunkManOn()
-    -- BotSay(string.format("Player %s scored %.1f \n", name, score))
-    -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
-
-    -- Report LSO grade to dcs.log file.
     env.info(string.format("CUSTOM CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
@@ -151,6 +150,9 @@ lha_1_airboss:SetDefaultPlayerSkill("Naval Aviator")
 lha_1_airboss:SetMenuRecovery(30, 7, false)
 lha_1_airboss:SetDespawnOnEngineShutdown()
 lha_1_airboss:SetHandleAION()
+lha_1_airboss:SetSoundfilesFolder("Airboss Soundfiles/")
+lha_1_airboss:SetVoiceOversMarshalByRaynor("Airboss Soundfiles/Airboss Soundpack Marshal Raynor")
+lha_1_airboss:SetVoiceOversLSOByFF("Airboss Soundfiles/Airboss Soundpack LSO FF")
 lha_1_airboss:Start()
 
 
