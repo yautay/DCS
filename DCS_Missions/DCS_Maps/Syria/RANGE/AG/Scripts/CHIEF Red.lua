@@ -33,7 +33,7 @@ RedChief:SetStrategy(CHIEF.Strategy.OFFENSIVE)
 -- LIMITS
 RedChief:SetLimitMission(1, AUFTRAG.Type.TANKER)
 RedChief:SetLimitMission(1, AUFTRAG.Type.INTERCEPT)
-RedChief:SetLimitMission(2, AUFTRAG.Type.CAP)
+RedChief:SetLimitMission(1, AUFTRAG.Type.CAP)
 
 -- RESOURCES
 RedChief:AddAirwing(AW_Assad)

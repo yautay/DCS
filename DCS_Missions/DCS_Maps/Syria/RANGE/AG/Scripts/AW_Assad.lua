@@ -20,7 +20,7 @@ AW_Assad_INT:SetFuelLowThreshold(0.4)
 AW_Assad:AddSquadron(AW_Assad_INT)
 
 AW_Assad:NewPayload("Red Mig23 Intercept", 2, { AUFTRAG.Type.INTERCEPT }, 100)
-AW_Assad:NewPayload("Red Mig23 Intercept", 2, { AUFTRAG.Type.CAP }, 30)
+--AW_Assad:NewPayload("Red Mig23 Intercept", 2, { AUFTRAG.Type.CAP }, 30)
 
 AW_Assad_CAP = SQUADRON:New("Red Su33 BVR", 4, "Red Su33 BVR")
 AW_Assad_CAP:SetGrouping(2)
