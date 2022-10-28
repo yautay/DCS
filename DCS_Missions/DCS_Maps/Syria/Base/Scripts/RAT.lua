@@ -63,10 +63,10 @@ a380:Livery({"Singapore Airlines", "Lufthansa", "British Airways"})
 
 
 
-rat_manager = RATMANAGER:New(7)
-rat_manager:Add(a320, 2)
-rat_manager:Add(b737, 2)
-rat_manager:Add(a330, 1)
+rat_manager = RATMANAGER:New(4)
+rat_manager:Add(a320, 1)
+rat_manager:Add(b737, 1)
+--rat_manager:Add(a330, 1)
 rat_manager:Add(a380, 1)
 rat_manager:Add(c2a, 1)
 

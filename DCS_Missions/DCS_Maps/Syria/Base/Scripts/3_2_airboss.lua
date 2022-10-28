@@ -38,15 +38,18 @@ cvn_75_airboss:SetMarshalRadio(FREQUENCIES.CV.btn16[1], FREQUENCIES.CV.btn16[3])
 cvn_75_airboss:SetRadioRelayMarshal(name_CVN_75_RALAY_MARSHAL)
 cvn_75_airboss:SetQueueUpdateTime(30)
 
--- RECOVERIES
-local case3_1 = cvn_75_airboss:AddRecoveryWindow("04:30", "05:00", 3, 30, true, 30)
-local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:30", "06:30", 2, 30, true, 30)
-local case1_1 = cvn_75_airboss:AddRecoveryWindow("07:00", "07:20", 1, nil, true, 30)
-local case1_2 = cvn_75_airboss:AddRecoveryWindow("08:00", "08:20", 1, nil, true, 30)
-local case1_3 = cvn_75_airboss:AddRecoveryWindow("09:00", "09:20", 1, nil, true, 30)
-local case1_4 = cvn_75_airboss:AddRecoveryWindow("10:00", "10:20", 1, nil, true, 30)
-local case1_5 = cvn_75_airboss:AddRecoveryWindow("11:00", "11:20", 1, nil, true, 30)
-local case1_6 = cvn_75_airboss:AddRecoveryWindow("12:00", "12:20", 1, nil, true, 30)
+-- RECOVERIES C1
+--local case3_1 = cvn_75_airboss:AddRecoveryWindow("04:30", "05:00", 3, 30, false, 30)
+--local case2_1 = cvn_75_airboss:AddRecoveryWindow("05:30", "06:30", 2, 30, false, 30)
+--local case1_1 = cvn_75_airboss:AddRecoveryWindow("07:00", "07:20", 1, nil, false, 30)
+--local case1_2 = cvn_75_airboss:AddRecoveryWindow("08:00", "08:20", 1, nil, false, 30)
+--local case1_3 = cvn_75_airboss:AddRecoveryWindow("09:00", "09:20", 1, nil, false, 30)
+--local case1_4 = cvn_75_airboss:AddRecoveryWindow("10:00", "10:20", 1, nil, false, 30)
+--local case1_5 = cvn_75_airboss:AddRecoveryWindow("11:00", "11:20", 1, nil, false, 30)
+--local case1_6 = cvn_75_airboss:AddRecoveryWindow("12:00", "12:20", 1, nil, false, 30)
+-- RECOVERIES C3
+local case3_1 = cvn_75_airboss:AddRecoveryWindow("10:00", "15:00", 3, 30, false, 30)
+
 
 -- AIRBOSS SET'UP
 cvn_75_airboss:SetDefaultPlayerSkill("Naval Aviator")
