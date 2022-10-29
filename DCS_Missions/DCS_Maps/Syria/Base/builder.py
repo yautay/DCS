@@ -27,7 +27,6 @@ scripts_order["\n--3.3 - Base\n"] = PATH_SCRIPT_RANGE
 # scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
 
 scripts_order["\n--AW.1 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
-scripts_order["\n--AW.3 - AW ASSAD\n"] = PATH_SCRIPT_AW_ASSAD
 scripts_order["\n--TANKERS BLUE\n"] = PATH_SCRIPT_TANKERS_BLUE
 
 scripts_order["\n--CHIEF.1 - CHIEF RED\n"] = PATH_SCRIPT_RED_CHIEF
