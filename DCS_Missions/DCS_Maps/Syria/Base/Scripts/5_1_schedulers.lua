@@ -44,5 +44,5 @@ function tanker_platform_updater(airwing)
     end
 end
 
-tanker_platform_updater(AW_LCRA)
-tanker_platform_updater(AW_LCLK)
+--tanker_platform_updater(AW_LCRA)
+--tanker_platform_updater(AW_LCLK)

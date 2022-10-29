@@ -1,28 +1,10 @@
-function plot_strafe_box(static_name, boxlength, boxwidth, heading, foulline)
-
-    local tgt_coord = STATIC:FindByName(static_name):GetCoordinate()
-    local w = boxwidth / 2
-    local l = boxlength
-
-    local c1 = tgt_coord:Translate(w, heading + 90)
-    local c2 = p[#p]:Translate(l, heading)
-    local c3 = p[#p]:Translate(2 * w, heading - 90)
-    local c4 = p[#p]:Translate(-l, heading)
-
-    c1:QuadToAll(c2, c3, c4, 2, CONST.RGB.zone_red, .3, CONST.RGB.zone_red, .3, 2, True, "Strafe Box")
-
-    local vec2 = { c1:GetVec2(), c2:GetVec2(), c3:GetVec2(), c4:GetVec2() }
-
-    args[1]:UpdateFromVec2(vec2)
-
-end
 
 range_bluewater = RANGE:New("Bluewater Range")
 zone_bluewater = ZONE_POLYGON:NewFromGroupName("BLUEWATER_RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
 range_bluewater:SetRangeZone(zone_bluewater)
 
 local bombtargets = { "ASuW-1", "ASuW-2", "ASuW-3" }
-local strafe_targets = { "ASuW-S-1", "ASuW-S-2", "ASuW-S-3" }
+local strafe_targets = { "ASuW-S-1" }
 
 range_bluewater:AddBombingTargets(bombtargets, 50, false)
 
@@ -92,4 +74,4 @@ function report_target_coordinates(list_targets_names)
     return final_msg
 end
 
-info_msg:SendText(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1], strafe_targets[2], strafe_targets[3] }))
+info_msg:SendText(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))
