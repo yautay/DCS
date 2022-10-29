@@ -8,6 +8,7 @@ ZONE_RED_BORDER_2 = ZONE_POLYGON:NewFromGroupName("RED_BORDER_2")
 ZONE_RED_CONFLICT = ZONE_POLYGON:NewFromGroupName("RED_CONFLICT_1")
 
 ZONE_RED_AAR = ZONE:New("RED_AAR")
+ZONE_RED_AWACS = ZONE:New("RED_AWACS")
 ZONE_RED_PATROL_1 = ZONE:New("RED_PATROL_1")
 ZONE_RED_PATROL_2 = ZONE:New("RED_PATROL_2")
 
@@ -29,15 +30,17 @@ RedChief = CHIEF:New("red", RedAgentSet, "Comrade RedChief")
 RedChief:SetBorderZones(RedBorderZoneSet)
 RedChief:SetConflictZones(ConflictZoneSet)
 -- STRATEGY
-RedChief:SetStrategy(CHIEF.Strategy.OFFENSIVE)
+RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
 -- LIMITS
 RedChief:SetLimitMission(1, AUFTRAG.Type.TANKER)
-RedChief:SetLimitMission(1, AUFTRAG.Type.INTERCEPT)
+--RedChief:SetLimitMission(1, AUFTRAG.Type.INTERCEPT)
 RedChief:SetLimitMission(2, AUFTRAG.Type.CAP)
 
 -- RESOURCES
 RedChief:AddAirwing(AW_Assad)
 RedChief:AddCapZone(ZONE_RED_PATROL_1, 25000, 275, 025, 20)
 RedChief:AddCapZone(ZONE_RED_PATROL_2, 20000, 275, 180, 20)
+RedChief:AddAwacsZone(ZONE_RED_AWACS, 33000, 450, 0, 25)
 RedChief:AddTankerZone(ZONE_RED_AAR, 25000, 340, 0, 30, 1)
-RedChief:__Start(5)
+RedChief:AddTankerZone(ZONE_RED_AAR, 25000, 340, 0, 30, 1)
+RedChief:__Start(2)

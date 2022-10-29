@@ -62,28 +62,3 @@ function AW_Assad:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission) 
   env.info(text)
 
 end
-
--- callsign, AW, coalition, base, station zone, fez, cap_zone, freq, modulation
-local Assad_AWACS_route = {ZONE_RED_AWACS:GetCoordinate(), 30000, 450, 0, 40}
-
-AWACS_IVAN = AWACS:New("RED MAGIC", AW_Assad, "red", AIRBASE.Syria.Bassel_Al_Assad, "RED_AWACS", "KILLBOX", "RED_PATROL_1", 251, radio.modulation.AM)
-AWACS_IVAN:SetBullsEyeAlias("SASHA")
-AWACS_IVAN:SetAwacsDetails(CALLSIGN.AWACS.Magic, 1, Assad_AWACS_route[2], Assad_AWACS_route[3], Assad_AWACS_route[4], Assad_AWACS_route[5])
-AWACS_IVAN:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
-AWACS_IVAN:SetModernEraAggressive()
-
-AWACS_IVAN.PlayerGuidance = true -- allow missile warning call-outs.
-AWACS_IVAN.NoGroupTags = true -- use group tags like Alpha, Bravo .. etc in call outs.
-AWACS_IVAN.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
-AWACS_IVAN.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
-AWACS_IVAN.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
-AWACS_IVAN.maxassigndistance = 150 -- Don't assign targets further out than this, in NM.
-AWACS_IVAN.NoMissileCalls = true -- suppress missile callouts
-AWACS_IVAN.PlayerCapAssigment = true -- no task assignment for players
-AWACS_IVAN.invisible = false -- set AWACS to be invisible to hostiles
-AWACS_IVAN.immortal = false -- set AWACS to be immortal
-AWACS_IVAN.GoogleTTSPadding = 1 -- seconds
-AWACS_IVAN.WindowsTTSPadding = 2.5 -- seconds
-
-AWACS_IVAN:SuppressScreenMessages(true)
-AWACS_IVAN:__Start(2)
