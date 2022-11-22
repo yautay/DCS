@@ -1,0 +1,6 @@
+red_mantis = MANTIS:New("red_mantis","Red SAM","Red EWR","Red C3i","red",true)
+red_mantis:AddZones({ ZONE_RED_BORDER_1, ZONE_RED_BORDER_2},nil, ZONE_RED_CONFLICT )
+red_mantis:SetMaxActiveSAMs(3,3,3,6)
+--red_mantis:Debug(true)
+red_mantis:SetAdvancedMode( true, 90 )
+red_mantis:Start()
