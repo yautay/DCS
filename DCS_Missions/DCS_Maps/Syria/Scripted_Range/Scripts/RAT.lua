@@ -1,0 +1,10 @@
+c2a = RAT:New("RAT C2A")
+c2a:SetAISkill("excellent")
+c2a:EnableATC(false)
+c2a:SetDeparture({AIRBASE.Syria.Paphos})
+c2a:SetDestination({"CVN-75"})
+c2a:Commute()
+
+rat_manager = RATMANAGER:New(1)
+rat_manager:Add(c2a, 1)
+rat_manager:Start()
