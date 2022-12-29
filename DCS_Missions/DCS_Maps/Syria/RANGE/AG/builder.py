@@ -1,7 +1,4 @@
-import string
-
 from lib import *
-# change this below!!!!
 from DCS_Maps.Syria.RANGE.AG.Scripts import *
 from collections import OrderedDict
 import os
@@ -34,7 +31,6 @@ scripts_order["\n--AW.3 - AW ASSAD\n"] = PATH_SCRIPT_AW_ASSAD
 scripts_order["\n--CHIEF.1 - CHIEF RED\n"] = PATH_SCRIPT_RED_CHIEF
 
 scripts_order["\n--MANTIS - Red IADS\n"] = PATH_SCRIPT_MANTIS_RED
-# scripts_order["\n--SCR - SCORING\n"] = PATH_SCRIPT_SCORING
 scripts_order["\n--5.1 - SCHEDULER\n"] = PATH_SCRIPT_SCHEDULERS
 
 
