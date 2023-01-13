@@ -49,7 +49,7 @@ cvn_75_airboss:SetQueueUpdateTime(10)
 --local case1_5 = cvn_75_airboss:AddRecoveryWindow("11:00", "11:20", 1, nil, false, 30)
 --local case1_6 = cvn_75_airboss:AddRecoveryWindow("12:00", "12:20", 1, nil, false, 30)
 -- RECOVERIES C3
-local case3_1 = cvn_75_airboss:AddRecoveryWindow("10:00", "15:00", 3, 30, false, 30)
+-- local case3_1 = cvn_75_airboss:AddRecoveryWindow("10:00", "15:00", 3, 30, false, 30)
 
 
 -- AIRBOSS SET'UP
