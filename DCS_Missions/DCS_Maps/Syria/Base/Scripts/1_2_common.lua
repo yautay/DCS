@@ -61,3 +61,6 @@ function TableConcat(t1,t2)
     return t1
 end
 
+function Msg(arg)
+    MESSAGE:New(arg[1], arg[2]):ToAll()
+end

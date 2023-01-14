@@ -124,7 +124,8 @@ local icls_info = icls_text(ordered_icls_data)
 
 local freqs_info = flight_freqs_info .. ground_freqs_info .. special_freqs_info .. cvn_freqs_info .. lha_freqs_info
 
-MenuSrver = MENU_MISSION:New("Server Menu")
+MenuServer = MENU_MISSION:New("Server Menu")
+MenuCoalitionBlue = MENU_COALITION:New( coalition.side.BLUE, "Coalition Menu" )
 
 if (menu_dump_to_file) then
     save_to_file("freqs_info", freqs_info)
