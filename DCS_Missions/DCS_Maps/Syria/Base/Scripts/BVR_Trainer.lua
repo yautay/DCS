@@ -50,6 +50,7 @@ local function Spawn_Group(template_name)
     local dest = ZONE_DARKSTAR_1_ENGAGE:GetVec2()
     local coord_dest = COORDINATE:NewFromVec2(dest, UTILS.FeetToMeters(30000))
     spawned_group:RouteAirTo(coord_dest, COORDINATE.WaypointAltType.BARO, COORDINATE.WaypointType.TurningPoint, COORDINATE.WaypointAction.FlyoverPoint, UTILS.KnotsToKmph(750))
+    spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
     local msg = template_name .. " SPAWNED!"
     Msg({msg, 3})
 end
