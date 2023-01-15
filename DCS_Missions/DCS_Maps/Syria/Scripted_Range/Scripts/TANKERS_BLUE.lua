@@ -1,5 +1,0 @@
-Spawn_Shell_One= SPAWN:New("SPAWN SH1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (shell_11) shell_11:CommandSetCallsign(CALLSIGN.Tanker.Shell, 1) end):InitRepeatOnLanding()
-Spawn_Shell_Two = SPAWN:New("SPAWN SH2"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (shell_12) shell_12:CommandSetCallsign(CALLSIGN.Tanker.Shell, 2) end):InitRepeatOnLanding()
-Spawn_Texaco_One = SPAWN:New("SPAWN TX1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (texaco_11) texaco_11:CommandSetCallsign(CALLSIGN.Tanker.Texaco, 1) end):InitRepeatOnLanding()
-Spawn_Focus_One = SPAWN:New("SPAWN FC1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (facus_11) facus_11:CommandSetCallsign(CALLSIGN.AWACS.Focus, 1) end):InitRepeatOnLanding()
-Spawn_Focus_Two = SPAWN:New("SPAWN FC2"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (pontiac_11) pontiac_11:CommandSetCallsign(CALLSIGN.Aircraft.Pontiac, 1) end):InitRepeatOnLanding()
