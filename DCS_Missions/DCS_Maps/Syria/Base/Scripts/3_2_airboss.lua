@@ -136,8 +136,6 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     --- Interface your Discord bot here! ---
     ----------------------------------------
     lha_1_airboss:SetFunkManOn()
-    -- BotSay(string.format("Player %s scored %.1f \n", name, score))
-    -- BotSay(string.format("details: \n wire: %d \n time in Grove: %d \n LSO grade: %s", wire, timeInGrove, gradeLso))
 
     -- Report LSO grade to dcs.log file.
     env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
