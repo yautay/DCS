@@ -23,12 +23,21 @@ scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--3.3 - Base\n"] = PATH_SCRIPT_RANGE
 
-scripts_order["\n--4.2 - CSAR\n"] = PATH_SCRIPT_CSAR
-
 scripts_order["\n--AW.1 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
 scripts_order["\n--TANKERS BLUE\n"] = PATH_SCRIPT_TANKERS_BLUE
 
 scripts_order["\n--BVR TRAINER\n"] = PATH_SCRIPT_BVR_TRAINER
+
+
+def delete_old_files(filename: str):
+    if os.path.exists(filename):
+        print(f"Deleting old {filename}")
+        os.remove(filename)
+
+
+delete_old_files(FRAMEWORK_FILE)
+delete_old_files(SCRIPTS_FILE)
+delete_old_files(DYNAMIC_LOAD_LUA)
 
 content_scripts = ""
 content_frameworks = ""
