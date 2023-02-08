@@ -712,6 +712,7 @@ MenuBvr_Su27 = MENU_COALITION:New(coalition.side.BLUE, "Cy-27", MenuBvr)
 MenuBvr_Su30 = MENU_COALITION:New(coalition.side.BLUE, "Су-30", MenuBvr)
 MenuBvr_Mig23 = MENU_COALITION:New(coalition.side.BLUE, "МиГ-23", MenuBvr)
 MenuBvr_Mig29 = MENU_COALITION:New(coalition.side.BLUE, "МиГ-29", MenuBvr)
+MenuBvr_WW2 = MENU_COALITION:New(coalition.side.BLUE, "WW2", MenuBvr)
 
 MenuBvr_Su27_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Su27)
 MenuBvr_Su27_vet = MENU_COALITION:New(coalition.side.BLUE, "Vet", MenuBvr_Su27)
@@ -742,6 +743,10 @@ local function Spawn_Group(template_name)
     spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
     local msg = template_name .. " SPAWNED!"
     Msg({msg, 3})
+end
+
+local function Spawn_Set(set_group)
+    set_group:Activate()
 end
 
 -- SU-27
@@ -781,3 +786,6 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
 
+SetJu88Groups = SET_GROUP:New():FilterCoalitions("red"):FilterPrefixes("SPAWN-RED-DOG-WW2"):FilterStart()
+
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Big Formation", MenuBvr_WW2, Spawn_Set, SetJu88Groups)
