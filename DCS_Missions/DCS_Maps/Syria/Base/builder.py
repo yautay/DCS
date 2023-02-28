@@ -1,5 +1,5 @@
 from lib import *
-from DCS_Maps.Syria.Base.Scripts import *
+from DCS_Missions.DCS_Maps.Syria.Base.Scripts import *
 from collections import OrderedDict
 import os
 
