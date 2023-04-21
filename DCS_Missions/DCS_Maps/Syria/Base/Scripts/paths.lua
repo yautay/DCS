@@ -1,9 +1,9 @@
-SERVER = false
+SERVER = true
 
-SERVER_DCS_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Missions\\DCS_Missions"
-LOCAL_DCS_PATH = "E:\\repos\\DCS_MISSIONS\\DCS_Missions"
+SERVER_DCS_PATH = "D:\\repos\\DCS\\DCS_Missions"
+LOCAL_DCS_PATH = "D:\\repos\\DCS\\DCS_Missions"
 
-SCRIPTS_PATH = "\\DCS_Maps\\Syria\\Base\\AG\\Scripts\\"
+SCRIPTS_PATH = "\\DCS_Maps\\Syria\\Base\\Scripts\\"
 
 LIBS_PATH = "\\lib"
 
@@ -11,9 +11,9 @@ LIBS_PATH = "\\lib"
 SRS_PATH = nil
 SRS_PORT = nil
 
-SRS_SERVER_PATH = "C:\\DCS-SimpleRadio-Standalone"
+SRS_SERVER_PATH = "D:\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
-SRS_LOCAL_PATH = "E:\\Software\\DCS-SimpleRadio-Standalone"
+SRS_LOCAL_PATH = "D:\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
 SERVER_SAVE_SHEET_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Sheets"
