@@ -1,6 +1,3 @@
-local function Msg(arg)
-    MESSAGE:New(arg[1], arg[2]):ToAll()
-end
 
 local function freq_text(general_freqs)
     local tmp_table = {}

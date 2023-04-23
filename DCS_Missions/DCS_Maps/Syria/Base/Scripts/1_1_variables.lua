@@ -70,16 +70,16 @@ TACAN = {
     shell_2 = {53, "Y", "SH2", "Tanker Shell Two", false},
     texaco_1 = {52, "Y", "TX1", "Tanker Texaco One", false},
 }
-YARDSTICKS = {
-    sting_1 = {"STING ONE", 37, 100, "Y"},
-    joker_1 = {"JOKER TWO", 38, 101, "Y"},
-    hawk_1 = {"HAWK ONE", 39, 102, "Y"},
-    devil_1 = {"DEVIL TWO", 40, 103, "Y"},
-    squid_1 = {"SQUID ONE", 41, 104, "Y"},
-    check_1 = {"CHECK TWO", 42, 105, "Y"},
-    viper_1 = {"VIPER ONE", 43, 106, "Y"},
-    venom_1 = {"VENOM TWO", 44, 107, "Y"},
-    jedi_1 = {"JEDI ONE", 45, 108, "Y"},
-    ninja_1 = {"NINJA TWO", 46, 109, "Y"},
-}
+-- YARDSTICKS = {
+--     sting_1 = {"STING ONE", 37, 100, "Y"},
+--     joker_1 = {"JOKER TWO", 38, 101, "Y"},
+--     hawk_1 = {"HAWK ONE", 39, 102, "Y"},
+--     devil_1 = {"DEVIL TWO", 40, 103, "Y"},
+--     squid_1 = {"SQUID ONE", 41, 104, "Y"},
+--     check_1 = {"CHECK TWO", 42, 105, "Y"},
+--     viper_1 = {"VIPER ONE", 43, 106, "Y"},
+--     venom_1 = {"VENOM TWO", 44, 107, "Y"},
+--     jedi_1 = {"JEDI ONE", 45, 108, "Y"},
+--     ninja_1 = {"NINJA TWO", 46, 109, "Y"},
+-- }
 

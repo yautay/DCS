@@ -7,5 +7,3 @@ CONST = {
         zone_bvr = {1, .5, 1}
     }
 }
-
-menu_dump_to_file = true

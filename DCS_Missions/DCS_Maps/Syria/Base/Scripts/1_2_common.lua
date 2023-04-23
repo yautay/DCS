@@ -1,4 +1,3 @@
-
 function save_to_file(filename, content)
 	local fdir = lfs.writedir() .. [[Logs\]] .. filename .. timer.getTime() .. ".txt"
 	local f,err = io.open(fdir,"w")
@@ -54,13 +53,13 @@ function calculateCoordinateFromRoute(startCoordObject, course, distance)
 	return startCoordObject:Translate(UTILS.NMToMeters(distance), course, false, false)
 end
 
-function TableConcat(t1,t2)
+function tableConcat(t1,t2)
     for i=1,#t2 do
         t1[#t1+1] = t2[i]
     end
     return t1
 end
 
-function Msg(arg)
+function msg(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
