@@ -78,8 +78,6 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
     local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
     local score = tonumber(Grade.points)
-    local gradeLso = tostring(Grade.grade)
-    local timeInGrove = tonumber(Grade.Tgroove)
     local wire = tonumber(Grade.wire)
     local name = tostring(PlayerData.name)
 
@@ -127,8 +125,6 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
     local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
     local score = tonumber(Grade.points)
-    local gradeLso = tostring(Grade.grade)
-    local timeInGrove = tonumber(Grade.Tgroove)
     local wire = tonumber(Grade.wire)
     local name = tostring(PlayerData.name)
 

@@ -97,6 +97,3 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
 
-SetJu88Groups = SET_GROUP:New():FilterCoalitions("red"):FilterPrefixes("SPAWN-RED-DOG-WW2"):FilterStart()
-
-MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Big Formation", MenuBvr_WW2, Spawn_Set, SetJu88Groups)

@@ -19,7 +19,7 @@ range_bluewater:AddStrafePit(strafe_targets, boxlength, boxwidth, heading, false
 range_bluewater:SetSRS(
         SRS_PATH,
         SRS_PORT,
-        coalition.side.BLU,
+        coalition.side.BLUE,
         FREQUENCIES.RANGE.bluewater_con[1],
         FREQUENCIES.RANGE.bluewater_con[3],
         1
