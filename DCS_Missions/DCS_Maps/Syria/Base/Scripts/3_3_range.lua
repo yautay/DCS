@@ -54,22 +54,22 @@ range_bluewater:SetFunkManOn()
 range_bluewater:Start()
 
 function report_target_coordinates(list_targets_names)
-    local msg = {}
-    table.insert(msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
-    table.insert(msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. "\n")
-    table.insert(msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
-    table.insert(msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
-    table.insert(msg, "targets positioned VC-bomb targets / WC-strafe targets\n")
+    local tmp_msg = {}
+    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
+    table.insert(tmp_msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. "\n")
+    table.insert(tmp_msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
+    table.insert(tmp_msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
+    table.insert(tmp_msg, "targets positioned VC-bomb targets / WC-strafe targets\n")
     for index, value in ipairs(list_targets_names) do
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
         local coords = unit:GetCoordinate()
         local mgrs = coords:ToStringMGRS()
-        table.insert(msg, mgrs .. "\n")
+        table.insert(tmp_msg, mgrs .. "\n")
     end
-    table.insert(msg, "bombing ingress leg up to cmdr discretion\nstrafe box len 3Nm/ wid 1Nm/ rad 360/ foul 400mtrs\n")
-    table.insert(msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
-    local final_msg = table.concat(msg)
+    table.insert(tmp_msg, "bombing ingress leg up to cmdr discretion\nstrafe box len 3Nm/ wid 1Nm/ rad 360/ foul 400mtrs\n")
+    table.insert(tmp_msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
+    local final_msg = table.concat(tmp_msg)
     env.info("CUSTOM\n" .. final_msg)
     return final_msg
 end

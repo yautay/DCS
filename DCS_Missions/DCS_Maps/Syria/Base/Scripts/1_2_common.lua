@@ -63,3 +63,5 @@ end
 function msg(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
+
+info_msg = SOCKET:New()
