@@ -60,7 +60,7 @@ function tableConcat(t1,t2)
     return t1
 end
 
-function msg(arg)
+function sendMsg(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
 

@@ -10,7 +10,6 @@ CONST = {
     }
 }
 
-menu_dump_to_file = true
 --1.1 - VARIABLES
 FREQUENCIES = {
     AWACS = {
@@ -84,22 +83,21 @@ TACAN = {
     shell_2 = {53, "Y", "SH2", "Tanker Shell Two", false},
     texaco_1 = {52, "Y", "TX1", "Tanker Texaco One", false},
 }
-YARDSTICKS = {
-    sting_1 = {"STING ONE", 37, 100, "Y"},
-    joker_1 = {"JOKER TWO", 38, 101, "Y"},
-    hawk_1 = {"HAWK ONE", 39, 102, "Y"},
-    devil_1 = {"DEVIL TWO", 40, 103, "Y"},
-    squid_1 = {"SQUID ONE", 41, 104, "Y"},
-    check_1 = {"CHECK TWO", 42, 105, "Y"},
-    viper_1 = {"VIPER ONE", 43, 106, "Y"},
-    venom_1 = {"VENOM TWO", 44, 107, "Y"},
-    jedi_1 = {"JEDI ONE", 45, 108, "Y"},
-    ninja_1 = {"NINJA TWO", 46, 109, "Y"},
-}
+-- YARDSTICKS = {
+--     sting_1 = {"STING ONE", 37, 100, "Y"},
+--     joker_1 = {"JOKER TWO", 38, 101, "Y"},
+--     hawk_1 = {"HAWK ONE", 39, 102, "Y"},
+--     devil_1 = {"DEVIL TWO", 40, 103, "Y"},
+--     squid_1 = {"SQUID ONE", 41, 104, "Y"},
+--     check_1 = {"CHECK TWO", 42, 105, "Y"},
+--     viper_1 = {"VIPER ONE", 43, 106, "Y"},
+--     venom_1 = {"VENOM TWO", 44, 107, "Y"},
+--     jedi_1 = {"JEDI ONE", 45, 108, "Y"},
+--     ninja_1 = {"NINJA TWO", 46, 109, "Y"},
+-- }
 
 
 --1.2 - COMMON
-
 function save_to_file(filename, content)
 	local fdir = lfs.writedir() .. [[Logs\]] .. filename .. timer.getTime() .. ".txt"
 	local f,err = io.open(fdir,"w")
@@ -155,103 +153,23 @@ function calculateCoordinateFromRoute(startCoordObject, course, distance)
 	return startCoordObject:Translate(UTILS.NMToMeters(distance), course, false, false)
 end
 
-function TableConcat(t1,t2)
+function tableConcat(t1,t2)
     for i=1,#t2 do
         t1[#t1+1] = t2[i]
     end
     return t1
 end
 
-function Msg(arg)
+function msg(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
+
+info_msg = SOCKET:New()
 
 --2.1 - MENU
-local function Msg(arg)
-    MESSAGE:New(arg[1], arg[2]):ToAll()
-end
-
-local function freq_text(general_freqs)
-    local tmp_table = {}
-    local msg = string.format("General freq in use: \n")
-    table.insert(tmp_table, msg)
-    for i, v in pairs(general_freqs) do
-        local tmp_string = "empty"
-        if (type(v[1]) == "string") then
-            tmp_string = string.format("%s -> %s \n", v[1], v[2])
-        else    
-            tmp_string = string.format("%.2f -> %s %s \n", v[1], v[2], v[3])
-        end
-        table.insert(tmp_table, tmp_string)
-    end
-    local final_msg = table.concat(tmp_table)
-    return final_msg .. "\n"
-end
-
-local function tacans_text(general_tacans)
-    local tmp_table = {}
-    local msg = string.format("TACANs in use: \n")
-    table.insert(tmp_table, msg)
-    for i, v in pairs(general_tacans) do
-        local tmp_string = string.format("Ch %d %s Code: %s -> %s \n", v[1], v[2], v[3], v[4])
-        table.insert(tmp_table, tmp_string)
-    end
-    local final_msg = table.concat(tmp_table)
-    return final_msg .. "\n"
-end
-
-local function yardsticks_text(general_yardsticks)
-    local tmp_table = {}
-    local msg = string.format("YARDSTICK's in use: \n")
-    table.insert(tmp_table, msg)
-    for i, v in pairs(general_yardsticks) do
-        local tmp_string = string.format("%s -> Leader: %d <-> Wingman: %d (%s) \n", v[1], v[2], v[3], v[4])
-        table.insert(tmp_table, tmp_string)
-    end
-    local final_msg = table.concat(tmp_table)
-    return final_msg .. "\n"
-end
-
-local function icls_text(general_icls)
-    local tmp_table = {}
-    local msg = string.format("ICLS/ILS in use: \n")
-    table.insert(tmp_table, msg)
-    for i, v in pairs(general_icls) do
-        local tmp_string = string.format("Ch %s Code: %s -> %s \n", v[1], v[2], v[3])
-        table.insert(tmp_table, tmp_string)
-    end
-    local final_msg = table.concat(tmp_table)
-    return final_msg .. "\n"
-end
-
 MenuSeler = MENU_MISSION:New("Seler Menu")
-MenuFeatures = MENU_MISSION:New("Features", MenuSeler)
 
 --2.2 - CLIENT
-CLIENTS = {
-    "LOBO-1",
-    "LOBO-2",
-    "FAGOT-1",
-    "FAGOT-2",
-    "FARMER-1",
-    "FARMER-2",
-    "FISHBED-1",
-    "FISHBED-2",
-    "FULCRUM-1",
-    "FULCRUM-2",
-    "RED-16-S",
-    "RED-16-N",
-    "RED-27-N",
-    "RED-27-S",
-    "RED-29-N",
-    "RED-29-S",
-    "BLUE-16-N",
-    "BLUE-16-S",
-    "BLUE-27-N",
-    "BLUE-27-S",
-    "BLUE-29-N",
-    "BLUE-29-S",
-}
 NAVY_CLIENTS = {
     "UZI-1",
     "UZI-2",
@@ -273,8 +191,6 @@ NAVY_CLIENTS = {
     "CASE 1 TRAINER D",
 }
 
-navy_in_air = {}
-
 ClientSet = SET_CLIENT:New():FilterOnce()
 
 function SetEventHandler()
@@ -288,13 +204,11 @@ function ClientSet:OnEventPlayerEnterAircraft(event_data)
     local player_name = event_data.IniPlayerName
 
     if has_value(NAVY_CLIENTS, unit_name) then
-        env.info("CUSTOM Aviator Connected " .. unit_name)
-        info_msg:SendText("Aviator " .. player_name .. " Connected!")
-        env.info("CUSTOM Client " .. unit_name .. " added to book of living")
-        table.insert(navy_in_air, unit_name)
+        env.info("CLIENT Aviator Connected " .. unit_name)
+        info_msg:SendText("Aviator " .. player_name .. " to " .. unit_name .. " Connected!")
     else
-        env.info("CUSTOM Pilot Connected " .. unit_name)
-        info_msg:SendText("Pilot " .. player_name .. " Connected!")
+        env.info("CLIENT Pilot Connected " .. unit_name)
+        info_msg:SendText("Pilot " .. player_name .. " to " .. unit_name .. " Connected!")
     end
 
     MESSAGE:New("Welcome, " .. player_name):ToGroup(group)
@@ -303,16 +217,6 @@ end
 
 SetEventHandler()
 
---function hearth_beet_check(list_object)
---    for index, value in ipairs(list_object) do
---        if not CLIENT:FindByName(value):IsAlive() then
---            env.info("CUSTOM Client " .. value .. " removed from book of living")
---            table.remove(value)
---        end
---    end
---end
-scheduler_cvn = SCHEDULER:New( cvn_75_airboss, recheck_activation_zone, self, 10, 60 )
---garbage_remover = SCHEDULER:New( navy_in_air, hearth_beet_check, self, 27, 120 )
 --3.1 - ATIS
 AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
 AtisLCRA:SetRadioRelayUnitName("LCRA Relay")
@@ -405,8 +309,6 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
     local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
     local score = tonumber(Grade.points)
-    local gradeLso = tostring(Grade.grade)
-    local timeInGrove = tonumber(Grade.Tgroove)
     local wire = tonumber(Grade.wire)
     local name = tostring(PlayerData.name)
 
@@ -454,8 +356,6 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
     local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
     local score = tonumber(Grade.points)
-    local gradeLso = tostring(Grade.grade)
-    local timeInGrove = tonumber(Grade.Tgroove)
     local wire = tonumber(Grade.wire)
     local name = tostring(PlayerData.name)
 
@@ -497,7 +397,7 @@ range_bluewater:AddStrafePit(strafe_targets, boxlength, boxwidth, heading, false
 range_bluewater:SetSRS(
         SRS_PATH,
         SRS_PORT,
-        coalition.side.BLU,
+        coalition.side.BLUE,
         FREQUENCIES.RANGE.bluewater_con[1],
         FREQUENCIES.RANGE.bluewater_con[3],
         1
@@ -532,22 +432,22 @@ range_bluewater:SetFunkManOn()
 range_bluewater:Start()
 
 function report_target_coordinates(list_targets_names)
-    local msg = {}
-    table.insert(msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
-    table.insert(msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. "\n")
-    table.insert(msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
-    table.insert(msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
-    table.insert(msg, "targets positioned VC-bomb targets / WC-strafe targets\n")
+    local tmp_msg = {}
+    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
+    table.insert(tmp_msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. "\n")
+    table.insert(tmp_msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
+    table.insert(tmp_msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
+    table.insert(tmp_msg, "targets positioned VC-bomb targets / WC-strafe targets\n")
     for index, value in ipairs(list_targets_names) do
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
         local coords = unit:GetCoordinate()
         local mgrs = coords:ToStringMGRS()
-        table.insert(msg, mgrs .. "\n")
+        table.insert(tmp_msg, mgrs .. "\n")
     end
-    table.insert(msg, "bombing ingress leg up to cmdr discretion\nstrafe box len 3Nm/ wid 1Nm/ rad 360/ foul 400mtrs\n")
-    table.insert(msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
-    local final_msg = table.concat(msg)
+    table.insert(tmp_msg, "bombing ingress leg up to cmdr discretion\nstrafe box len 3Nm/ wid 1Nm/ rad 360/ foul 400mtrs\n")
+    table.insert(tmp_msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
+    local final_msg = table.concat(tmp_msg)
     env.info("CUSTOM\n" .. final_msg)
     return final_msg
 end
@@ -661,7 +561,7 @@ local function Spawn_Group(template_name)
     spawned_group:RouteAirTo(coord_dest, COORDINATE.WaypointAltType.BARO, COORDINATE.WaypointType.TurningPoint, COORDINATE.WaypointAction.FlyoverPoint, UTILS.KnotsToKmph(750))
     spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
     local msg = template_name .. " SPAWNED!"
-    Msg({msg, 3})
+    msg({msg, 3})
 end
 
 local function Spawn_Set(set_group)
@@ -705,6 +605,3 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
 
-SetJu88Groups = SET_GROUP:New():FilterCoalitions("red"):FilterPrefixes("SPAWN-RED-DOG-WW2"):FilterStart()
-
-MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Big Formation", MenuBvr_WW2, Spawn_Set, SetJu88Groups)
