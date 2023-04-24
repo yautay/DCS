@@ -74,4 +74,4 @@ function report_target_coordinates(list_targets_names)
     return final_msg
 end
 
-info_msg:SendText(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))
+socketBot:SendText(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))

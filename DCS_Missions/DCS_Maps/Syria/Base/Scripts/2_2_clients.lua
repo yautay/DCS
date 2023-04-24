@@ -32,11 +32,13 @@ function ClientSet:OnEventPlayerEnterAircraft(event_data)
     local player_name = event_data.IniPlayerName
 
     if has_value(NAVY_CLIENTS, unit_name) then
-        env.info("CLIENT Aviator Connected " .. unit_name)
-        info_msg:SendText("Aviator " .. player_name .. " to " .. unit_name .. " Connected!")
+        local client = "Aviator " .. player_name .. " to " .. unit_name .. " Connected!"
+        env.info(client)
+        socketBot:SendText(client)
     else
-        env.info("CLIENT Pilot Connected " .. unit_name)
-        info_msg:SendText("Pilot " .. player_name .. " to " .. unit_name .. " Connected!")
+        local client = "Pilot " .. player_name .. " to " .. unit_name .. " Connected!"
+        env.info(client)
+        socketBot:SendText(client)
     end
 
     MESSAGE:New("Welcome, " .. player_name):ToGroup(group)

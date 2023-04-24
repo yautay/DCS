@@ -60,8 +60,8 @@ function tableConcat(t1,t2)
     return t1
 end
 
-function sendMsg(arg)
+function msgToAll(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
 
-info_msg = SOCKET:New()
+socketBot = SOCKET:New()

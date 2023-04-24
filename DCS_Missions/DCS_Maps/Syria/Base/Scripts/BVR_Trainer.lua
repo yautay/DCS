@@ -53,7 +53,7 @@ local function Spawn_Group(template_name)
     spawned_group:RouteAirTo(coord_dest, COORDINATE.WaypointAltType.BARO, COORDINATE.WaypointType.TurningPoint, COORDINATE.WaypointAction.FlyoverPoint, UTILS.KnotsToKmph(750))
     spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
     local msg = template_name .. " SPAWNED!"
-    sendMsg({msg, 3})
+    msgToAll({msg, 3})
 end
 
 local function Spawn_Set(set_group)

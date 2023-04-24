@@ -1,1 +1,1 @@
-MenuSeler = MENU_MISSION:New("Seler Menu")
+--MenuSeler = MENU_MISSION:New("Seler Menu")
