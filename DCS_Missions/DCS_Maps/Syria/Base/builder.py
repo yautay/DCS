@@ -17,9 +17,7 @@ scripts_order = OrderedDict()
 scripts_order["\n--0.1 - CONST\n"] = PATH_SCRIPT_CONST
 scripts_order["\n--1.1 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--1.2 - COMMON\n"] = PATH_SCRIPT_COMMON
-scripts_order["\n--2.1 - MENU\n"] = PATH_SCRIPT_MENU
 scripts_order["\n--2.2 - CLIENT\n"] = PATH_SCRIPT_CLIENTS
-scripts_order["\n--3.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--3.3 - Base\n"] = PATH_SCRIPT_RANGE
 
@@ -27,6 +25,8 @@ scripts_order["\n--AW.1 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
 scripts_order["\n--TANKERS BLUE\n"] = PATH_SCRIPT_TANKERS_BLUE
 
 scripts_order["\n--BVR TRAINER\n"] = PATH_SCRIPT_BVR_TRAINER
+
+scripts_order["\n--9.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 
 
 def delete_old_files(filename: str):

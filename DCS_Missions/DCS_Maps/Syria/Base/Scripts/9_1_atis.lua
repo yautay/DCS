@@ -9,3 +9,13 @@ AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
 AtisLCRA:Start()
 local noticeLCRA = AtisLCRA:GetSRSText()
 socketBot:SendText(noticeLCRA)
+
+function getAtisData(atisObject)
+    local atis_data =  atisObject:GetSRSText()
+    if (atis_data) then
+        socketBot:SendText(atis_data)
+    end
+end
+
+SchedulerLCRAMasterObject = SCHEDULER:New( AtisLCRA )
+SchedulerLCRA = SchedulerLCRAMasterObject:Schedule( AtisLCRA, getAtisData, {AtisLCRA}, 120)
