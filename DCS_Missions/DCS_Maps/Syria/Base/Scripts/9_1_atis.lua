@@ -7,8 +7,6 @@ AtisLCRA:SetSRS(SRS_PATH, "female", "en-US")
 AtisLCRA:SetMapMarks()
 AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
 AtisLCRA:Start()
-local noticeLCRA = AtisLCRA:GetSRSText()
-socketBot:SendText(noticeLCRA)
 
 function getAtisData(atisObject)
     local atis_data =  atisObject:GetSRSText()
