@@ -447,8 +447,8 @@ function getRangeData(string_report)
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
     range_msg.text=string.upper(string_report)
-    if (string_report.text) then
-        socketBot:SendTable(string_report)
+    if (range_msg.text) then
+        socketBot:SendTable(range_msg)
     end
 end
 
