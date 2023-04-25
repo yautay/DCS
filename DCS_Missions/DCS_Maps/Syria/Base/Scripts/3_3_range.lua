@@ -84,4 +84,5 @@ function getRangeData(string_report)
     end
 end
 
-getRangeData(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))
+SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
+SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })}, 120)

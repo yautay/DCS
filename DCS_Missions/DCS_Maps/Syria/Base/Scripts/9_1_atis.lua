@@ -19,4 +19,4 @@ function getAtisData(atisObject)
 end
 
 SchedulerLCRAMasterObject = SCHEDULER:New( AtisLCRA )
-SchedulerLCRA = SchedulerLCRAMasterObject:Schedule( AtisLCRA, getAtisData, {AtisLCRA}, 120)
+SchedulerLCRA = SchedulerLCRAMasterObject:Schedule( AtisLCRA, getAtisData, {AtisLCRA}, 75)
