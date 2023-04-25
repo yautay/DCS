@@ -74,4 +74,14 @@ function report_target_coordinates(list_targets_names)
     return final_msg
 end
 
-socketBot:SendText(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))
+function getRangeData(string_report)
+    local range_msg={}
+    range_msg.command=HELPERS.SOCKET_NOTAM
+    range_msg.server_name="Nygus Server"
+    range_msg.text=string.upper(string_report)
+    if (range_msg.text) then
+        socketBot:SendTable(range_msg)
+    end
+end
+
+getRangeData(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))

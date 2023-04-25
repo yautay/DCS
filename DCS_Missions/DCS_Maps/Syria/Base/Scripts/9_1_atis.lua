@@ -9,9 +9,12 @@ AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
 AtisLCRA:Start()
 
 function getAtisData(atisObject)
-    local atis_data =  atisObject:GetSRSText()
-    if (atis_data) then
-        socketBot:SendText(atis_data)
+    local atis_msg={}
+    atis_msg.command=HELPERS.SOCKET_NOTAM
+    atis_msg.server_name="Nygus Server"
+    atis_msg.text="\n\n" .. string.upper(atisObject:GetSRSText()) .. "\n\n"
+    if (atis_msg.text) then
+        socketBot:SendTable(atis_msg)
     end
 end
 

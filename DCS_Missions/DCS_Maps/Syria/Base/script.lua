@@ -9,7 +9,9 @@ CONST = {
         zone_bvr = {1, .5, 1}
     }
 }
-
+HELPERS = {
+    SOCKET_NOTAM = "custom_notam"
+}
 --1.1 - VARIABLES
 FREQUENCIES = {
     AWACS = {
@@ -166,9 +168,6 @@ end
 
 socketBot = SOCKET:New()
 
---2.1 - MENU
---MenuSeler = MENU_MISSION:New("Seler Menu")
-
 --2.2 - CLIENT
 NAVY_CLIENTS = {
     "UZI-1",
@@ -219,18 +218,6 @@ end
 
 SetEventHandler()
 
---3.1 - ATIS
-AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
-AtisLCRA:SetRadioRelayUnitName("LCRA Relay")
-AtisLCRA:SetTowerFrequencies({FREQUENCIES.GROUND.twr_lcra_v[1], FREQUENCIES.GROUND.twr_lcra_u[1]})
-AtisLCRA:AddILS(109.70, "29")
-AtisLCRA:AddNDBinner(365.00)
-AtisLCRA:SetSRS(SRS_PATH, "female", "en-US")
-AtisLCRA:SetMapMarks()
-AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
-AtisLCRA:Start()
-local noticeLCRA = AtisLCRA:GetSRSText()
-socketBot:SendText(noticeLCRA)
 --3.2 - AIRBOSS
 name_CVN_75 = "CVN-75"
 name_CVN_75_SAR = "CVN-SAR"
@@ -455,7 +442,17 @@ function report_target_coordinates(list_targets_names)
     return final_msg
 end
 
-socketBot:SendText(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))
+function getRangeData(string_report)
+    local range_msg={}
+    range_msg.command=HELPERS.SOCKET_NOTAM
+    range_msg.server_name="Nygus Server"
+    range_msg.text=string.upper(string_report)
+    if (string_report.text) then
+        socketBot:SendTable(string_report)
+    end
+end
+
+getRangeData(report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] }))
 --AW.1 - AW AKROTIRI
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
 ZONE_DARKSTAR_1_PATROL_CAP = ZONE:New("DARKSTAR_1_PATROL_CAP"):DrawZone(2, CONST.RGB.zone_patrol, 1, CONST.RGB.zone_patrol, .5, 1, true)
@@ -608,3 +605,27 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
 
+
+--9.1 - ATIS
+AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
+AtisLCRA:SetRadioRelayUnitName("LCRA Relay")
+AtisLCRA:SetTowerFrequencies({FREQUENCIES.GROUND.twr_lcra_v[1], FREQUENCIES.GROUND.twr_lcra_u[1]})
+AtisLCRA:AddILS(109.70, "29")
+AtisLCRA:AddNDBinner(365.00)
+AtisLCRA:SetSRS(SRS_PATH, "female", "en-US")
+AtisLCRA:SetMapMarks()
+AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
+AtisLCRA:Start()
+
+function getAtisData(atisObject)
+    local atis_msg={}
+    atis_msg.command=HELPERS.SOCKET_NOTAM
+    atis_msg.server_name="Nygus Server"
+    atis_msg.text="\n\n" .. string.upper(atisObject:GetSRSText()) .. "\n\n"
+    if (atis_msg.text) then
+        socketBot:SendTable(atis_msg)
+    end
+end
+
+SchedulerLCRAMasterObject = SCHEDULER:New( AtisLCRA )
+SchedulerLCRA = SchedulerLCRAMasterObject:Schedule( AtisLCRA, getAtisData, {AtisLCRA}, 120)
