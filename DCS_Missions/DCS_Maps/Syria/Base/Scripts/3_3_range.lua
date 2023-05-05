@@ -79,12 +79,10 @@ function getRangeData(string_report)
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
     range_msg.text=string.upper(string_report)
-    if (range_msg.text) then
-        socketBot:SendTable(range_msg)
-    end
+    socketBot:SendTable(range_msg)
 end
 
 local range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
 
---SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
---SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {range_msg}, 120)
+SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
+SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {range_msg}, 120)
