@@ -447,15 +447,13 @@ function getRangeData(string_report)
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
     range_msg.text=string.upper(string_report)
-    if (range_msg.text) then
-        socketBot:SendTable(range_msg)
-    end
+    socketBot:SendTable(range_msg)
 end
 
 local range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
 
---SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
---SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {range_msg}, 120)
+SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
+SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {range_msg}, 120)
 --AW.1 - AW AKROTIRI
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
 ZONE_DARKSTAR_1_PATROL_CAP = ZONE:New("DARKSTAR_1_PATROL_CAP"):DrawZone(2, CONST.RGB.zone_patrol, 1, CONST.RGB.zone_patrol, .5, 1, true)
@@ -521,12 +519,14 @@ TEMPLATE_SU27 = "SPAWN-RED-BVR-SU27_"
 TEMPLATE_MiG23 = "SPAWN-RED-BVR-M23_"
 TEMPLATE_MiG29 = "SPAWN-RED-BVR-M29_"
 TEMPLATE_SU30 = "SPAWN-RED-BVR-SU30_"
+TEMPLATE_TU22 = "SPAWN-RED-BVR-TU22_"
 
 SUFFIX_ACE = "ACE"
 SUFFIX_VET = "VET"
 SUFFIX_TRN = "TRN"
 
 SUFFIX_PAIR = "-2"
+SUFFIX_FOURSHIP = "-4"
 
 
 MenuBvr = MENU_COALITION:New(coalition.side.BLUE, "BVR Trainer", MenuCoalitionBlue)
@@ -534,7 +534,7 @@ MenuBvr_Su27 = MENU_COALITION:New(coalition.side.BLUE, "Cy-27", MenuBvr)
 MenuBvr_Su30 = MENU_COALITION:New(coalition.side.BLUE, "Су-30", MenuBvr)
 MenuBvr_Mig23 = MENU_COALITION:New(coalition.side.BLUE, "МиГ-23", MenuBvr)
 MenuBvr_Mig29 = MENU_COALITION:New(coalition.side.BLUE, "МиГ-29", MenuBvr)
-MenuBvr_WW2 = MENU_COALITION:New(coalition.side.BLUE, "WW2", MenuBvr)
+MenuBvr_Tu22 = MENU_COALITION:New(coalition.side.BLUE, "Ту-22М", MenuBvr)
 
 MenuBvr_Su27_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Su27)
 MenuBvr_Su27_vet = MENU_COALITION:New(coalition.side.BLUE, "Vet", MenuBvr_Su27)
@@ -552,6 +552,7 @@ MenuBvr_Mig29_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Mig29
 MenuBvr_Mig29_vet = MENU_COALITION:New(coalition.side.BLUE, "Vet", MenuBvr_Mig29)
 MenuBvr_Mig29_trn = MENU_COALITION:New(coalition.side.BLUE, "Trn", MenuBvr_Mig29)
 
+MenuBvr_Tu22_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Tu22)
 
 
 local function Spawn_Group(template_name)
@@ -564,6 +565,14 @@ local function Spawn_Group(template_name)
     spawned_group:RouteAirTo(coord_dest, COORDINATE.WaypointAltType.BARO, COORDINATE.WaypointType.TurningPoint, COORDINATE.WaypointAction.FlyoverPoint, UTILS.KnotsToKmph(750))
     spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
     local msg = template_name .. " SPAWNED!"
+    msgToAll({msg, 3})
+end
+
+local function Spawn_Mission(template_name)
+    local spawned_group = SPAWN
+           :New(template_name)
+           :Spawn()
+    local msg = template_name .. " SPAWNED MISSION!"
     msgToAll({msg, 3})
 end
 
@@ -607,7 +616,8 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
-
+-- Tu-22
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Four-Ship", MenuBvr_Tu22_ace, Spawn_Mission, TEMPLATE_TU22 .. SUFFIX_ACE .. SUFFIX_FOURSHIP)
 
 --9.1 - ATIS
 AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
