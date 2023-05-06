@@ -526,7 +526,6 @@ SUFFIX_VET = "VET"
 SUFFIX_TRN = "TRN"
 
 SUFFIX_PAIR = "-2"
-SUFFIX_FOURSHIP = "-4"
 
 
 MenuBvr = MENU_COALITION:New(coalition.side.BLUE, "BVR Trainer", MenuCoalitionBlue)
@@ -568,12 +567,11 @@ local function Spawn_Group(template_name)
     msgToAll({msg, 3})
 end
 
-local function Spawn_Mission(template_name)
-    local spawned_group = SPAWN
-           :New(template_name)
-           :Spawn()
-    local msg = template_name .. " SPAWNED MISSION!"
-    msgToAll({msg, 3})
+local function Spawn_Backfires_Strike()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-3"):Spawn()
+    msgToAll({"Backfires strike spawned!", 3})
 end
 
 local function Spawn_Set(set_group)
@@ -617,7 +615,7 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
 -- Tu-22
-MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Four-Ship", MenuBvr_Tu22_ace, Spawn_Mission, TEMPLATE_TU22 .. SUFFIX_ACE .. SUFFIX_FOURSHIP)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Four-Ship", MenuBvr_Tu22_ace, Spawn_Backfires_Strike)
 
 --9.1 - ATIS
 AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
