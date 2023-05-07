@@ -1,4 +1,4 @@
-SERVER = falselo
+SERVER = true
 
 SERVER_DCS_PATH = "D:\\repos\\DCS\\DCS_Missions"
 LOCAL_DCS_PATH = "D:\\repo\\DCS\\DCS_Missions"
