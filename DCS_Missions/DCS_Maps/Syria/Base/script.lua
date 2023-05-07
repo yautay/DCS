@@ -446,7 +446,7 @@ function getRangeData(string_report)
     local range_msg={}
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
-    range_msg.text=string.upper(string_report)
+    range_msg.text=string.upper(string_report[1])
     socketBot:SendTable(range_msg)
 end
 
@@ -480,25 +480,25 @@ AW_LCRA:NewPayload("ME AWACS E3", -1, { AUFTRAG.Type.ORBIT }, 100)
 local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 35000, 450, 180, 80}
 
 AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "DARKSTAR_1_ENGAGE", "DARKSTAR_1_PATROL_CAP", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
-AWACS_DARKSTAR:SetBullsEyeAlias("CRUSADER")
+AWACS_DARKSTAR:SetBullsEyeAlias("BULLS")
 AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, Darkstar_1_1_route[2], Darkstar_1_1_route[3], Darkstar_1_1_route[4], Darkstar_1_1_route[5])
 AWACS_DARKSTAR:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
 AWACS_DARKSTAR:SetModernEraAggressive()
 
-AWACS_DARKSTAR.PlayerGuidance = true -- allow missile warning call-outs.
+AWACS_DARKSTAR.PlayerGuidance = false -- allow missile warning call-outs.
 AWACS_DARKSTAR.NoGroupTags = false -- use group tags like Alpha, Bravo .. etc in call outs.
 AWACS_DARKSTAR.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
-AWACS_DARKSTAR.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
+AWACS_DARKSTAR.DeclareRadius = 10 -- you need to be this close to the lead unit for declare/VID to work, in NM.
 AWACS_DARKSTAR.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
-AWACS_DARKSTAR.maxassigndistance = 150 -- Don't assign targets further out than this, in NM.
-AWACS_DARKSTAR.NoMissileCalls = false -- suppress missile callouts
+AWACS_DARKSTAR.maxassigndistance = 200 -- Don't assign targets further out than this, in NM.
+AWACS_DARKSTAR.NoMissileCalls = true -- suppress missile callouts
 AWACS_DARKSTAR.PlayerCapAssigment = true -- no task assignment for players
 AWACS_DARKSTAR.invisible = true -- set AWACS to be invisible to hostiles
 AWACS_DARKSTAR.immortal = true -- set AWACS to be immortal
 AWACS_DARKSTAR.GoogleTTSPadding = 1 -- seconds
 AWACS_DARKSTAR.WindowsTTSPadding = 2.5 -- seconds
 
-AWACS_DARKSTAR:SuppressScreenMessages(true)
+AWACS_DARKSTAR:SuppressScreenMessages(false)
 AWACS_DARKSTAR:__Start(2)
 
 --TANKERS BLUE

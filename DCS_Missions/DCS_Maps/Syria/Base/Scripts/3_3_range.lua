@@ -55,11 +55,11 @@ range_bluewater:Start()
 
 function report_target_coordinates(list_targets_names)
     local tmp_msg = {}
-    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
-    table.insert(tmp_msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. "\n")
-    table.insert(tmp_msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
-    table.insert(tmp_msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
-    table.insert(tmp_msg, "targets positioned VC-bomb targets / WC-strafe targets\n")
+    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. " NOTICE ")
+    table.insert(tmp_msg, "BLUEWATER RANGE ACTIVE " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. " ")
+    table.insert(tmp_msg, "RANGE CONTROL/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM ")
+    table.insert(tmp_msg, "RANGE INSTRUCTOR/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM ")
+    table.insert(tmp_msg, "TARGETS POSITIONED VC-BOMB TARGETS / WC-STRAFE TARGETS ")
     for index, value in ipairs(list_targets_names) do
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
@@ -67,8 +67,8 @@ function report_target_coordinates(list_targets_names)
         local mgrs = coords:ToStringMGRS()
         table.insert(tmp_msg, mgrs .. "\n")
     end
-    table.insert(tmp_msg, "bombing ingress leg up to cmdr discretion\nstrafe box len 3Nm/ wid 1Nm/ rad 360/ foul 400mtrs\n")
-    table.insert(tmp_msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
+    table.insert(tmp_msg, "BOMBING INGRESS LEG UP TO CMDR DISCRETION STRAFE BOX LEN 3NM/ WID 1NM/ RAD 360/ FOUL 400MTRS ")
+    table.insert(tmp_msg, "PROCEED WITH CAUTION FRIENDLY FFG AND LPD IN CLOSE VICINITY REPORT RECIEVED INFORMATION GEORGE UPON CHECKIN ")
     local final_msg = table.concat(tmp_msg)
     env.info("CUSTOM\n" .. final_msg)
     return final_msg
@@ -78,11 +78,11 @@ function getRangeData(string_report)
     local range_msg={}
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
-    range_msg.text=string.upper(string_report)
+    range_msg.text=string_report
     socketBot:SendTable(range_msg)
 end
 
-local range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
+range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
 
-SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
-SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {range_msg}, 120)
+--SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
+--SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, range_msg, 10)
