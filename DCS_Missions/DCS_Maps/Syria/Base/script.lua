@@ -520,13 +520,13 @@ TEMPLATE_MiG23 = "SPAWN-RED-BVR-M23_"
 TEMPLATE_MiG29 = "SPAWN-RED-BVR-M29_"
 TEMPLATE_SU30 = "SPAWN-RED-BVR-SU30_"
 TEMPLATE_TU22 = "SPAWN-RED-BVR-TU22_"
+TEMPLATE_TU22_ESCORT = "SPAWN-RED-BVR-TU22_ESCORT"
 
 SUFFIX_ACE = "ACE"
 SUFFIX_VET = "VET"
 SUFFIX_TRN = "TRN"
 
 SUFFIX_PAIR = "-2"
-
 
 MenuBvr = MENU_COALITION:New(coalition.side.BLUE, "BVR Trainer", MenuCoalitionBlue)
 MenuBvr_Su27 = MENU_COALITION:New(coalition.side.BLUE, "Cy-27", MenuBvr)
@@ -551,7 +551,7 @@ MenuBvr_Mig29_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Mig29
 MenuBvr_Mig29_vet = MENU_COALITION:New(coalition.side.BLUE, "Vet", MenuBvr_Mig29)
 MenuBvr_Mig29_trn = MENU_COALITION:New(coalition.side.BLUE, "Trn", MenuBvr_Mig29)
 
-MenuBvr_Tu22_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Tu22)
+MenuBvr_Tu22_ace = MENU_COALITION:New(coalition.side.BLUE, "CVN Strike", MenuBvr_Tu22)
 
 
 local function Spawn_Group(template_name)
@@ -567,11 +567,30 @@ local function Spawn_Group(template_name)
     msgToAll({msg, 3})
 end
 
-local function Spawn_Backfires_Strike()
+local function Spawn_Backfires_Strike_3p_escorts()
     SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
     SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
     SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-3"):Spawn()
-    msgToAll({"Backfires strike spawned!", 3})
+    SPAWN:New(TEMPLATE_TU22_ESCORT):Spawn()
+    msgToAll({"Backfires strike 3P with escorts spawned!", 3})
+end
+
+local function Spawn_Backfires_Strike_3p()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-3"):Spawn()
+    msgToAll({"Backfires strike 3P spawned!", 3})
+end
+
+local function Spawn_Backfires_Strike_2p()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
+    msgToAll({"Backfires strike 2P spawned!", 3})
+end
+
+local function Spawn_Backfires_Strike_1p()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    msgToAll({"Backfires strike 1P spawned!", 3})
 end
 
 local function Spawn_Set(set_group)
@@ -615,7 +634,10 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
 -- Tu-22
-MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Four-Ship", MenuBvr_Tu22_ace, Spawn_Backfires_Strike)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 3 players + escorts", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_3p_escorts)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 3 players", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_3p)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 2 players", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_2p)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 1 player", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_1p)
 
 --9.1 - ATIS
 AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
@@ -625,7 +647,8 @@ AtisLCRA:AddILS(109.70, "29")
 AtisLCRA:AddNDBinner(365.00)
 AtisLCRA:SetSRS(SRS_PATH, "female", "en-US")
 AtisLCRA:SetMapMarks()
-AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
+AtisLCRA:SetTransmitOnlyWithPlayers(true)
+AtisLCRA:ReportZuluTimeOnly()
 AtisLCRA:Start()
 
 function getAtisData(atisObject)
