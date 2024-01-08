@@ -423,11 +423,11 @@ range_bluewater:Start()
 
 function report_target_coordinates(list_targets_names)
     local tmp_msg = {}
-    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. "\nurgent notice\n")
-    table.insert(tmp_msg, "bluewater range active " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. "\n")
-    table.insert(tmp_msg, "range control/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM\n")
-    table.insert(tmp_msg, "range instructor/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM\n")
-    table.insert(tmp_msg, "targets positioned VC-bomb targets / WC-strafe targets\n")
+    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. " NOTICE ")
+    table.insert(tmp_msg, "BLUEWATER RANGE ACTIVE " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. " ")
+    table.insert(tmp_msg, "RANGE CONTROL/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM ")
+    table.insert(tmp_msg, "RANGE INSTRUCTOR/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM ")
+    table.insert(tmp_msg, "TARGETS POSITIONED VC-BOMB TARGETS / WC-STRAFE TARGETS ")
     for index, value in ipairs(list_targets_names) do
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
@@ -435,8 +435,8 @@ function report_target_coordinates(list_targets_names)
         local mgrs = coords:ToStringMGRS()
         table.insert(tmp_msg, mgrs .. "\n")
     end
-    table.insert(tmp_msg, "bombing ingress leg up to cmdr discretion\nstrafe box len 3Nm/ wid 1Nm/ rad 360/ foul 400mtrs\n")
-    table.insert(tmp_msg, "proceed with caution friendly ffg and lpd in close vicinity\nreport recieved information george upon checkin\nnnnn\n")
+    table.insert(tmp_msg, "BOMBING INGRESS LEG UP TO CMDR DISCRETION STRAFE BOX LEN 3NM/ WID 1NM/ RAD 360/ FOUL 400MTRS ")
+    table.insert(tmp_msg, "PROCEED WITH CAUTION FRIENDLY FFG AND LPD IN CLOSE VICINITY REPORT RECIEVED INFORMATION GEORGE UPON CHECKIN ")
     local final_msg = table.concat(tmp_msg)
     env.info("CUSTOM\n" .. final_msg)
     return final_msg
@@ -446,16 +446,14 @@ function getRangeData(string_report)
     local range_msg={}
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
-    range_msg.text=string.upper(string_report)
-    if (range_msg.text) then
-        socketBot:SendTable(range_msg)
-    end
+    range_msg.text=string_report
+    socketBot:SendTable(range_msg)
 end
 
-local range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
+range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
 
 --SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
---SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, {range_msg}, 120)
+--SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, range_msg, 10)
 --AW.1 - AW AKROTIRI
 ZONE_DARKSTAR_1_AWACS = ZONE:New("DARKSTAR_1_AWACS")
 ZONE_DARKSTAR_1_PATROL_CAP = ZONE:New("DARKSTAR_1_PATROL_CAP"):DrawZone(2, CONST.RGB.zone_patrol, 1, CONST.RGB.zone_patrol, .5, 1, true)
@@ -482,25 +480,25 @@ AW_LCRA:NewPayload("ME AWACS E3", -1, { AUFTRAG.Type.ORBIT }, 100)
 local Darkstar_1_1_route = {ZONE_DARKSTAR_1_AWACS:GetCoordinate(), 35000, 450, 180, 80}
 
 AWACS_DARKSTAR = AWACS:New("DARKSTAR", AW_LCRA, "blue", AIRBASE.Syria.Akrotiri, "DARKSTAR_1_AWACS", "DARKSTAR_1_ENGAGE", "DARKSTAR_1_PATROL_CAP", FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
-AWACS_DARKSTAR:SetBullsEyeAlias("CRUSADER")
+AWACS_DARKSTAR:SetBullsEyeAlias("BULLS")
 AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.Darkstar, 1, Darkstar_1_1_route[2], Darkstar_1_1_route[3], Darkstar_1_1_route[4], Darkstar_1_1_route[5])
 AWACS_DARKSTAR:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
 AWACS_DARKSTAR:SetModernEraAggressive()
 
-AWACS_DARKSTAR.PlayerGuidance = true -- allow missile warning call-outs.
+AWACS_DARKSTAR.PlayerGuidance = false -- allow missile warning call-outs.
 AWACS_DARKSTAR.NoGroupTags = false -- use group tags like Alpha, Bravo .. etc in call outs.
 AWACS_DARKSTAR.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
-AWACS_DARKSTAR.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
+AWACS_DARKSTAR.DeclareRadius = 10 -- you need to be this close to the lead unit for declare/VID to work, in NM.
 AWACS_DARKSTAR.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
-AWACS_DARKSTAR.maxassigndistance = 150 -- Don't assign targets further out than this, in NM.
-AWACS_DARKSTAR.NoMissileCalls = false -- suppress missile callouts
+AWACS_DARKSTAR.maxassigndistance = 200 -- Don't assign targets further out than this, in NM.
+AWACS_DARKSTAR.NoMissileCalls = true -- suppress missile callouts
 AWACS_DARKSTAR.PlayerCapAssigment = true -- no task assignment for players
 AWACS_DARKSTAR.invisible = true -- set AWACS to be invisible to hostiles
 AWACS_DARKSTAR.immortal = true -- set AWACS to be immortal
 AWACS_DARKSTAR.GoogleTTSPadding = 1 -- seconds
 AWACS_DARKSTAR.WindowsTTSPadding = 2.5 -- seconds
 
-AWACS_DARKSTAR:SuppressScreenMessages(true)
+AWACS_DARKSTAR:SuppressScreenMessages(false)
 AWACS_DARKSTAR:__Start(2)
 
 --TANKERS BLUE
@@ -521,6 +519,8 @@ TEMPLATE_SU27 = "SPAWN-RED-BVR-SU27_"
 TEMPLATE_MiG23 = "SPAWN-RED-BVR-M23_"
 TEMPLATE_MiG29 = "SPAWN-RED-BVR-M29_"
 TEMPLATE_SU30 = "SPAWN-RED-BVR-SU30_"
+TEMPLATE_TU22 = "SPAWN-RED-BVR-TU22_"
+TEMPLATE_TU22_ESCORT = "SPAWN-RED-BVR-TU22_ESCORT"
 
 SUFFIX_ACE = "ACE"
 SUFFIX_VET = "VET"
@@ -528,13 +528,12 @@ SUFFIX_TRN = "TRN"
 
 SUFFIX_PAIR = "-2"
 
-
 MenuBvr = MENU_COALITION:New(coalition.side.BLUE, "BVR Trainer", MenuCoalitionBlue)
 MenuBvr_Su27 = MENU_COALITION:New(coalition.side.BLUE, "Cy-27", MenuBvr)
 MenuBvr_Su30 = MENU_COALITION:New(coalition.side.BLUE, "Су-30", MenuBvr)
 MenuBvr_Mig23 = MENU_COALITION:New(coalition.side.BLUE, "МиГ-23", MenuBvr)
 MenuBvr_Mig29 = MENU_COALITION:New(coalition.side.BLUE, "МиГ-29", MenuBvr)
-MenuBvr_WW2 = MENU_COALITION:New(coalition.side.BLUE, "WW2", MenuBvr)
+MenuBvr_Tu22 = MENU_COALITION:New(coalition.side.BLUE, "Ту-22М", MenuBvr)
 
 MenuBvr_Su27_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Su27)
 MenuBvr_Su27_vet = MENU_COALITION:New(coalition.side.BLUE, "Vet", MenuBvr_Su27)
@@ -552,6 +551,7 @@ MenuBvr_Mig29_ace = MENU_COALITION:New(coalition.side.BLUE, "Ace", MenuBvr_Mig29
 MenuBvr_Mig29_vet = MENU_COALITION:New(coalition.side.BLUE, "Vet", MenuBvr_Mig29)
 MenuBvr_Mig29_trn = MENU_COALITION:New(coalition.side.BLUE, "Trn", MenuBvr_Mig29)
 
+MenuBvr_Tu22_ace = MENU_COALITION:New(coalition.side.BLUE, "CVN Strike", MenuBvr_Tu22)
 
 
 local function Spawn_Group(template_name)
@@ -565,6 +565,32 @@ local function Spawn_Group(template_name)
     spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
     local msg = template_name .. " SPAWNED!"
     msgToAll({msg, 3})
+end
+
+local function Spawn_Backfires_Strike_3p_escorts()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-3"):Spawn()
+    SPAWN:New(TEMPLATE_TU22_ESCORT):Spawn()
+    msgToAll({"Backfires strike 3P with escorts spawned!", 3})
+end
+
+local function Spawn_Backfires_Strike_3p()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-3"):Spawn()
+    msgToAll({"Backfires strike 3P spawned!", 3})
+end
+
+local function Spawn_Backfires_Strike_2p()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-2"):Spawn()
+    msgToAll({"Backfires strike 2P spawned!", 3})
+end
+
+local function Spawn_Backfires_Strike_1p()
+    SPAWN:New(TEMPLATE_TU22 .. SUFFIX_ACE .. "-1"):Spawn()
+    msgToAll({"Backfires strike 1P spawned!", 3})
 end
 
 local function Spawn_Set(set_group)
@@ -607,7 +633,11 @@ MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_vet, Spawn
 
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Singleton", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN)
 MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Pair", MenuBvr_Mig29_trn, Spawn_Group, TEMPLATE_MiG29 .. SUFFIX_TRN .. SUFFIX_PAIR)
-
+-- Tu-22
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 3 players + escorts", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_3p_escorts)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 3 players", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_3p)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 2 players", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_2p)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Ту-22М Strike for 1 player", MenuBvr_Tu22_ace, Spawn_Backfires_Strike_1p)
 
 --9.1 - ATIS
 AtisLCRA= ATIS:New(AIRBASE.Syria.Akrotiri, FREQUENCIES.GROUND.atis_lcra[1])
@@ -617,7 +647,8 @@ AtisLCRA:AddILS(109.70, "29")
 AtisLCRA:AddNDBinner(365.00)
 AtisLCRA:SetSRS(SRS_PATH, "female", "en-US")
 AtisLCRA:SetMapMarks()
-AtisLCRA:SetTransmitOnlyWithPlayers(Switch)
+AtisLCRA:SetTransmitOnlyWithPlayers(true)
+AtisLCRA:ReportZuluTimeOnly()
 AtisLCRA:Start()
 
 function getAtisData(atisObject)
