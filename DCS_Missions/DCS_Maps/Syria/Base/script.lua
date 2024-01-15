@@ -165,31 +165,7 @@ end
 function msgToAll(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
-
-socketBot = SOCKET:New()
-
 --2.2 - CLIENT
-NAVY_CLIENTS = {
-    "UZI-1",
-    "UZI-2",
-    "HORNET-1",
-    "HORNET-2",
-    "HORNET-212",
-    "HORNET-237",
-    "DEVIL-1",
-    "DEVIL-2",
-    "DEVIL-3",
-    "DEVIL-4",
-    "RED-18-N",
-    "RED-18-S",
-    "BLUE-18-N",
-    "BLUE-18-S",
-    "CASE 1 TRAINER A",
-    "CASE 1 TRAINER B",
-    "CASE 1 TRAINER C",
-    "CASE 1 TRAINER D",
-}
-
 ClientSet = SET_CLIENT:New():FilterOnce()
 
 function SetEventHandler()
@@ -197,23 +173,11 @@ function SetEventHandler()
 end
 
 function ClientSet:OnEventPlayerEnterAircraft(event_data)
-
     local unit_name = event_data.IniUnitName
     local group = event_data.IniGroup
     local player_name = event_data.IniPlayerName
-
-    if has_value(NAVY_CLIENTS, unit_name) then
-        local client = "Aviator " .. player_name .. " to " .. unit_name .. " Connected!"
-        env.info(client)
-        socketBot:SendText(client)
-    else
-        local client = "Pilot " .. player_name .. " to " .. unit_name .. " Connected!"
-        env.info(client)
-        socketBot:SendText(client)
-    end
-
-    MESSAGE:New("Welcome, " .. player_name):ToGroup(group)
-    --MESSAGE:New(GUAM_GENERAL_BRIEFING, 20):ToGroup(group)
+    local client = "Pilot " .. player_name .. " to " .. unit_name .. " Connected!"
+    env.info(client)
 end
 
 SetEventHandler()
@@ -289,7 +253,6 @@ cvn_75_airboss:SetVoiceOversMarshalByGabriella("Airboss Soundfiles/Airboss Sound
 cvn_75_airboss:SetVoiceOversLSOByRaynor("Airboss Soundfiles/Airboss Soundpack LSO Raynor")
 cvn_75_airboss:Start()
 
-
 function cvn_75_airboss:OnAfterStart(From, Event, To)
     env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
@@ -305,7 +268,6 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
-    cvn_75_airboss:SetFunkManOn()
     env.info(string.format("CUSTOM CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
@@ -352,8 +314,6 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
-    lha_1_airboss:SetFunkManOn()
-
     -- Report LSO grade to dcs.log file.
     env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
@@ -418,7 +378,6 @@ range_bluewater:SetDefaultPlayerSmokeBomb(false)
 range_bluewater:SetTargetSheet(SHEET_PATH, "Base-")
 range_bluewater:SetAutosaveOn()
 range_bluewater:SetMessageTimeDuration(10)
-range_bluewater:SetFunkManOn()
 range_bluewater:Start()
 
 function report_target_coordinates(list_targets_names)

@@ -63,5 +63,3 @@ end
 function msgToAll(arg)
     MESSAGE:New(arg[1], arg[2]):ToAll()
 end
-
-socketBot = SOCKET:New()

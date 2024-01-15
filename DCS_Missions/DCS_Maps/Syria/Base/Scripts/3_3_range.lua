@@ -50,7 +50,6 @@ range_bluewater:SetDefaultPlayerSmokeBomb(false)
 range_bluewater:SetTargetSheet(SHEET_PATH, "Base-")
 range_bluewater:SetAutosaveOn()
 range_bluewater:SetMessageTimeDuration(10)
-range_bluewater:SetFunkManOn()
 range_bluewater:Start()
 
 function report_target_coordinates(list_targets_names)

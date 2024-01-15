@@ -68,7 +68,6 @@ cvn_75_airboss:SetVoiceOversMarshalByGabriella("Airboss Soundfiles/Airboss Sound
 cvn_75_airboss:SetVoiceOversLSOByRaynor("Airboss Soundfiles/Airboss Soundpack LSO Raynor")
 cvn_75_airboss:Start()
 
-
 function cvn_75_airboss:OnAfterStart(From, Event, To)
     env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
 end
@@ -84,7 +83,6 @@ function cvn_75_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
-    cvn_75_airboss:SetFunkManOn()
     env.info(string.format("CUSTOM CVN LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
 
@@ -131,8 +129,6 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     ----------------------------------------
     --- Interface your Discord bot here! ---
     ----------------------------------------
-    lha_1_airboss:SetFunkManOn()
-
     -- Report LSO grade to dcs.log file.
     env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
