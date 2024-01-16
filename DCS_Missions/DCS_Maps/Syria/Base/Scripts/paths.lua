@@ -1,6 +1,6 @@
 SERVER = true
 
-SERVER_DCS_PATH = "C:\\Michal\\DCS\\DCS_Missions"
+SERVER_DCS_PATH = "C:\\repos\\DCS\\DCS_Missions"
 LOCAL_DCS_PATH = "F:\\repo\\DCS\\DCS_Missions"
 
 SCRIPTS_PATH = "\\DCS_Maps\\Syria\\Base\\Scripts\\"
@@ -11,7 +11,7 @@ LIBS_PATH = "\\lib"
 SRS_PATH = nil
 SRS_PORT = nil
 
-SRS_SERVER_PATH = "D:\\DCS-SimpleRadio-Standalone"
+SRS_SERVER_PATH = "C:\\michal\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
 SRS_LOCAL_PATH = "D:\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
