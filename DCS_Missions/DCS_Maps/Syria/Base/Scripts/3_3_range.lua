@@ -78,7 +78,7 @@ function getRangeData(string_report)
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
     range_msg.text=string_report
-    socketBot:SendTable(range_msg)
+--     socketBot:SendTable(range_msg)
 end
 
 range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })

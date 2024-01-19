@@ -406,7 +406,7 @@ function getRangeData(string_report)
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
     range_msg.text=string_report
-    socketBot:SendTable(range_msg)
+--     socketBot:SendTable(range_msg)
 end
 
 range_msg = report_target_coordinates({ bombtargets[1], bombtargets[2], bombtargets[3], strafe_targets[1] })
@@ -615,9 +615,9 @@ function getAtisData(atisObject)
     atis_msg.command=HELPERS.SOCKET_NOTAM
     atis_msg.server_name="Nygus Server"
     atis_msg.text="\n\n" .. string.upper(atisObject:GetSRSText()) .. "\n\n"
-    if (atis_msg.text) then
-        socketBot:SendTable(atis_msg)
-    end
+--     if (atis_msg.text) then
+--         socketBot:SendTable(atis_msg)
+--     end
 end
 
 SchedulerLCRAMasterObject = SCHEDULER:New( AtisLCRA )

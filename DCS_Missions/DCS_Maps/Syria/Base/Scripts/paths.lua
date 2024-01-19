@@ -11,12 +11,12 @@ LIBS_PATH = "\\lib"
 SRS_PATH = nil
 SRS_PORT = nil
 
-SRS_SERVER_PATH = "D:\\DCS-SimpleRadio-Standalone"
+SRS_SERVER_PATH = "C:\\Michal\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
 SRS_LOCAL_PATH = "D:\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
-SERVER_SAVE_SHEET_PATH = "C:\\Users\\yauta\\Saved Games\\DCS.openbeta_server\\Sheets"
+SERVER_SAVE_SHEET_PATH = "C:\\Michal"
 LOCAL_SAVE_SHEET_PATH = "D:\\Data"
 
 if (SERVER) then

@@ -14,9 +14,9 @@ function getAtisData(atisObject)
     atis_msg.command=HELPERS.SOCKET_NOTAM
     atis_msg.server_name="Nygus Server"
     atis_msg.text="\n\n" .. string.upper(atisObject:GetSRSText()) .. "\n\n"
-    if (atis_msg.text) then
-        socketBot:SendTable(atis_msg)
-    end
+--     if (atis_msg.text) then
+--         socketBot:SendTable(atis_msg)
+--     end
 end
 
 SchedulerLCRAMasterObject = SCHEDULER:New( AtisLCRA )
