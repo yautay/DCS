@@ -1,6 +1,6 @@
 SERVER = true
 
-SERVER_DCS_PATH = "C:\\Michal\\DCS\\DCS_Missions"
+SERVER_DCS_PATH = "C:\\repos\\DCS\\DCS_Missions"
 LOCAL_DCS_PATH = "F:\\repo\\DCS\\DCS_Missions"
 
 SCRIPTS_PATH = "\\DCS_Maps\\Syria\\Base\\Scripts\\"
