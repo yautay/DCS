@@ -1,6 +1,6 @@
-SERVER = false
+SERVER = true
 
-SERVER_DCS_PATH = "C:\\repos\\DCS\\DCS_Missions"
+SERVER_DCS_PATH = "D:\\repo\\DCS\\DCS_Missions"
 LOCAL_DCS_PATH = "F:\\repo\\DCS\\DCS_Missions"
 
 SCRIPTS_PATH = "\\DCS_Maps\\Kavkaz\\Base\\Scripts\\"
@@ -11,12 +11,12 @@ LIBS_PATH = "\\lib"
 SRS_PATH = nil
 SRS_PORT = nil
 
-SRS_SERVER_PATH = "C:\\Michal\\DCS-SimpleRadio-Standalone"
+SRS_SERVER_PATH = "C:\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
 SRS_LOCAL_PATH = "D:\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
-SERVER_SAVE_SHEET_PATH = "C:\\Michal"
+SERVER_SAVE_SHEET_PATH = "C:\\DCS_Data"
 LOCAL_SAVE_SHEET_PATH = "D:\\Data"
 
 if (SERVER) then

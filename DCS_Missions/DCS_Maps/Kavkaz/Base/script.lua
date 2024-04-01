@@ -13,87 +13,35 @@ HELPERS = {
     SOCKET_NOTAM = "custom_notam"
 }
 --1.1 - VARIABLES
-FREQUENCIES = {
-    AWACS = {
-        darkstar = {249.00, "AWACS @MOOSE Darkstar UHF", "AM"},
-        wizard = {250.00, "AWACS @ DCS Wizard UHF", "AM"},
-        focus = {249.80, "ELINT @ DCS Focus UHF", "AM"},
-    },
-    AAR = {
-        shell_1 = {252.10, "Tanker Shell One UHF", "AM"},
-        shell_2 = {252.20, "Tanker Shell Two UHF", "AM"},
-        texaco_1 = {252.30, "Tanker Texaco One UHF", "AM"},
-        arco = {252.50, "Tanker Arco UHF", "AM"}
-    },
-    FLIGHTS = {
-        vfma212_1_u = {266.20, "SQUADRON VFMA-212 UHF", "AM"},
-        vfma212_2_u = {266.25, "SQUADRON VFMA-212 UHF", "AM"},
-        vfma212_3_u = {266.80, "SQUADRON VFMA-212 UHF", "AM"},
-        templar_u = {266.30, "TEMPLAR UHF", "AM"},
-        assasin_u = {266.35, "ASSASIN UHF", "AM"},
-        palladin_u = {266.40, "PALLADIN UHF", "AM"},
-        crusader_u = {266.70, "CRUSADER UHF", "AM"},
-        knight_u = {266.75, "KNIGHT UHF", "AM"},
-        viper = {270.10, "VIPER ONE UHF", "AM"},
-        viper = {270.20, "VIPER ONE UHF", "AM"},
-        viper_3 = {270.30, "VIPER ONE UHF", "AM"},
-        viper_4 = {270.40, "VIPER ONE UHF", "AM"}
-    },
-    CV = {
-        dcs_sc = {127.50, "DCS SC ATC VHF", "AM"},
-        btn1 = {260.00, "B-1 HUMAN Paddles/Tower C1 UHF", "AM"},
-        btn2 = {260.10, "B-2 HUMAN Departure C2/C3 UHF", "AM"},
-        btn3 = {249.10, "B-3 HUMAN Strike UHF", "AM"},
-        btn4 = {258.20, "B-4 HUMAN Red Crown UHF", "AM"},
-        btn15 = {260.20, "B-15 HUMAN CCA Fianal A", "AM"},
-        btn16 = {260.30, "B-16 AIRBOSS/HUMAN Marshal UHF", "AM"},
-        btn17 = {260.40, "B-17 HUMAN CCA Fianal B", "AM"},
-    },
-    LHA = {
-        dcs_sc = {127.8, "LHA-1 DCS VHF", "AM"},
-        tower = {267.00, "LHA-1 HUMAN Tower UHF", "AM"},
-        radar = {267.50, "LHA-1 AIRBOSS/HUMAN Marshal UHF", "AM"},
-    },
+FREQUENCIES_MAP = {
     GROUND = {
-        atis_ag1651 = {125.000, "ATIS Senaki", "AM"},
-        twr_ag1651_1 = {40.600, "TOWER Senaki VHF/LOW", "AM"},
-        twr_ag1651_2 = {132.000, "TOWER Senaki VHF", "AM"},
-        twr_ag1651_3 = {261.000, "TOWER Senaki UHF", "AM"},
-    },
+            atis_ag1651 = {125.000, "ATIS Senaki", "AM"},
+            twr_ag1651_1 = {40.600, "TOWER Senaki VHF/LOW", "AM"},
+            twr_ag1651_2 = {132.000, "TOWER Senaki VHF", "AM"},
+            twr_ag1651_3 = {261.000, "TOWER Senaki UHF", "AM"},
+        },
     SPECIAL = {
         guard_hi = {243.00, "Guard UHF", "AM"},
         guard_lo = {121.50, "Guard VHF", "AM"},
-        ch_16 = {156.8, "Maritime Ch16 VHF", "FM"}
+        ch_16 = {156.8, "Maritime Ch16 VHF", "FM"},
     },
+}
+FREQUENCIES = {
     RANGE = {
-        kobuleti_con = {132, "Bluewater RANGE CONTROL VHF", "AM"},
-        kobuleti_inst = {40.6, "Bluewater RANGE INSTRUCTOR VHF", "AM"}
-    }
+            CONTROL_KOBULETI = {45, "RANGE CONTROL VHF", "AM"},
+            INSTRUCTOR_KOBULETI = {40.6, "RANGE INSTRUCTOR VHF", "AM"}
+            },
+    FLIGHTS = {
+        JG52_1 = {45, "JG52 Ch1", "AM"},
+        JG52_2 = {40.6, "JG52 Ch2", "AM"},
+        JG52_3 = {41, "JG52 Ch3", "AM"},
+        JG52_4 = {42, "JG52 Ch4", "AM"},
+        COALITION_1 = {132, "COALITION #1", "AM"},
+        COALITION_2 = {101, "COALITION #2", "AM"},
+        COALITION_3 = {102, "COALITION #3", "AM"},
+        COALITION_4 = {103, "COALITION #4", "AM"},
+    },
 }
-ICLS = {
-    sc = {11, "CV", "ICLS CVN-75"},
-    lha = {6, "LH", "ICLS LHA-1"},
-}
-TACAN = {
-    sc = {74, "X", "CVN", "CVN-75"},
-    lha = {66, "X", "LHA", "LHA-1"},
-    arco = {1, "Y", "RCV", "Recovery Tanker CVN-75", false},
-    shell_1 = {51, "Y", "SH1", "Tanker Shell One", false},
-    shell_2 = {53, "Y", "SH2", "Tanker Shell Two", false},
-    texaco_1 = {52, "Y", "TX1", "Tanker Texaco One", false},
-}
--- YARDSTICKS = {
---     sting_1 = {"STING ONE", 37, 100, "Y"},
---     joker_1 = {"JOKER TWO", 38, 101, "Y"},
---     hawk_1 = {"HAWK ONE", 39, 102, "Y"},
---     devil_1 = {"DEVIL TWO", 40, 103, "Y"},
---     squid_1 = {"SQUID ONE", 41, 104, "Y"},
---     check_1 = {"CHECK TWO", 42, 105, "Y"},
---     viper_1 = {"VIPER ONE", 43, 106, "Y"},
---     venom_1 = {"VENOM TWO", 44, 107, "Y"},
---     jedi_1 = {"JEDI ONE", 45, 108, "Y"},
---     ninja_1 = {"NINJA TWO", 46, 109, "Y"},
--- }
 
 
 --1.2 - COMMON
@@ -180,36 +128,36 @@ end
 SetEventHandler()
 
 --3.3 - Base
-range_kobuleti = RANGE:New("Kobuleti Range")
-zone_kobuleti = ZONE_POLYGON:NewFromGroupName("KOBULETI_RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
-range_kobuleti:SetRangeZone(zone_kobuleti)
+RangeKobuleti = RANGE:New("Kobuleti Range")
+ZoneKobuletiRange = ZONE_POLYGON:NewFromGroupName("KOBULETI_RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
+RangeKobuleti:SetRangeZone(ZoneKobuletiRange)
 
-local bombtargets = { "TARGETS" }
-local strafe_targets = { "STRAFER" }
+local bombtargets = { "TARGET_BMB" }
+local strafe_targets = { "TARGET_STR" }
 
-range_kobuleti:AddBombingTargets(bombtargets, 50, false)
+RangeKobuleti:AddBombingTargets(bombtargets, 50, false)
 
 local boxlength = UTILS.NMToMeters(3)
 local boxwidth = UTILS.NMToMeters(1)
-local heading = 180
+local heading = 0
 local foulline = 500
 
 --Base:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
-range_kobuleti:AddStrafePit(strafe_targets, boxlength, boxwidth, heading, false, 10, foulline)
+RangeKobuleti:AddStrafePit(strafe_targets, boxlength, boxwidth, heading, false, 10, foulline)
 
-range_kobuleti:SetSRS(
+RangeKobuleti:SetSRS(
         SRS_PATH,
         SRS_PORT,
         coalition.side.BLUE,
-        FREQUENCIES.RANGE.kobuleti_con[1],
-        FREQUENCIES.RANGE.kobuleti_con[3],
+        FREQUENCIES.RANGE.CONTROL_KOBULETI[1],
+        FREQUENCIES.RANGE.CONTROL_KOBULETI[3],
         1
 )
 
 --Base:SetSRSRangeControl(frequency: number, modulation: modulation, voice:string, culture:string, gender:string, relayunitname:string)
-range_kobuleti:SetSRSRangeControl(
-        FREQUENCIES.RANGE.kobuleti_con[1],
-        FREQUENCIES.RANGE.kobuleti_con[3],
+RangeKobuleti:SetSRSRangeControl(
+        FREQUENCIES.RANGE.CONTROL_KOBULETI[1],
+        FREQUENCIES.RANGE.CONTROL_KOBULETI[3],
         nil,
         "en-US",
         "female",
@@ -217,9 +165,9 @@ range_kobuleti:SetSRSRangeControl(
 )
 
 --Base:SetSRSRangeInstructor(frequency: number, modulation: modulation, voice:string, culture:string, gender:string, relayunitname:string)
-range_kobuleti:SetSRSRangeInstructor(
-        FREQUENCIES.RANGE.bluewater_inst[1],
-        FREQUENCIES.RANGE.bluewater_inst[3],
+RangeKobuleti:SetSRSRangeInstructor(
+        FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[1],
+        FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[3],
         nil,
         "en-US",
         "male",
@@ -227,18 +175,18 @@ range_kobuleti:SetSRSRangeInstructor(
 )
 
 -- Start range.
-range_kobuleti:SetDefaultPlayerSmokeBomb(false)
-range_kobuleti:SetTargetSheet(SHEET_PATH, "Base-")
-range_kobuleti:SetAutosaveOn()
-range_kobuleti:SetMessageTimeDuration(3)
-range_kobuleti:Start()
+RangeKobuleti:SetDefaultPlayerSmokeBomb(false)
+RangeKobuleti:SetTargetSheet(SHEET_PATH, "Base-")
+RangeKobuleti:SetAutosaveOn()
+RangeKobuleti:SetMessageTimeDuration(5)
+RangeKobuleti:Start()
 
 function report_target_coordinates(list_targets_names)
     local tmp_msg = {}
     table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. " NOTICE ")
     table.insert(tmp_msg, "KOBULETI RANGE ACTIVE " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. " ")
-    table.insert(tmp_msg, "RANGE CONTROL/" .. FREQUENCIES.RANGE.bluewater_con[1] .. "/AM ")
-    table.insert(tmp_msg, "RANGE INSTRUCTOR/" .. FREQUENCIES.RANGE.bluewater_inst[1] .. "/AM ")
+    table.insert(tmp_msg, "RANGE CONTROL/" .. FREQUENCIES.RANGE.CONTROL_KOBULETI[1] .. "/AM ")
+    table.insert(tmp_msg, "RANGE INSTRUCTOR/" .. FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[1] .. "/AM ")
     table.insert(tmp_msg, "TARGETS POSITIONED VC-BOMB TARGETS / WC-STRAFE TARGETS ")
     for index, value in ipairs(list_targets_names) do
         local unit = STATIC:FindByName(value)
@@ -264,14 +212,14 @@ end
 
 range_msg = report_target_coordinates({ bombtargets[1], strafe_targets[1] })
 
---SchedulerBluewaterRangeObject = SCHEDULER:New( range_bluewater )
---SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( range_bluewater, getRangeData, range_msg, 10)
+--SchedulerBluewaterRangeObject = SCHEDULER:New( RangeKobuleti )
+--SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( RangeKobuleti, getRangeData, range_msg, 10)
 --9.1 - ATIS
-AtisAG1651= ATIS:New(AIRBASE.Caucasus.Senaki_Kolkhi, FREQUENCIES.GROUND.atis_ag1651[1])
+AtisAG1651= ATIS:New(AIRBASE.Caucasus.Senaki_Kolkhi, FREQUENCIES_MAP.GROUND.atis_ag1651[1])
 AtisAG1651:SetRadioRelayUnitName("AG1651 Relay")
-AtisAG1651:SetTowerFrequencies({FREQUENCIES.GROUND.twr_ag1651_1[1], FREQUENCIES.GROUND.twr_ag1651_2[1], , FREQUENCIES.GROUND.twr_ag1651_3[1]})
+AtisAG1651:SetTowerFrequencies({FREQUENCIES_MAP.GROUND.twr_ag1651_1[1], FREQUENCIES_MAP.GROUND.twr_ag1651_2[1], FREQUENCIES_MAP.GROUND.twr_ag1651_3[1]})
 AtisAG1651:AddILS(108.90, "09")
-AtisAG1651:ATIS.SetTACAN(31)
+AtisAG1651:SetTACAN(31)
 AtisAG1651:SetSRS(SRS_PATH, "female", "en-US")
 AtisAG1651:SetMapMarks()
 AtisAG1651:SetTransmitOnlyWithPlayers(true)
@@ -288,5 +236,5 @@ function getAtisData(atisObject)
 --     end
 end
 
-SchedulerLCRAMasterObject = SCHEDULER:New( AtisLCRA )
-SchedulerLCRA = SchedulerLCRAMasterObject:Schedule( AtisLCRA, getAtisData, {AtisLCRA}, 75)
+SchedulerLCRAMasterObject = SCHEDULER:New( AtisAG1651 )
+SchedulerLCRA = SchedulerLCRAMasterObject:Schedule( AtisAG1651, getAtisData, {AtisAG1651}, 75)
