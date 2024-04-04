@@ -13,8 +13,8 @@ FREQUENCIES_MAP = {
 }
 FREQUENCIES = {
     RANGE = {
-            CONTROL_KOBULETI = {45, "RANGE CONTROL VHF", "AM"},
-            INSTRUCTOR_KOBULETI = {40.6, "RANGE INSTRUCTOR VHF", "AM"}
+            CONTROL_KOBULETI = {124.8, "RANGE CONTROL VHF", "AM"},
+            INSTRUCTOR_KOBULETI = {251.0, "RANGE INSTRUCTOR VHF", "AM"}
             },
     FLIGHTS = {
         JG52_1 = {45, "JG52 Ch1", "AM"},
