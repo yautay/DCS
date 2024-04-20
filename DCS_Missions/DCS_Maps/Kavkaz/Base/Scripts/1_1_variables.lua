@@ -13,6 +13,9 @@ FREQUENCIES_MAP = {
     },
 }
 FREQUENCIES = {
+     AWACS = {
+        darkstar = {249.00, "AWACS/GCI @MOOSE Darkstar UHF", "AM"},
+    },
     RANGE = {
             CONTROL_KOBULETI = {258.00, "RANGE CONTROL VHF", "AM"},
             INSTRUCTOR_KOBULETI = {255.00, "RANGE INSTRUCTOR VHF", "AM"}

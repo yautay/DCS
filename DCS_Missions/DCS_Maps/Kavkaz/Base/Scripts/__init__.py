@@ -14,7 +14,7 @@ PATH_SCRIPT_CLIENTS = os.path.join(PATH_MISSION_SCRIPTS, "2_2_clients.lua")
 PATH_SCRIPT_RANGE = os.path.join(PATH_MISSION_SCRIPTS, "3_3_range.lua")
 
 
-# PATH_SCRIPT_AW_AKROTIRI = os.path.join(PATH_MISSION_SCRIPTS, "4_1_AW_Akrotiri.lua")
+PATH_SCRIPT_AW_KUTAISI = os.path.join(PATH_MISSION_SCRIPTS, "4_1_AW_Kutaisi.lua")
 # PATH_SCRIPT_TANKERS_BLUE = os.path.join(PATH_MISSION_SCRIPTS, "4_2_TANKERS_BLUE.lua")
 # PATH_SCRIPT_BVR_TRAINER = os.path.join(PATH_MISSION_SCRIPTS, "5_1_BVR_Trainer.lua")
 
