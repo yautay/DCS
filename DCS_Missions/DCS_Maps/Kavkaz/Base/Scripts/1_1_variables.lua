@@ -9,12 +9,13 @@ FREQUENCIES_MAP = {
         guard_hi = {243.00, "Guard UHF", "AM"},
         guard_lo = {121.50, "Guard VHF", "AM"},
         ch_16 = {156.8, "Maritime Ch16 VHF", "FM"},
+        lobby = {251.00, "Lobby UHF", "FM"}
     },
 }
 FREQUENCIES = {
     RANGE = {
-            CONTROL_KOBULETI = {124.8, "RANGE CONTROL VHF", "AM"},
-            INSTRUCTOR_KOBULETI = {251.0, "RANGE INSTRUCTOR VHF", "AM"}
+            CONTROL_KOBULETI = {258.00, "RANGE CONTROL VHF", "AM"},
+            INSTRUCTOR_KOBULETI = {255.00, "RANGE INSTRUCTOR VHF", "AM"}
             },
     FLIGHTS = {
         JG52_1 = {45, "JG52 Ch1", "AM"},
