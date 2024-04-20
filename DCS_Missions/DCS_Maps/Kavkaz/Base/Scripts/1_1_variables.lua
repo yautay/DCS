@@ -32,3 +32,8 @@ FREQUENCIES = {
     },
 }
 
+BASES = {
+    SENAKI = AIRBASE.Caucasus.Senaki_Kolkhi,
+    KUTAISI = AIRBASE.Caucasus.Kutaisi,
+    SOCHI = AIRBASE.AIRBASE.Caucasus.Sochi_Adler
+}

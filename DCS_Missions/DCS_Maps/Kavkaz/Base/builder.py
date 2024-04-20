@@ -21,10 +21,11 @@ scripts_order["\n--2.2 - CLIENT\n"] = PATH_SCRIPT_CLIENTS
 # scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--3.3 - Base\n"] = PATH_SCRIPT_RANGE
 
-# scripts_order["\n--AW.1 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
+scripts_order["\n--AW.1 - AW SENAKI\n"] = PATH_SCRIPT_AW_SENAKI
+scripts_order["\n--AW.1 - AW SOCHI\n"] = PATH_SCRIPT_AW_SOCHI
 # scripts_order["\n--TANKERS BLUE\n"] = PATH_SCRIPT_TANKERS_BLUE
 
-# scripts_order["\n--BVR TRAINER\n"] = PATH_SCRIPT_BVR_TRAINER
+scripts_order["\n--PVE TRAINER\n"] = PATH_SCRIPT_PVE_TRAINER
 
 scripts_order["\n--9.1 - ATIS\n"] = PATH_SCRIPT_ATIS
 
