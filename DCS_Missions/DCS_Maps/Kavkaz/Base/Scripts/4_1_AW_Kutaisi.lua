@@ -33,7 +33,7 @@ GCI_SENAKI:SetModernEraAggressive()
 GCI_SENAKI.PlayerGuidance = false -- allow missile warning call-outs.
 GCI_SENAKI.NoGroupTags = false -- use group tags like Alpha, Bravo .. etc in call outs.
 GCI_SENAKI.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
-GCI_SENAKI.DeclareRadius = 10 -- you need to be this close to the lead unit for declare/VID to work, in NM.
+GCI_SENAKI.DeclareRadius = 3 -- you need to be this close to the lead unit for declare/VID to work, in NM.
 GCI_SENAKI.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
 GCI_SENAKI.maxassigndistance = 200 -- Don't assign targets further out than this, in NM.
 GCI_SENAKI.NoMissileCalls = true -- suppress missile callouts
