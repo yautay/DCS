@@ -1,5 +1,5 @@
-ATC_SENAKI=FLIGHTCONTROL:New(BASES.SENAKI, 251, radio.modulation.AM, SRS_PATH)
-ATC_SENAKI:SetParkingGuardStatic("Parking Guard")
+ATC_SENAKI=FLIGHTCONTROL:New(BASES.Senaki_Kolkhi, FREQUENCIES_MAP.GROUND.twr_ag1651_3, radio.modulation.AM, SRS_PATH)
+ATC_SENAKI:SetParkingGuardStatic("StaticGuard")
 ATC_SENAKI:SetSpeedLimitTaxi(25)
 ATC_SENAKI:SetLimitTaxi(3, false, 1)
 ATC_SENAKI:SetLimitLanding(2, 99)
@@ -9,22 +9,23 @@ ATC_SENAKI:SetSRSTower("male", "en-US", nil, 1, nil)
 ATC_SENAKI:SetSRSPilot("male", "en-US", nil,  1, nil)
 -- Define two holding zones.
 -- FLIGHTCONTROL.AddHoldingPattern(ArrivalZone, Heading, Length, FlightlevelMin, FlightlevelMax, Prio)
-ATC_SENAKI:AddHoldingPattern(ZONE:New("Senaki Holding Alpha"), 090, 10, 6, 12, 10)
-ATC_SENAKI:AddHoldingPattern(ZONE:New("Senaki Holding Bravo"), 270, 10, 6, 12, 20)
+ATC_SENAKI:AddHoldingPattern(ZONE:New("Senaki Holding Alpha"), 090, 3, 2, 12, 10)
+ATC_SENAKI:AddHoldingPattern(ZONE:New("Senaki Holding Bravo"), 270, 3, 2, 12, 20)
 -- Start the ATC.
 ATC_SENAKI:Start()
 
-ZONE_PATROL = ZONE:New("SENAKI_PATROL_CAP"):DrawZone(2, CONST.RGB.zone_patrol, 1, CONST.RGB.zone_patrol, .5, 1, true)
+ZONE_PATROL = ZONE:New("SENAKI_PATROL_CAP")
 ZONE_ENGAGE = ZONE:New("GCI_ENGAGE_ZONE")
 
 AW_Senaki = AIRWING:New("WH Senaki", "Senaki Air Wing")
 
 AW_Senaki:SetMarker(true)
-AW_Senaki:SetAirbase(AIRBASE:FindByName(BASES.SENAKI))
+AW_Senaki:SetAirbase(AIRBASE:FindByName(BASES.Senaki_Kolkhi))
 AW_Senaki:SetRespawnAfterDestroyed(600)
 AW_Senaki:__Start(2)
 
-GCI_SENAKI = AWACS:New("GCI Senaki",AW_Senaki,"blue",BASES.SENAKI,nil,ZONE_ENGAGE,ZONE_PATROL,FREQUENCIES.AWACS.darkstar[1], radio.modulation.AM)
+--function AWACS:New(Name,AirWing,Coalition,AirbaseName,AwacsOrbit,OpsZone,StationZone,Frequency,Modulation)
+GCI_SENAKI = AWACS:New("GCI Senaki",AW_Senaki,"blue",BASES.Senaki_Kolkhi,nil,ZONE_ENGAGE,"GCI_ENGAGE_ZONE",FREQUENCIES.GCI.GCI_SENAKI[1], radio.modulation.AM)
 GCI_SENAKI:SetAsGCI(GROUP:FindByName("EWR Senaki"),2)
 GCI_SENAKI:SetBullsEyeAlias("BULLS")
 GCI_SENAKI:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)

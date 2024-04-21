@@ -68,7 +68,7 @@ function report_target_coordinates(list_targets_names)
     table.insert(tmp_msg, "BOMBING INGRESS LEG UP TO CMDR DISCRETION STRAFE BOX LEN 3NM/ WID 1NM/ RAD 180/ FOUL 500MTRS ")
     table.insert(tmp_msg, "PROCEED WITH CAUTION REPORT RECIEVED INFORMATION KILO UPON CHECKIN ")
     local final_msg = table.concat(tmp_msg)
-    env.info("CUSTOM\n" .. final_msg)
+    env.info(final_msg)
     return final_msg
 end
 
@@ -78,9 +78,10 @@ function getRangeData(string_report)
     range_msg.server_name="Nygus Server"
     range_msg.text=string_report
 --     socketBot:SendTable(range_msg)
+    env.info("RANGE KOBULETI\n" .. range_msg.text)
 end
 
 range_msg = report_target_coordinates({ bombtargets[1], strafe_targets[1] })
 
---SchedulerBluewaterRangeObject = SCHEDULER:New( RangeKobuleti )
---SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( RangeKobuleti, getRangeData, range_msg, 10)
+SchedulerBluewaterRangeObject = SCHEDULER:New( RangeKobuleti )
+SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( RangeKobuleti, getRangeData, {range_msg}, 7)

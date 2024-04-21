@@ -10,7 +10,7 @@ DYNAMIC_LOAD_LUA = "dynamic_load.lua"
 
 frameworks_order = OrderedDict()
 frameworks_order["\n--1 - PATHS\n"] = PATH_SCRIPT_PATHS
-frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE
+frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE_CUSTOM
 frameworks_order["\n--4 - STTS\n"] = PATH_LIBS_STTS
 
 scripts_order = OrderedDict()

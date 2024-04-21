@@ -1,3 +1,27 @@
+BASES = {
+  ["Gelendzhik"] = "Gelendzhik",
+  ["Krasnodar_Pashkovsky"] = "Krasnodar-Pashkovsky",
+  ["Sukhumi_Babushara"] = "Sukhumi-Babushara",
+  ["Gudauta"] = "Gudauta",
+  ["Batumi"] = "Batumi",
+  ["Senaki_Kolkhi"] = "Senaki-Kolkhi",
+  ["Kobuleti"] = "Kobuleti",
+  ["Kutaisi"] = "Kutaisi",
+  ["Tbilisi_Lochini"] = "Tbilisi-Lochini",
+  ["Soganlug"] = "Soganlug",
+  ["Vaziani"] = "Vaziani",
+  ["Anapa_Vityazevo"] = "Anapa-Vityazevo",
+  ["Krasnodar_Center"] = "Krasnodar-Center",
+  ["Novorossiysk"] = "Novorossiysk",
+  ["Krymsk"] = "Krymsk",
+  ["Maykop_Khanskaya"] = "Maykop-Khanskaya",
+  ["Sochi_Adler"] = "Sochi-Adler",
+  ["Mineralnye_Vody"] = "Mineralnye Vody",
+  ["Nalchik"] = "Nalchik",
+  ["Mozdok"] = "Mozdok",
+  ["Beslan"] = "Beslan",
+}
+
 FREQUENCIES_MAP = {
     GROUND = {
             atis_ag1651 = {125.000, "ATIS Senaki", "AM"},
@@ -13,8 +37,8 @@ FREQUENCIES_MAP = {
     },
 }
 FREQUENCIES = {
-     AWACS = {
-        darkstar = {249.00, "AWACS/GCI @MOOSE Darkstar UHF", "AM"},
+     GCI = {
+        GCI_SENAKI = {249.00, "GCI @MOOSE Darkstar UHF", "AM"},
     },
     RANGE = {
             CONTROL_KOBULETI = {258.00, "RANGE CONTROL VHF", "AM"},
@@ -30,10 +54,4 @@ FREQUENCIES = {
         COALITION_3 = {102, "COALITION #3", "AM"},
         COALITION_4 = {103, "COALITION #4", "AM"},
     },
-}
-
-BASES = {
-    SENAKI = AIRBASE.Caucasus.Senaki_Kolkhi,
-    KUTAISI = AIRBASE.Caucasus.Kutaisi,
-    SOCHI = AIRBASE.AIRBASE.Caucasus.Sochi_Adler
 }
