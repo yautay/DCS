@@ -13,7 +13,7 @@ function getAtisData(atisObject)
     local atis_msg={}
     atis_msg.command=HELPERS.SOCKET_NOTAM
     atis_msg.server_name="Nygus Server"
-    atis_msg.text="\n\n" .. string.upper(atisObject:GetSRSText()) .. "\n\n"
+    atis_msg.text=string.upper(atisObject:GetSRSText())
     env.info("ATIS SENAKI\n" .. atis_msg.text)
 --     if (atis_msg.text) then
 --         socketBot:SendTable(atis_msg)

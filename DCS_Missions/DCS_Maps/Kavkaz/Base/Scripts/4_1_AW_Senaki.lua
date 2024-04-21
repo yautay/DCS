@@ -29,7 +29,7 @@ GCI_SENAKI = AWACS:New("GCI Senaki",AW_Senaki,"blue",BASES.Senaki_Kolkhi,nil,ZON
 GCI_SENAKI:SetAsGCI(GROUP:FindByName("EWR Senaki"),2)
 GCI_SENAKI:SetBullsEyeAlias("BULLS")
 GCI_SENAKI:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
-GCI_SENAKI:SetModernEraAggressive()
+GCI_SENAKI:SetPolicingWW2()
 
 GCI_SENAKI.PlayerGuidance = false -- allow missile warning call-outs.
 GCI_SENAKI.NoGroupTags = false -- use group tags like Alpha, Bravo .. etc in call outs.

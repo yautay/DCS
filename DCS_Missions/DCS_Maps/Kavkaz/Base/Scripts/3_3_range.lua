@@ -45,13 +45,13 @@ RangeKobuleti:SetSRSRangeInstructor(
 )
 
 -- Start range.
-RangeKobuleti:SetDefaultPlayerSmokeBomb(false)
-RangeKobuleti:SetTargetSheet(SHEET_PATH, "Base-")
+RangeKobuleti:SetDefaultPlayerSmokeBomb(true)
+RangeKobuleti:SetTargetSheet(SHEET_PATH, "Range-")
 RangeKobuleti:SetAutosaveOn()
 RangeKobuleti:SetMessageTimeDuration(5)
 RangeKobuleti:Start()
 
-function report_target_coordinates(list_targets_names)
+function range_report(list_targets_names)
     local tmp_msg = {}
     table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. " NOTICE ")
     table.insert(tmp_msg, "KOBULETI RANGE ACTIVE " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. " ")
@@ -67,21 +67,17 @@ function report_target_coordinates(list_targets_names)
     end
     table.insert(tmp_msg, "BOMBING INGRESS LEG UP TO CMDR DISCRETION STRAFE BOX LEN 3NM/ WID 1NM/ RAD 180/ FOUL 500MTRS ")
     table.insert(tmp_msg, "PROCEED WITH CAUTION REPORT RECIEVED INFORMATION KILO UPON CHECKIN ")
-    local final_msg = table.concat(tmp_msg)
-    env.info(final_msg)
-    return final_msg
+    --save_to_file()
+    return tmp_msg
 end
 
-function getRangeData(string_report)
+function getRangeData(table_string)
     local range_msg={}
     range_msg.command=HELPERS.SOCKET_NOTAM
     range_msg.server_name="Nygus Server"
-    range_msg.text=string_report
+    range_msg.text=table_string
 --     socketBot:SendTable(range_msg)
-    env.info("RANGE KOBULETI\n" .. range_msg.text)
+    env.info("RANGE KOBULETI\n" .. table.concat(range_msg.text))
 end
 
-range_msg = report_target_coordinates({ bombtargets[1], strafe_targets[1] })
-
-SchedulerBluewaterRangeObject = SCHEDULER:New( RangeKobuleti )
-SchedulerBluewaterRange = SchedulerBluewaterRangeObject:Schedule( RangeKobuleti, getRangeData, {range_msg}, 7)
+range_msg = range_report({ bombtargets[1], strafe_targets[1] })
