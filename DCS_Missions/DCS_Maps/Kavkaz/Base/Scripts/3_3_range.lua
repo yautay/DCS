@@ -54,10 +54,8 @@ RangeKobuleti:Start()
 function targets_coordinates(list_targets_names)
     local tgts_tbl = {}
     for index, value in ipairs(list_targets_names) do
-        env.info(value)
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
-        env.info(unit_type)
         local coords = unit:GetCoordinate()
         local mgrs = coords:ToStringMGRS()
         local lldm = coords:ToStringLLDDM()

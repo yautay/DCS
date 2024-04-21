@@ -1,16 +1,32 @@
-ATC_SENAKI=FLIGHTCONTROL:New(BASES.Senaki_Kolkhi, FREQUENCIES_MAP.GROUND.twr_ag1651_3, radio.modulation.AM, SRS_PATH)
+function getNotam(atisObject)
+    local name = atisObject.airbasename
+    saveToFile(SHEET_PATH .. "\\NOTAM-ATIS-" .. string.upper(name), string.upper(atisObject:GetSRSText()))
+end
+
+AtisAG1651= ATIS:New(BASES.Senaki_Kolkhi, FREQUENCIES_MAP.GROUND.atis_ag1651[1])
+AtisAG1651:SetRadioRelayUnitName("AG1651 Relay")
+AtisAG1651:SetTowerFrequencies({FREQUENCIES_MAP.GROUND.twr_ag1651_1[1], FREQUENCIES_MAP.GROUND.twr_ag1651_2[1], FREQUENCIES_MAP.GROUND.twr_ag1651_3[1]})
+AtisAG1651:AddILS(108.90, "09")
+AtisAG1651:SetTACAN(31)
+AtisAG1651:SetSRS(SRS_PATH, "female", "en-US")
+AtisAG1651:SetMapMarks()
+AtisAG1651:SetTransmitOnlyWithPlayers(true)
+AtisAG1651:ReportZuluTimeOnly()
+AtisAG1651:Start()
+
+SchedulerAG1651MasterObject = SCHEDULER:New( AtisAG1651 )
+SchedulerAG1651 = SchedulerAG1651MasterObject:Schedule( AtisAG1651, getNotam, {AtisAG1651}, 5)
+
+ATC_SENAKI=FLIGHTCONTROL:New(BASES.Senaki_Kolkhi, {FREQUENCIES_MAP.GROUND.twr_ag1651_1[1], FREQUENCIES_MAP.GROUND.twr_ag1651_2[1], FREQUENCIES_MAP.GROUND.twr_ag1651_3[1]}, radio.modulation.AM, SRS_PATH)
+ATC_SENAKI:SetVerbosity(2)
 ATC_SENAKI:SetParkingGuardStatic("StaticGuard")
 ATC_SENAKI:SetSpeedLimitTaxi(25)
 ATC_SENAKI:SetLimitTaxi(3, false, 1)
 ATC_SENAKI:SetLimitLanding(2, 99)
--- Use Google for text-to-speech.
---FLIGHTCONTROL:SetSRSTower(Gender, Culture, Voice, Volume, Label)
-ATC_SENAKI:SetSRSTower("male", "en-US", nil, 1, nil)
-ATC_SENAKI:SetSRSPilot("male", "en-US", nil,  1, nil)
--- Define two holding zones.
 -- FLIGHTCONTROL.AddHoldingPattern(ArrivalZone, Heading, Length, FlightlevelMin, FlightlevelMax, Prio)
 ATC_SENAKI:AddHoldingPattern(ZONE:New("Senaki Holding Alpha"), 090, 3, 2, 12, 10)
 ATC_SENAKI:AddHoldingPattern(ZONE:New("Senaki Holding Bravo"), 270, 3, 2, 12, 20)
+ATC_SENAKI:SetATIS(AtisAG1651)
 -- Start the ATC.
 ATC_SENAKI:Start()
 
