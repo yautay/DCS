@@ -50,34 +50,39 @@ RangeKobuleti:SetTargetSheet(SHEET_PATH, "Range-")
 RangeKobuleti:SetAutosaveOn()
 RangeKobuleti:SetMessageTimeDuration(5)
 RangeKobuleti:Start()
+inspect = require('inspect')
 
-function range_report(list_targets_names)
-    local tmp_msg = {}
-    table.insert(tmp_msg, os.date('%Y-%m-%d/%H%ML') .. " NOTICE ")
-    table.insert(tmp_msg, "KOBULETI RANGE ACTIVE " .. os.date('%Y-%m-%d') .. "/0400Z/1800Z" .. " ")
-    table.insert(tmp_msg, "RANGE CONTROL/" .. FREQUENCIES.RANGE.CONTROL_KOBULETI[1] .. "/AM ")
-    table.insert(tmp_msg, "RANGE INSTRUCTOR/" .. FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[1] .. "/AM ")
-    table.insert(tmp_msg, "TARGETS POSITIONED VC-BOMB TARGETS / WC-STRAFE TARGETS ")
+function targets_coordinates(list_targets_names)
+    local tgts_tbl = {}
     for index, value in ipairs(list_targets_names) do
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
         local coords = unit:GetCoordinate()
         local mgrs = coords:ToStringMGRS()
-        table.insert(tmp_msg, mgrs .. "\n")
+        local lldm = coords:ToStringLLDDM()
+        table.insert(tgts_tbl, lldm .. "----" .. mgrs "\n")
     end
-    table.insert(tmp_msg, "BOMBING INGRESS LEG UP TO CMDR DISCRETION STRAFE BOX LEN 3NM/ WID 1NM/ RAD 180/ FOUL 500MTRS ")
-    table.insert(tmp_msg, "PROCEED WITH CAUTION REPORT RECIEVED INFORMATION KILO UPON CHECKIN ")
-    --save_to_file()
-    return tmp_msg
+    return tgts_tbl
 end
 
-function getRangeData(table_string)
-    local range_msg={}
-    range_msg.command=HELPERS.SOCKET_NOTAM
-    range_msg.server_name="Nygus Server"
-    range_msg.text=table_string
---     socketBot:SendTable(range_msg)
-    env.info("RANGE KOBULETI\n" .. table.concat(range_msg.text))
-end
+function range_report(range_object, table_bomb_targets, table_strafe_targets)
+    local name = range_object.rangename
+    local rangecontrolfreq = range_object.rangecontrolfreq
+    local instructorfreq = range_object.instructorfreq
+    local bomb_tgts = targets_coordinates(table_bomb_targets)
+    local strafe_tgts = targets_coordinates(table_strafe_targets)
 
-range_msg = range_report({ bombtargets[1], strafe_targets[1] })
+    local range_report = {}
+    table.insert(range_report, os.date('%Y-%m-%d/%H%ML') .. "\n")
+    table.insert(range_report, name .. "\n")
+    table.insert(range_report, rangecontrolfreq .. "\n")
+    table.insert(range_report, instructorfreq .. "\n")
+    table.insert(range_report, "BOMB TARGETS\n")
+    for index, value in ipairs(bomb_tgts) do
+        table.insert(range_report, value .. "\n")
+    end
+    for index, value in ipairs(strafe_tgts) do
+        table.insert(range_report, value .. "\n")
+    end
+    saveToFile(SHEET_PATH .. "\\NOTAM-RANGE-KOBULETI", table.concat(range_report))
+end

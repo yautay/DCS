@@ -9,16 +9,4 @@ AtisAG1651:SetTransmitOnlyWithPlayers(true)
 AtisAG1651:ReportZuluTimeOnly()
 AtisAG1651:Start()
 
-function getAtisData(atisObject)
-    local atis_msg={}
-    atis_msg.command=HELPERS.SOCKET_NOTAM
-    atis_msg.server_name="Nygus Server"
-    atis_msg.text=string.upper(atisObject:GetSRSText())
-    env.info("ATIS SENAKI\n" .. atis_msg.text)
---     if (atis_msg.text) then
---         socketBot:SendTable(atis_msg)
---     end
-end
-
-SchedulerAG1651MasterObject = SCHEDULER:New( AtisAG1651 )
-SchedulerAG1651 = SchedulerAG1651MasterObject:Schedule( AtisAG1651, getAtisData, {AtisAG1651}, 5)
+saveToFile(SHEET_PATH .. "\\NOTAM-ATIS-SENAKI", string.upper(AtisAG1651:GetSRSText()))

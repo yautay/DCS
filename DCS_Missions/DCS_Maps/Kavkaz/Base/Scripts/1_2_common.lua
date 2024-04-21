@@ -1,25 +1,24 @@
-function save_to_file(filename, content)
-    local fdir = lfs.writedir() .. [[Logs\]] .. filename .. timer.getTime() .. ".txt"
-    local f, err = io.open(fdir, "w")
-    if not f then
-        local errmsg = "Error: IO"
-        trigger.action.outText(errmsg, 10)
-        return print(err)
-    end
-    f:write(content)
-    f:close()
+function errorHandler(err)
+    env.info("ERROR")
+    env.info(err)
 end
 
-function append_to_file(filename, content)
-    local fdir = lfs.writedir() .. [[Logs\]] .. filename .. timer.getTime() .. ".txt"
-    local f, err = io.open(fdir, "a")
-    if not f then
-        local errmsg = "Error: IO"
-        trigger.action.outText(errmsg, 10)
-        return print(err)
+--status = xpcall( env.info(inspect(bombingTargets)), errorHandler )
+    --print( status)
+    --for index, value in ipairs(bombingTargets) do
+    --    env.info(index)
+    --    status = xpcall( env.info(value), errorHandler )
+    --print( status)
+    --end
+
+function saveToFile(filename, data)
+    local f = io.open(filename .. os.date('__%Y-%m-%d__%H%ML') .. ".txt", "wb")
+    if f then
+        f:write(data)
+        f:close()
+    else
+        env.info("ERROR: could not save to file")
     end
-    f:write(content)
-    f:close()
 end
 
 function random(x, y)
@@ -67,6 +66,7 @@ end
 
 function debugObject(o)
     for key, value in pairs(o) do
-        print("found member " .. key);
+        env.info("found member " .. key);
+        env.info("with value " .. value);
     end
 end
