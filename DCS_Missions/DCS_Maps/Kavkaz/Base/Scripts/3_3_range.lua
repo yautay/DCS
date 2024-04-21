@@ -1,19 +1,19 @@
-RangeKobuleti = RANGE:New("Kobuleti Range")
+RangeKobuleti = RANGE:New("Kobuleti")
 ZoneKobuletiRange = ZONE_POLYGON:NewFromGroupName("KOBULETI_RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
 RangeKobuleti:SetRangeZone(ZoneKobuletiRange)
 
-local bombtargets = { "TARGET_BMB" }
-local strafe_targets = { "TARGET_STR" }
+BombTargetsRangeKobuleti = { "TARGET_BMB" }
+StrafeTargetsRangeKobuleti = { "TARGET_STR" }
 
-RangeKobuleti:AddBombingTargets(bombtargets, 50, false)
+RangeKobuleti:AddBombingTargets(BombTargetsRangeKobuleti, 50, false)
 
 local boxlength = UTILS.NMToMeters(3)
 local boxwidth = UTILS.NMToMeters(1)
 local heading = 0
-local foulline = 500
+local foulline = 150
 
 --Base:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
-RangeKobuleti:AddStrafePit(strafe_targets, boxlength, boxwidth, heading, false, 10, foulline)
+RangeKobuleti:AddStrafePit(StrafeTargetsRangeKobuleti, boxlength, boxwidth, heading, false, 10, foulline)
 
 RangeKobuleti:SetSRS(
         SRS_PATH,
@@ -50,17 +50,18 @@ RangeKobuleti:SetTargetSheet(SHEET_PATH, "Range-")
 RangeKobuleti:SetAutosaveOn()
 RangeKobuleti:SetMessageTimeDuration(5)
 RangeKobuleti:Start()
-inspect = require('inspect')
 
 function targets_coordinates(list_targets_names)
     local tgts_tbl = {}
     for index, value in ipairs(list_targets_names) do
+        env.info(value)
         local unit = STATIC:FindByName(value)
         local unit_type = unit:GetTypeName()
+        env.info(unit_type)
         local coords = unit:GetCoordinate()
         local mgrs = coords:ToStringMGRS()
         local lldm = coords:ToStringLLDDM()
-        table.insert(tgts_tbl, lldm .. "----" .. mgrs "\n")
+        table.insert(tgts_tbl, lldm .. "   " .. mgrs .. "\n")
     end
     return tgts_tbl
 end
@@ -79,10 +80,13 @@ function range_report(range_object, table_bomb_targets, table_strafe_targets)
     table.insert(range_report, instructorfreq .. "\n")
     table.insert(range_report, "BOMB TARGETS\n")
     for index, value in ipairs(bomb_tgts) do
-        table.insert(range_report, value .. "\n")
+        table.insert(range_report, value)
     end
+    table.insert(range_report, "STRAFE TARGETS\n")
     for index, value in ipairs(strafe_tgts) do
-        table.insert(range_report, value .. "\n")
+        table.insert(range_report, value)
     end
-    saveToFile(SHEET_PATH .. "\\NOTAM-RANGE-KOBULETI", table.concat(range_report))
+    saveToFile(SHEET_PATH .. "\\NOTAM-RANGE-" .. string.upper(name), table.concat(range_report))
 end
+
+range_report(RangeKobuleti, BombTargetsRangeKobuleti, StrafeTargetsRangeKobuleti)
