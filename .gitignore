@@ -47,3 +47,7 @@ coverage.xml
 
 # Django stuff:
 
+#DCS
+**/dynamic_load.lua
+**/frameworks.lua
+**/script.lua
