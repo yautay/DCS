@@ -1,0 +1,42 @@
+ZONE_SPAWN_1 = ZONE:New("SPAWN-1")
+ZONE_SPAWN_2 = ZONE:New("SPAWN-2")
+ZONE_SPAWN_3 = ZONE:New("SPAWN-3")
+ZONE_SPAWN_4 = ZONE:New("SPAWN-4")
+ZONE_SPAWN_5 = ZONE:New("SPAWN-5")
+ZONE_SPAWN_6 = ZONE:New("SPAWN-6")
+SPAWN_ZONES = {ZONE_SPAWN_1, ZONE_SPAWN_2, ZONE_SPAWN_3, ZONE_SPAWN_4, ZONE_SPAWN_5, ZONE_SPAWN_6}
+
+TEMPLATE_A20 = "TMP-A20"
+TEMPLATE_MUSTANG = "TMP-MUSTANG"
+TEMPLATE_MOSQUITO = "TMP-MOSQUITO"
+TEMPLATE_SPITFIRE = "TMP-SPITFIRE"
+TEMPLATE_YAK = "TMP-YAK"
+
+MenuPVE = MENU_COALITION:New(coalition.side.BLUE, "PVE Trainer")
+MenuPVE_A20 = MENU_COALITION:New(coalition.side.BLUE, "A20", MenuPVE)
+MenuPVE_P51 = MENU_COALITION:New(coalition.side.BLUE, "P51", MenuPVE)
+MenuPVE_SPIT = MENU_COALITION:New(coalition.side.BLUE, "SPITFIRE", MenuPVE)
+MenuPVE_MOSIE = MENU_COALITION:New(coalition.side.BLUE, "MOSIE", MenuPVE)
+MenuPVE_YAK = MENU_COALITION:New(coalition.side.BLUE, "YAK", MenuPVE)
+
+
+local function Spawn_Group(template_name)
+    local spawned_group = SPAWN
+           :New(template_name)
+           :InitRandomizeZones( SPAWN_ZONES )
+           :Spawn()
+    local dest = ZONE_ENGAGE:GetVec2()
+    local coord_dest = COORDINATE:NewFromVec2(dest, UTILS.FeetToMeters(15000))
+    spawned_group:RouteAirTo(coord_dest, COORDINATE.WaypointAltType.BARO, COORDINATE.WaypointType.TurningPoint, COORDINATE.WaypointAction.FlyoverPoint, UTILS.KnotsToKmph(250))
+    spawned_group:EnRouteTaskEngageTargetsInZone(dest, UTILS.NMToMeters(60))
+    local msg = template_name .. " SPAWNED!"
+    msgToAll({msg, 3})
+end
+
+
+-- SU-27
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Spawn", MenuPVE_A20, Spawn_Group, TEMPLATE_A20)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Spawn", MenuPVE_P51, Spawn_Group, TEMPLATE_MUSTANG)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Spawn", MenuPVE_SPIT, Spawn_Group, TEMPLATE_SPITFIRE)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Spawn", MenuPVE_MOSIE, Spawn_Group, TEMPLATE_MOSQUITO)
+MENU_COALITION_COMMAND:New(coalition.side.BLUE, "Spawn", MenuPVE_YAK, Spawn_Group, TEMPLATE_YAK)
