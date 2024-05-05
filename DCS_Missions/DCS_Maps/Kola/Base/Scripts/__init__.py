@@ -20,3 +20,4 @@ PATH_SCRIPT_AW_SOCHI = os.path.join(PATH_MISSION_SCRIPTS, "4_2_AW_Sochi.lua")
 PATH_SCRIPT_PVE_TRAINER = os.path.join(PATH_MISSION_SCRIPTS, "6_1_PVE_Trainer.lua")
 
 PATH_SCRIPT_ATIS = os.path.join(PATH_MISSION_SCRIPTS, "9_1_atis.lua")
+PATH_SCRIPT_RAT = os.path.join(PATH_MISSION_SCRIPTS, "9_2_rat.lua")

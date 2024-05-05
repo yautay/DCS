@@ -29,7 +29,7 @@ scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 # scripts_order["\n--PVE TRAINER\n"] = PATH_SCRIPT_PVE_TRAINER
 
 # scripts_order["\n--9.1 - ATIS\n"] = PATH_SCRIPT_ATIS
-
+scripts_order["\n--9.2 - RAT\n"] = PATH_SCRIPT_RAT
 
 def delete_old_files(filename: str):
     if os.path.exists(filename):
