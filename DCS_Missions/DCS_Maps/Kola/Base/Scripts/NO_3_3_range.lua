@@ -1,11 +1,11 @@
-RangeKobuleti = RANGE:New("Kobuleti")
+NO_RangeKobuleti = RANGE:New("Kobuleti")
 ZoneKobuletiRange = ZONE_POLYGON:NewFromGroupName("KOBULETI_RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
-RangeKobuleti:SetRangeZone(ZoneKobuletiRange)
+NO_RangeKobuleti:SetRangeZone(ZoneKobuletiRange)
 
 BombTargetsRangeKobuleti = { "TARGET_BMB" }
 StrafeTargetsRangeKobuleti = { "TARGET_STR" }
 
-RangeKobuleti:AddBombingTargets(BombTargetsRangeKobuleti, 50, false)
+NO_RangeKobuleti:AddBombingTargets(BombTargetsRangeKobuleti, 50, false)
 
 local boxlength = UTILS.NMToMeters(3)
 local boxwidth = UTILS.NMToMeters(1)
@@ -13,9 +13,9 @@ local heading = 0
 local foulline = 150
 
 --Base:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
-RangeKobuleti:AddStrafePit(StrafeTargetsRangeKobuleti, boxlength, boxwidth, heading, false, 10, foulline)
+NO_RangeKobuleti:AddStrafePit(StrafeTargetsRangeKobuleti, boxlength, boxwidth, heading, false, 10, foulline)
 
-RangeKobuleti:SetSRS(
+NO_RangeKobuleti:SetSRS(
         SRS_PATH,
         SRS_PORT,
         coalition.side.BLUE,
@@ -25,7 +25,7 @@ RangeKobuleti:SetSRS(
 )
 
 --Base:SetSRSRangeControl(frequency: number, modulation: modulation, voice:string, culture:string, gender:string, relayunitname:string)
-RangeKobuleti:SetSRSRangeControl(
+NO_RangeKobuleti:SetSRSRangeControl(
         FREQUENCIES.RANGE.CONTROL_KOBULETI[1],
         FREQUENCIES.RANGE.CONTROL_KOBULETI[3],
         nil,
@@ -35,7 +35,7 @@ RangeKobuleti:SetSRSRangeControl(
 )
 
 --Base:SetSRSRangeInstructor(frequency: number, modulation: modulation, voice:string, culture:string, gender:string, relayunitname:string)
-RangeKobuleti:SetSRSRangeInstructor(
+NO_RangeKobuleti:SetSRSRangeInstructor(
         FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[1],
         FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[3],
         nil,
@@ -45,11 +45,11 @@ RangeKobuleti:SetSRSRangeInstructor(
 )
 
 -- Start range.
-RangeKobuleti:SetDefaultPlayerSmokeBomb(true)
-RangeKobuleti:SetTargetSheet(SHEET_PATH, "Range-")
-RangeKobuleti:SetAutosaveOn()
-RangeKobuleti:SetMessageTimeDuration(5)
-RangeKobuleti:Start()
+NO_RangeKobuleti:SetDefaultPlayerSmokeBomb(true)
+NO_RangeKobuleti:SetTargetSheet(SHEET_PATH, "Range-")
+NO_RangeKobuleti:SetAutosaveOn()
+NO_RangeKobuleti:SetMessageTimeDuration(5)
+NO_RangeKobuleti:Start()
 
 function targets_coordinates(list_targets_names)
     local tgts_tbl = {}
@@ -87,4 +87,4 @@ function range_report(range_object, table_bomb_targets, table_strafe_targets)
     saveToFile(SHEET_PATH .. "\\NOTAM-RANGE-" .. string.upper(name), table.concat(range_report))
 end
 
-range_report(RangeKobuleti, BombTargetsRangeKobuleti, StrafeTargetsRangeKobuleti)
+range_report(NO_RangeKobuleti, BombTargetsRangeKobuleti, StrafeTargetsRangeKobuleti)
