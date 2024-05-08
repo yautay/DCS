@@ -1,1 +1,0 @@
-Spawn_Texaco_One = SPAWN:New("SPAWN TX1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (texaco_11) texaco_11:CommandSetCallsign(CALLSIGN.Tanker.Texaco, 1) end):InitRepeatOnLanding()
