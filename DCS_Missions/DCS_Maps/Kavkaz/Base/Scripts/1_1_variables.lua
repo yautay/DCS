@@ -24,10 +24,10 @@ BASES = {
 
 FREQUENCIES_MAP = {
     GROUND = {
-            atis_ag1651 = {125.000, "ATIS Senaki", "AM"},
-            twr_ag1651_1 = {40.600, "TOWER Senaki VHF/LOW", "AM"},
-            twr_ag1651_2 = {132.000, "TOWER Senaki VHF", "AM"},
-            twr_ag1651_3 = {261.000, "TOWER Senaki UHF", "AM"},
+            atis_senaki = {125.000, "ATIS Senaki", "AM"},
+            twr_senaki_1 = {40.600, "TOWER Senaki VHF/LOW", "AM"},
+            twr_senaki_2 = {132.000, "TOWER Senaki VHF", "AM"},
+            twr_senaki_3 = {261.000, "TOWER Senaki UHF", "AM"},
         },
     SPECIAL = {
         guard_hi = {243.00, "Guard UHF", "AM"},

@@ -15,35 +15,6 @@ local foulline = 150
 --Base:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
 NO_RangeKobuleti:AddStrafePit(StrafeTargetsRangeKobuleti, boxlength, boxwidth, heading, false, 10, foulline)
 
-NO_RangeKobuleti:SetSRS(
-        SRS_PATH,
-        SRS_PORT,
-        coalition.side.BLUE,
-        FREQUENCIES.RANGE.CONTROL_KOBULETI[1],
-        FREQUENCIES.RANGE.CONTROL_KOBULETI[3],
-        1
-)
-
---Base:SetSRSRangeControl(frequency: number, modulation: modulation, voice:string, culture:string, gender:string, relayunitname:string)
-NO_RangeKobuleti:SetSRSRangeControl(
-        FREQUENCIES.RANGE.CONTROL_KOBULETI[1],
-        FREQUENCIES.RANGE.CONTROL_KOBULETI[3],
-        nil,
-        "en-US",
-        "female",
-        "RELAY-KOBULETI"
-)
-
---Base:SetSRSRangeInstructor(frequency: number, modulation: modulation, voice:string, culture:string, gender:string, relayunitname:string)
-NO_RangeKobuleti:SetSRSRangeInstructor(
-        FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[1],
-        FREQUENCIES.RANGE.INSTRUCTOR_KOBULETI[3],
-        nil,
-        "en-US",
-        "male",
-        "RELAY-KOBULETI"
-)
-
 -- Start range.
 NO_RangeKobuleti:SetDefaultPlayerSmokeBomb(true)
 NO_RangeKobuleti:SetTargetSheet(SHEET_PATH, "Range-")
@@ -66,16 +37,12 @@ end
 
 function range_report(range_object, table_bomb_targets, table_strafe_targets)
     local name = range_object.rangename
-    local rangecontrolfreq = range_object.rangecontrolfreq
-    local instructorfreq = range_object.instructorfreq
     local bomb_tgts = targets_coordinates(table_bomb_targets)
     local strafe_tgts = targets_coordinates(table_strafe_targets)
 
     local range_report = {}
     table.insert(range_report, os.date('%Y-%m-%d/%H%ML') .. "\n")
     table.insert(range_report, name .. "\n")
-    table.insert(range_report, rangecontrolfreq .. "\n")
-    table.insert(range_report, instructorfreq .. "\n")
     table.insert(range_report, "BOMB TARGETS\n")
     for index, value in ipairs(bomb_tgts) do
         table.insert(range_report, value)
