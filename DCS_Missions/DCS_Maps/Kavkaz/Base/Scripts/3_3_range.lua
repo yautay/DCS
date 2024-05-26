@@ -5,7 +5,7 @@ NO_RangeKobuleti:SetRangeZone(ZoneKobuletiRange)
 BombTargetsRangeKobuleti = { "TARGET_BMB" }
 StrafeTargetsRangeKobuleti = { "TARGET_STR" }
 
-NO_RangeKobuleti:AddBombingTargets(BombTargetsRangeKobuleti, 50, false)
+NO_RangeKobuleti:AddBombingTargets(BombTargetsRangeKobuleti, 20, false)
 
 local boxlength = UTILS.NMToMeters(3)
 local boxwidth = UTILS.NMToMeters(1)
