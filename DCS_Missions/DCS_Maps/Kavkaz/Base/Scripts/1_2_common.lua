@@ -3,14 +3,6 @@ function errorHandler(err)
     env.info(err)
 end
 
---status = xpcall( env.info(inspect(bombingTargets)), errorHandler )
-    --print( status)
-    --for index, value in ipairs(bombingTargets) do
-    --    env.info(index)
-    --    status = xpcall( env.info(value), errorHandler )
-    --print( status)
-    --end
-
 function saveToFile(filename, data)
     local f = io.open(filename .. os.date('__%Y-%m-%d__%H%ML') .. ".txt", "wb")
     if f then

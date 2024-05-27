@@ -7,6 +7,3 @@ CONST = {
         zone_bvr = {1, .5, 1}
     }
 }
-HELPERS = {
-    SOCKET_NOTAM = "custom_notam"
-}

@@ -17,7 +17,6 @@ scripts_order = OrderedDict()
 scripts_order["\n--2.1 - CONST\n"] = PATH_SCRIPT_CONST
 scripts_order["\n--2.2 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--2.3 - COMMON\n"] = PATH_SCRIPT_COMMON
-scripts_order["\n--2.4 - CLIENT\n"] = PATH_SCRIPT_CLIENTS
 
 scripts_order["\n--3.1 - RANGES\n"] = PATH_SCRIPT_RANGE
 
