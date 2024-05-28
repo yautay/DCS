@@ -15,12 +15,14 @@ FREQUENCIES_MAP = {
 
 FREQUENCIES = {
     AWACS = {
-        wizard = { 251.00, "AWACS @ DCS Wizard UHF", "AM" },
+        wizard = { 250.00, "AWACS @ DCS Wizard UHF", "AM" },
+        darkstar = { 249.00, "AWACS @ DCS Darkstar UHF", "AM" },
     },
     AAR = {
-        navy_one = { 252.50, "Tanker Navy One UHF", "AM" },
-        texaco_one = { 252.00, "Tanker Texaco One UHF", "AM" },
-        shell_one = { 252.10, "Tanker Shell One UHF", "AM" },
+        arco = { 252.50, "Tanker Arco UHF", "AM" },
+        shell_one = { 252.30, "Tanker Texaco One UHF", "AM" },
+        texaco_one = { 252.30, "Tanker Texaco One UHF", "AM" },
+        texaco_two = { 252.10, "Tanker Texaco Two UHF", "AM" },
     },
     CVN_75 = {
         dcs_sc = { 127.50, "DCS SC ATC VHF", "AM" },
@@ -38,12 +40,13 @@ FREQUENCIES = {
         ch_16 = { 156.8, "Maritime Ch16 VHF", "FM" }
     },
     ICLS = {
-        sc_75 = { 11, "CV5", "ICLS CVN-75" },
+        sc_75 = { 11, "CVN", "ICLS CVN-75" },
     },
     TACAN = {
         sc_75 = { 75, "X", "CVN", "CVN-75" },
-        navy_one = { 1, "Y", "RCV", "Recovery Tanker CVN-75", true },
-        texaco_one = { 52, "Y", "TX1", "Tanker Texaco One", true },
-        shell_one = { 51, "Y", "SH1", "Tanker Shell One", true },
+        arco = { 1, "Y", "RCV", "Recovery Tanker" },
+        shell_one = { 51, "Y", "SH1", "Tanker Texaco One" },
+        texaco_one = { 52, "Y", "TX1", "Tanker Texaco One" },
+        texaco_two = { 54, "Y", "TX2", "Tanker Texaco One" },
     }
 }

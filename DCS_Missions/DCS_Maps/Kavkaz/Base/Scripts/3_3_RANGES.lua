@@ -1,6 +1,6 @@
 RangeObject = RANGE:New("Kobuleti")
-ZoneiRange = ZONE_POLYGON:NewFromGroupName("RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
-RangeObject:SetRangeZone(ZoneKobuletiRange)
+ZoneRange = ZONE_POLYGON:NewFromGroupName("RANGE"):DrawZone(2, CONST.RGB.zone_red, 1, CONST.RGB.zone_red, .3, 1, true)
+RangeObject:SetRangeZone(ZoneRange)
 
 BombTargets = { "TARGET_BMB" }
 StrafeTargets = { "TARGET_STR" }
@@ -20,7 +20,18 @@ RangeObject:SetDefaultPlayerSmokeBomb(true)
 RangeObject:SetTargetSheet(SHEET_PATH, "Range-")
 RangeObject:SetAutosaveOn()
 RangeObject:SetMessageTimeDuration(5)
+RangeObject:SetFunkManOn(10042, "127.0.0.1")
 RangeObject:Start()
+
+function RangeObject:OnAfterImpact(From, Event, To, Result, Player)
+    local player = Player
+    local result = Result
+end
+
+function RangeObject:OnAfterStrafeResult(From, Event, To, Player, Result)
+    local player = Player
+    local result = Result
+end
 
 function targets_coordinates(list_targets_names)
     local tgts_tbl = {}
