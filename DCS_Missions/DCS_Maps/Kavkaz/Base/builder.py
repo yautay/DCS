@@ -25,6 +25,8 @@ scripts_order["\n--4.1 - BASES\n"] = PATH_SCRIPT_BASES
 scripts_order["\n--4.2 - SQUADRONS\n"] = PATH_SCRIPT_SQUADRONS
 scripts_order["\n--4.3 - AIRWINGS\n"] = PATH_SCRIPT_AIRWINGS
 
+scripts_order["\n--5.1 - MANTIS\n"] = PATH_SCRIPT_MANTIS
+
 
 
 def delete_old_files(filename: str):

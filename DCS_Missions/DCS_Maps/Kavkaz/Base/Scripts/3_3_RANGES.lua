@@ -9,7 +9,7 @@ RangeObject:AddBombingTargets(BombTargets, 20, false)
 
 local boxlength = UTILS.NMToMeters(3)
 local boxwidth = UTILS.NMToMeters(1)
-local heading = 276
+local heading = 96
 local foulline = 150
 
 --Base:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
