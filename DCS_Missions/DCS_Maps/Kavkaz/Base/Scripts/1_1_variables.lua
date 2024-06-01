@@ -30,9 +30,9 @@ FREQUENCIES = {
         btn2 = { 260.10, "B-2 HUMAN Departure C2/C3 UHF", "AM" },
         btn3 = { 249.10, "B-3 HUMAN Strike UHF", "AM" },
         btn4 = { 258.20, "B-4 HUMAN Red Crown UHF", "AM" },
-        btn15 = { 260.20, "B-15 HUMAN CCA Fianal A", "AM" },
+        btn15 = { 260.20, "B-15 HUMAN CCA Final A", "AM" },
         btn16 = { 260.30, "B-16 AIRBOSS/HUMAN Marshal UHF", "AM" },
-        btn17 = { 260.40, "B-17 HUMAN CCA Fianal B", "AM" },
+        btn17 = { 260.40, "B-17 HUMAN CCA Final B", "AM" },
     },
     SPECIAL = {
         guard_hi = { 243.00, "Guard UHF", "AM" },
