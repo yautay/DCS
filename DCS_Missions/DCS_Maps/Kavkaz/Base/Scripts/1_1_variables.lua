@@ -20,7 +20,7 @@ FREQUENCIES = {
     },
     AAR = {
         arco = { 252.50, "Tanker Arco UHF", "AM" },
-        shell_one = { 252.30, "Tanker Texaco One UHF", "AM" },
+        shell_one = { 252.20, "Tanker Texaco One UHF", "AM" },
         texaco_one = { 252.30, "Tanker Texaco One UHF", "AM" },
         texaco_two = { 252.10, "Tanker Texaco Two UHF", "AM" },
     },
