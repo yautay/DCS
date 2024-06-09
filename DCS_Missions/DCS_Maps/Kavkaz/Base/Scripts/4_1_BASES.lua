@@ -1,7 +1,0 @@
-ATC_SENAKI=FLIGHTCONTROL:New(AIRBASE.Caucasus.Senaki_Kolkhi, {FREQUENCIES_MAP.GROUND.twr_senaki_1[1], FREQUENCIES_MAP.GROUND.twr_senaki_2[1], FREQUENCIES_MAP.GROUND.twr_senaki_3[1]}, radio.modulation.AM, SRS_PATH)
-ATC_SENAKI:SetSpeedLimitTaxi(30)
-ATC_SENAKI:SetParkingGuardStatic("TEMPLATE_STATIC_ops_gnd")
-ATC_SENAKI:SetLimitTaxi(4, false, 2)
-ATC_SENAKI:SetLimitLanding(4, 99)
-ATC_SENAKI:SetMarkHoldingPattern(false)
-ATC_SENAKI:Start()

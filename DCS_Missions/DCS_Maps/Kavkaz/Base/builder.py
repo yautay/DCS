@@ -20,12 +20,7 @@ scripts_order["\n--2.3 - COMMON\n"] = PATH_SCRIPT_COMMON
 
 scripts_order["\n--3.1 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--3.2 - RANGES\n"] = PATH_SCRIPT_RANGE
-
-scripts_order["\n--4.1 - BASES\n"] = PATH_SCRIPT_BASES
 scripts_order["\n--4.2 - SQUADRONS\n"] = PATH_SCRIPT_SQUADRONS
-scripts_order["\n--4.3 - AIRWINGS\n"] = PATH_SCRIPT_AIRWINGS
-
-scripts_order["\n--5.1 - MANTIS\n"] = PATH_SCRIPT_MANTIS
 
 
 

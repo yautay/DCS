@@ -22,7 +22,6 @@ FREQUENCIES = {
         arco = { 252.50, "Tanker Arco UHF", "AM" },
         shell_one = { 252.20, "Tanker Texaco One UHF", "AM" },
         texaco_one = { 252.30, "Tanker Texaco One UHF", "AM" },
-        texaco_two = { 252.10, "Tanker Texaco Two UHF", "AM" },
     },
     CVN_75 = {
         dcs_sc = { 127.50, "DCS SC ATC VHF", "AM" },
@@ -47,6 +46,5 @@ FREQUENCIES = {
         arco = { 1, "Y", "RCV", "Recovery Tanker" },
         shell_one = { 51, "Y", "SH1", "Tanker Texaco One" },
         texaco_one = { 52, "Y", "TX1", "Tanker Texaco One" },
-        texaco_two = { 54, "Y", "TX2", "Tanker Texaco One" },
     }
 }

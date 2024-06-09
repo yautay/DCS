@@ -67,7 +67,7 @@ marker_SA2 = MARKER:New( ZoneRangeSA2:GetCoordinate(), "SA-2 Range | S-75 Fan So
 
 RangeObject_SA6 = RANGE:New("SA6")
 ZoneRangeSA6 = ZONE:New("RANGE-SA6")
-RangeObject_SA2:SetRangeZone(ZoneRangeSA6)
+RangeObject_SA6:SetRangeZone(ZoneRangeSA6)
 BombTargetsSA6 = { "SA6 STR" }
 RangeObject_SA6:AddBombingTargets(BombTargetsSA6, 15, false)
 RangeObject_SA6:SetDefaultPlayerSmokeBomb(false)
@@ -82,5 +82,5 @@ Fox_SA6:AddSafeZone(ZoneRangeSA2)
 Fox_SA6:AddLaunchZone(ZONE:New("SA6 LZ"))
 Fox_SA6:Start()
 
-marker_SA2 = MARKER:New( ZoneRangeSA2:GetCoordinate(), "SA-6 Range | Straight Flush"):ToCoalition( coalition.side.BLUE )
+marker_SA6 = MARKER:New( ZoneRangeSA6:GetCoordinate(), "SA-6 Range | Straight Flush"):ToCoalition( coalition.side.BLUE )
 
