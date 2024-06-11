@@ -23,8 +23,8 @@ RangeObject_IRON:SetMessageTimeDuration(5)
 RangeObject_IRON:SetFunkManOn(10042, "127.0.0.1")
 RangeObject_IRON:Start()
 
-marker_bomb = MARKER:New( STATIC:FindByName("TARGET_BMB"):GetCoordinate(), "Iron Bombs Target"):ToCoalition( coalition.side.BLUE )
-marker_strafe = MARKER:New( STATIC:FindByName("TARGET_STR"):GetCoordinate(), "Strafe Pit - ingress from East!!"):ToCoalition( coalition.side.BLUE )
+marker_bomb = MARKER:New( GROUP:FindByName("G_TARGET_BMB"):GetCoordinate(), "Iron Bombs Target"):ToCoalition( coalition.side.BLUE )
+marker_strafe = MARKER:New( GROUP:FindByName("G_TARGET_STR"):GetCoordinate(), "Strafe Pit - ingress from East!!"):ToCoalition( coalition.side.BLUE )
 
 
 RangeObject_SA3 = RANGE:New("SA3")
