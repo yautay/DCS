@@ -2,10 +2,10 @@ RangeObject_IRON = RANGE:New("Kobuleti")
 ZoneRange = ZONE_POLYGON:NewFromGroupName("RANGE")
 RangeObject_IRON:SetRangeZone(ZoneRange)
 
-BombTargets = { "TARGET_BMB" }
-StrafeTargets = { "TARGET_STR" }
+BombTargetsGroups = { "G_TARGET_BMB" }
+StrafeTargetsGroupMs = { "G_TARGET_STR" }
 
-RangeObject_IRON:AddBombingTargets(BombTargets, 20, false)
+RangeObject_IRON:AddBombingTargetGroup(GROUP:FindByName(BombTargetsGroups[1]), 30, false)
 
 local boxlength = UTILS.NMToMeters(3)
 local boxwidth = UTILS.NMToMeters(1)
@@ -13,7 +13,7 @@ local heading = 96
 local foulline = 150
 
 --Base:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
-RangeObject_IRON:AddStrafePit(StrafeTargets, boxlength, boxwidth, heading, false, 10, foulline)
+RangeObject_IRON:AddStrafePitGroup(GROUP:FindByName(StrafeTargetsGroupMs[1]), boxlength, boxwidth, heading, false, 20, foulline)
 
 -- Start range.
 RangeObject_IRON:SetDefaultPlayerSmokeBomb(true)
