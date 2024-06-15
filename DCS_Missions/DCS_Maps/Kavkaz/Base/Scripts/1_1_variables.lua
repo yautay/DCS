@@ -15,7 +15,7 @@ FREQUENCIES_MAP = {
 
 FREQUENCIES = {
     AWACS = {
-        wizard = { 250.00, "AWACS @ DCS Wizard UHF", "AM" },
+        wizard = { 250.00, "AWACS @ Mooze Wizard UHF", "AM" },
         darkstar = { 249.00, "AWACS @ DCS Darkstar UHF", "AM" },
     },
     AAR = {

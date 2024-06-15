@@ -1,10 +1,9 @@
-Spawn_Shell1 = SPAWN:New("SHELL #1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (shell_11) shell_11:CommandSetCallsign(CALLSIGN.Tanker.Shell, 1) end):InitRepeatOnLanding()
-Spawn_Texaco_1 = SPAWN:New("TEXACO #1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (texaco_11) texaco_11:CommandSetCallsign(CALLSIGN.Tanker.Texaco, 1) end):InitRepeatOnLanding()
-Spawn_Wizard_1 = SPAWN:New("WIZARD #1"):InitLimit( 1, 0 ):SpawnScheduled( 60, .1 ):OnSpawnGroup( function (wizard_11) wizard_11:CommandSetCallsign(CALLSIGN.AWACS.Wizard, 1) end):InitRepeatOnLanding()
-
-MenuSpawn = MENU_COALITION:New( coalition.side.BLUE, "Spawn Menu" )
-
-function spawn21()
-    Spawn_RED21 = SPAWN:New("REDMIG21"):Spawn()
-end
-MenuSpawn21 = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn 21", MenuSpawn, spawn21 )
+BLUE_AWACS = SQUADRON:New("WIZARD", 5, "AWACS")
+BLUE_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
+BLUE_AWACS:SetTakeoffType("Air")
+BLUE_AWACS:SetFuelLowRefuel(true)
+BLUE_AWACS:SetFuelLowThreshold(0.4)
+BLUE_AWACS:SetTurnoverTime(30, 5)
+BLUE_AWACS:SetRadio(FREQUENCIES.AWACS.wizard[1], radio.modulation.AM)
+AW_BLUE:AddSquadron(BLUE_AWACS)
+AW_BLUE:NewPayload("WIZARD", -1, { AUFTRAG.Type.ORBIT }, 100)

@@ -7,3 +7,5 @@ CONST = {
         zone_bvr = {1, .5, 1}
     }
 }
+
+MenuSpawn = MENU_COALITION:New( coalition.side.BLUE, "Spawn Menu" )
