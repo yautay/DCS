@@ -7,6 +7,8 @@ function spawnStrike()
     Spawn_Aggressor_1 = SPAWN:New("AGRESOR1"):Spawn()
     Spawn_Aggressor_2 = SPAWN:New("AGRESOR2"):Spawn()
     Spawn_Aggressor_3 = SPAWN:New("AGRESOR3"):Spawn()
+    Spawn_Aggressor_4 = SPAWN:New("LVL BOMBERS#1"):Spawn()
+    Spawn_Aggressor_5 = SPAWN:New("LVL BOMBERS#2"):Spawn()
 end
 
 function spawnMig21()
