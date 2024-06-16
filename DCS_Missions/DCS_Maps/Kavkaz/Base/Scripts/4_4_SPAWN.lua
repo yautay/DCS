@@ -10,10 +10,22 @@ function spawnStrike()
 end
 
 function spawnMig21()
-    Spawn_Aggressor_1 = SPAWN:New("MIGS21"):Spawn()
-    Spawn_Aggressor_2 = SPAWN:New("AGRESOR2"):Spawn()
-    Spawn_Aggressor_3 = SPAWN:New("AGRESOR3"):Spawn()
+    Spawn_Mig21 = SPAWN:New("MIGS21"):Spawn()
+end
+function spawnMig19()
+    Spawn_Mig21 = SPAWN:New("MIGS19"):Spawn()
+end
+function spawnMig15()
+    Spawn_Mig21 = SPAWN:New("MIGS15"):Spawn()
+end
+function spawnMig29()
+    Spawn_Mig21 = SPAWN:New("MIGS15"):Spawn()
 end
 
-MenuSpawnAttackOnSenaki = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn Strike", MenuSpawn, spawnStrike )
-MenuSpawnMIG21 = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn pair of MiG-21 from South", MenuSpawn, spawnMig21 )
+MenuSpawnAir = MENU_COALITION:New( coalition.side.BLUE, "Spawn Menu PvE" )
+
+MenuSpawnAttackOnSenaki = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn Strike", MenuSpawnAir, spawnStrike )
+MenuSpawnMIG21 = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn 2-ship of MiG-21 from South", MenuSpawnAir, spawnMig21 )
+MenuSpawnMIG19 = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn 2-ship of MiG-19 from South-East", MenuSpawnAir, spawnMig19 )
+MenuSpawnMIG15 = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn 4-ship of MiG-15 from East", MenuSpawnAir, spawnMig15 )
+MenuSpawnMIG29 = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn 2-ship of MiG-29 from West", MenuSpawnAir, spawnMig29 )
