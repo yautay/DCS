@@ -1,5 +1,5 @@
 from DCS_Missions.lib import *
-from DCS_Missions.DCS_Maps.Kavkaz.Base.Scripts import *
+from DCS_Missions.DCS_Maps.Kavkaz.PFS_AG_Range.Scripts import *
 from collections import OrderedDict
 import os
 
@@ -18,11 +18,8 @@ scripts_order["\n--2.1 - CONST\n"] = PATH_SCRIPT_CONST
 scripts_order["\n--2.2 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--2.3 - COMMON\n"] = PATH_SCRIPT_COMMON
 
-scripts_order["\n--3.1 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--3.2 - RANGES\n"] = PATH_SCRIPT_RANGE
 scripts_order["\n--4.1 - SQUADRONS\n"] = PATH_SCRIPT_SQUADRONS
-scripts_order["\n--4.2 - AIRWING\n"] = PATH_SCRIPT_AIRWING
-scripts_order["\n--4.3 - AWACS\n"] = PATH_SCRIPT_AWACS
 scripts_order["\n--4.4 - SPAWN\n"] = PATH_SCRIPT_SPAWN
 
 
