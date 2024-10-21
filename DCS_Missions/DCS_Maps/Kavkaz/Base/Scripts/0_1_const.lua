@@ -7,6 +7,5 @@ CONST = {
         zone_bvr = {1, .5, 1}
     }
 }
-HELPERS = {
-    SOCKET_NOTAM = "custom_notam"
-}
+
+MenuSpawn = MENU_COALITION:New( coalition.side.BLUE, "Spawn Menu" )

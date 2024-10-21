@@ -7,18 +7,30 @@ VAR_KOLA = {
                 twr_2 = { 118.700, "25TOWER EFRO VHF", "AM" },
                 twr_3 = { 250.250, "TOWER EFRO UHF", "AM" },
             },
+            ENBO = {
+                atis = { 126.900, "ATIS ENBO", "AM" },
+                twr_1 = { 38.950, "TOWER ENBO VHF/LOW", "AM" },
+                twr_2 = { 118.300, "25TOWER ENBO VHF", "AM" },
+                twr_3 = { 250.450, "TOWER ENBO UHF", "AM" },
+            },
             BAS100 = {
                 atis = { 126.250, "ATIS BAS100", "AM" },
                 twr_1 = { 38.800, "TOWER BAS100 VHF/LOW", "AM" },
                 twr_2 = { 118.250, "TOWER BAS100 VHF", "AM" },
                 twr_3 = { 257.100, "TOWER BAS100 UHF", "AM" },
+                farp_warsaw = { 256.000, "TOWER FARP WARSAW UHF", "AM" },
             },
         },
         AWACS = {
             wizard = { 250.00, "AWACS @ DCS Wizard UHF", "AM" },
+            darkstar = { 249.00, "AWACS @ Darkstar C3i UHF", "AM" },
         },
         AAR = {
-            navy_one = { 252.10, "Tanker Navy One UHF", "AM" },
+            navy_one = { 252.50, "Tanker Navy One UHF", "AM" },
+            texaco_one = {252.30, "Tanker Texaco One UHF", "AM" },
+            texaco_two = {252.30, "Tanker Texaco Two UHF", "AM" },
+            shell_one = {252.10, "Tanker Shell One UHF", "AM" },
+            shell_two = {252.10, "Tanker Shell Two UHF", "AM" }
         },
         FLIGHTS = {
             vfma212_1_u = { 266.20, "SQUADRON VFMA-212 UHF", "AM" },
@@ -44,12 +56,13 @@ VAR_KOLA = {
     ICLS = {
         sc_75 = { 11, "CV5", "ICLS CVN-75" },
     },
-    LUNK_4 = {
-        sc_75 = { 331, "CV5", "ACLS CVN-75" },
-    },
     TACAN = {
         sc_75 = { 75, "X", "CVN", "CVN-75" },
-        navy_one = { 1, "Y", "RCV", "Recovery Tanker CVN-75", false },
+        navy_one = { 1, "Y", "RCV", "Recovery Tanker CVN-75", true },
+        texaco_one = { 52, "Y", "TX1", "Tanker Texaco One", true },
+        texaco_two = { 54, "Y", "TX2", "Tanker Texaco Two", true },
+        shell_one = { 51, "Y", "SH1", "Tanker Shell One", true },
+        shell_two = { 53, "Y", "SH2", "Tanker Shell Two", true },
     }
 }
 

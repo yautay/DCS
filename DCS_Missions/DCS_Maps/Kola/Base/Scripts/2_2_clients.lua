@@ -13,3 +13,5 @@ function ClientSet:OnEventPlayerEnterAircraft(event_data)
 end
 
 SetEventHandler()
+
+MenuPyrlandia = MENU_COALITION:New( coalition.side.BLUE, "PYRLANDIA" )

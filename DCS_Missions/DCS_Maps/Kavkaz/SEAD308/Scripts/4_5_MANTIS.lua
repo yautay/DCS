@@ -1,0 +1,7 @@
+RedMANTIS = MANTIS:New("REDMANTIS", "Red SAM", "Red EWR", nil, "red", false)
+RedAcceptZONE = ZONE_POLYGON:NewFromGroupName("Red Accept Zone")
+RedMANTIS:SetDetectInterval(2)
+RedMANTIS:SetSAMRange(90)
+RedMANTIS:SetUsingEmOnOff(true)
+RedMANTIS:AddZones({RedAcceptZONE}, {}, {})
+RedMANTIS:Start()
