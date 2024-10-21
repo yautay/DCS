@@ -1,5 +1,6 @@
 from DCS_Missions.lib import *
 from DCS_Missions.DCS_Maps.Kola.Base.Scripts import *
+from DCS_Missions.lib import *
 from collections import OrderedDict
 import os
 
@@ -11,8 +12,8 @@ DYNAMIC_LOAD_LUA = "dynamic_load.lua"
 frameworks_order = OrderedDict()
 frameworks_order["\n--1 - PATHS\n"] = PATH_SCRIPT_PATHS
 # frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE_CUSTOM
-frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE
-frameworks_order["\n--4 - STTS\n"] = PATH_LIBS_STTS
+frameworks_order["\n--2 - MOOSE\n"] = PATH_LIB_MOOSE
+frameworks_order["\n--4 - STTS\n"] = PATH_LIB_STTS
 
 scripts_order = OrderedDict()
 scripts_order["\n--0_1_const.lua\n"] = PATH_SCRIPT_CONST
