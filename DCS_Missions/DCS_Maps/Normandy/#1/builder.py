@@ -1,5 +1,6 @@
 from DCS_Missions.lib import *
-from DCS_Missions.DCS_Maps.Syria.PFS308_SEAD_TNG.Scripts import *
+from DCS_Missions.DCS_Maps.Kola.Base.Scripts import *
+from DCS_Missions.lib import *
 from collections import OrderedDict
 import os
 
@@ -9,23 +10,27 @@ SCRIPTS_FILE = "script.lua"
 DYNAMIC_LOAD_LUA = "dynamic_load.lua"
 
 frameworks_order = OrderedDict()
-frameworks_order["\n--1.1 - PATHS\n"] = PATH_SCRIPT_PATHS
-frameworks_order["\n--1.2 - MOOSE\n"] = PATH_LIB_MOOSE
-frameworks_order["\n--1.3 - STTS\n"] = PATH_LIB_STTS
-frameworks_order["\n--1.4 - STTS\n"] = PATH_LIB_ATTACK
+frameworks_order["\n--1 - PATHS\n"] = PATH_SCRIPT_PATHS
+# frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE_CUSTOM
+frameworks_order["\n--2 - MOOSE\n"] = PATH_LIB_MOOSE
+frameworks_order["\n--4 - STTS\n"] = PATH_LIB_STTS
 
 scripts_order = OrderedDict()
-scripts_order["\n--2.1 - CONST\n"] = PATH_SCRIPT_CONST
-scripts_order["\n--2.2 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
-scripts_order["\n--2.3 - COMMON\n"] = PATH_SCRIPT_COMMON
+scripts_order["\n--0_1_const.lua\n"] = PATH_SCRIPT_CONST
+scripts_order["\n--1_1_variables.lua\n"] = PATH_SCRIPT_VARIABLES
+scripts_order["\n--1_2_common.lua\n"] = PATH_SCRIPT_COMMON
+scripts_order["\n--2_2_clients.lua\n"] = PATH_SCRIPT_CLIENTS
+scripts_order["\n--3_2_airboss.lua\n"] = PATH_SCRIPT_AIRBOSS
+scripts_order["\n--3.3_RANGES\n"] = PATH_SCRIPT_RANGE
 
-scripts_order["\n--4.1 - SQUADRONS\n"] = PATH_SCRIPT_SQUADRONS
-scripts_order["\n--4.2 - AIRWING\n"] = PATH_SCRIPT_AIRWING
-scripts_order["\n--4.3 - AWACS\n"] = PATH_SCRIPT_AWACS
-scripts_order["\n--4.4 - SPAWN\n"] = PATH_SCRIPT_SPAWN
-scripts_order["\n--4.5 - MANTIS\n"] = PATH_SCRIPT_MANTIS
+scripts_order["\n--4_1_BLUE_BASES.lua\n"] = PATH_SCRIPT_BLUE_BASES
+scripts_order["\n--4_2_BLUE_SQUADRONS.lua\n"] = PATH_SCRIPT_BLUE_SQUADRONS
+scripts_order["\n--4_3_BLUE_AIRWINGS.lua\n"] = PATH_SCRIPT_BLUE_AIRWINGS
 
-
+# scripts_order["\n--PVE TRAINER\n"] = PATH_SCRIPT_PVE_TRAINER
+scripts_order["\n--9.1 - MANTIS\n"] = PATH_SCRIPT_MANTIS
+scripts_order["\n--9.2 - RAT\n"] = PATH_SCRIPT_RAT
+scripts_order["\n--9.3 - CSAR\n"] = PATH_SCRIPT_CSAR
 
 def delete_old_files(filename: str):
     if os.path.exists(filename):
