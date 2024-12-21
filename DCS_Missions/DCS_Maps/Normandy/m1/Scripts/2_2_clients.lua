@@ -14,4 +14,4 @@ end
 
 SetEventHandler()
 
-MenuPyrlandia = MENU_COALITION:New( coalition.side.BLUE, "PYRLANDIA" )
+

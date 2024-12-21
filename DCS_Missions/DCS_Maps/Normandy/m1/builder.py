@@ -1,5 +1,5 @@
 from DCS_Missions.lib import *
-from DCS_Missions.DCS_Maps.Kola.Base.Scripts import *
+from DCS_Missions.DCS_Maps.Normandy.m1.Scripts import *
 from DCS_Missions.lib import *
 from collections import OrderedDict
 import os
