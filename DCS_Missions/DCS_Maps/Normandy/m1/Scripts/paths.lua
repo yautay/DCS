@@ -16,8 +16,8 @@ SRS_SERVER_PORT = 5002
 SRS_LOCAL_PATH = "D:\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
-SERVER_SAVE_SHEET_PATH = "C:\\DCS_Data"
-LOCAL_SAVE_SHEET_PATH = "C:\\Users\\yauta\\Saved Games\\DCS\\Logs"
+SERVER_SAVE_SHEET_PATH = "C:\\DCS_Data\\"
+LOCAL_SAVE_SHEET_PATH = "C:\\Users\\yauta\\Saved Games\\DCS\\Logs\\"
 
 if (SERVER) then
 	scripts_path = SERVER_DCS_PATH .. SCRIPTS_PATH
