@@ -22,9 +22,9 @@ MenuPVE_YAK = MENU_COALITION:New(coalition.side.BLUE, "YAK", MenuPVE)
 
 local function Spawn_Group(template_name)
     local spawned_group = SPAWN
-           :New(template_name)
-           :InitRandomizeZones( SPAWN_ZONES )
-           :Spawn()
+        :New(template_name)
+        :InitRandomizeZones( SPAWN_ZONES )
+        :Spawn()
     local dest = ZONE_ENGAGE:GetVec2()
     local coord_dest = COORDINATE:NewFromVec2(dest, UTILS.FeetToMeters(15000))
     spawned_group:RouteAirTo(coord_dest, COORDINATE.WaypointAltType.BARO, COORDINATE.WaypointType.TurningPoint, COORDINATE.WaypointAction.FlyoverPoint, UTILS.KnotsToKmph(250))
