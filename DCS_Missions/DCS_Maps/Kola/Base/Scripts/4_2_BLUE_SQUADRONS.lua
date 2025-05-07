@@ -56,7 +56,7 @@
 -- Squadron_MRA_Viggen_F13:SetFuelLowThreshold(0.3)
 -- Squadron_MRA_Viggen_F13:SetGrouping(2)
 -- Squadron_MRA_Viggen_F13:AddMissionCapability({ AUFTRAG.Type.BAI, AUFTRAG.Type.BOMBING, AUFTRAG.Type.BOMBRUNWAY }, 70)
--- Squadron_MRA_Viggen_F13:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.CAP, AUFTRAG.Type.GCICAP }, 03)
+-- Squadron_MRA_Viggen_F13:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.CAP, AUFTRAG.Type.GCICAP }, 30)
 -- Squadron_MRA_Viggen_F13:AddMissionCapability({ AUFTRAG.Type.INTERCEPT }, 40)
 -- Squadron_MRA_Viggen_F13:AddMissionCapability({ AUFTRAG.Type.STRIKE, AUFTRAG.Type.CAS, AUFTRAG.Type.SEAD }, 70)
 --

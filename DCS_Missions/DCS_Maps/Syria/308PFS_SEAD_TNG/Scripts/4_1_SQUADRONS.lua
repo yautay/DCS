@@ -1,0 +1,7 @@
+BLUE_AWACS = SQUADRON:New("WIZARD", 5, "AWACS")
+BLUE_AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
+BLUE_AWACS:SetTakeoffType("Air")
+BLUE_AWACS:SetFuelLowRefuel(true)
+BLUE_AWACS:SetFuelLowThreshold(0.4)
+BLUE_AWACS:SetTurnoverTime(30, 5)
+BLUE_AWACS:SetRadio(FREQUENCIES.AWACS.wizard[1], radio.modulation.AM)
