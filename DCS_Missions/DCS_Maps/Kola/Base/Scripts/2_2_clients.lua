@@ -42,6 +42,12 @@ local function AddGPSCommandToPlayer(unit)
         -- MGRS
         local coordObj = COORDINATE:New(pos)
         local mgrsFull = coordObj:ToStringMGRS()
+        -- Usuń prefix „MGRS ” (5 znaków)
+        mgrsFull = string.sub(mgrsFull, 6)
+        -- Usuń wszystkie spacje
+        mgrsFull = string.gsub(mgrsFull, "%s+", "")
+        env.info("Raw MGRS: " .. mgrsFull)
+        env.info("Length of MGRS: " .. tostring(string.len(mgrsFull)))
         local zoneNumber = string.sub(mgrsFull, 1, 2) -- 35
         local zoneLetter = string.sub(mgrsFull, 3, 3) -- W
         local squareId = string.sub(mgrsFull, 4, 5) -- MP
@@ -57,7 +63,7 @@ local function AddGPSCommandToPlayer(unit)
 
         local messageText =
             string.format(
-            "%-6s %s\n%-6s %s\n%-6s %.1f ft\n%-6s %.1f knots\n%-6s %.1f°",
+            "%-6s %s\n%-6s %s\n%-6s %s\n%-6s %.1f ft\n%-6s %.1f knots\n%-6s %.1f°",
             "POS      :",
             formattedLatLon,
             "MGRS 100m:",
@@ -70,7 +76,8 @@ local function AddGPSCommandToPlayer(unit)
             speed_knots,
             "COG      :",
             heading_deg
-        )
+            )
+
         env.info(messageText)
         MESSAGE:New(messageText, 30):ToUnit(unit_data)
     else
