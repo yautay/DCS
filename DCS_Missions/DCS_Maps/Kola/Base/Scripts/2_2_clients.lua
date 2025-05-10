@@ -75,9 +75,42 @@ local function AddGPSCommandToPlayer(unit)
     end
 end
 
+function AddSpawnAdversaryCommandToPlayer(args_dict)
+    SpawnAdversary(args_dict[2], args_dict[1], args_dict[3], args_dict[4])
+    local messageText = string.format(
+        "SPAWNED: %s | Distance: %.1f NM | Skill: %s",
+        args_dict[2], args_dict[3], args_dict[4]
+    )
+    MESSAGE:New(messageText, 5):ToAll()
+end
+
 function ClientSet:OnEventPlayerEnterAircraft(event_data)
     local client = CLIENT:FindByPlayerName(event_data.IniPlayerName)
     local unit = UNIT:FindByName(event_data.IniUnitName)
-    local tools = CLIENTMENU:NewEntry(client, "TOOLS")
-    local gps_function = CLIENTMENU:NewEntry(client, "GPS", tools, AddGPSCommandToPlayer, {unit})
+
+    local tools_menu = CLIENTMENU:NewEntry(client, "TOOLS")
+    local spawn_menu = CLIENTMENU:NewEntry(client, "SPAWN ADVERSARY", tools_menu)
+
+    local SKILL_LEVELS = { "Good", "High", "Excellent" }
+
+    function BuildAdversaryMenu(client, unit)
+
+        for _, skill in ipairs(SKILL_LEVELS) do
+            local skill_menu = CLIENTMENU:NewEntry(client, skill, spawn_menu)
+
+            for aircraftName, templateName in pairs(TEMPLATE.AIR.ADVERSARY) do
+                CLIENTMENU:NewEntry(
+                    client,
+                    aircraftName,
+                    skill_menu,
+                    AddSpawnAdversaryCommandToPlayer,
+                    { unit, templateName, 50 , skill }
+                )
+            end
+        end
+    end
+
+    BuildAdversaryMenu(client, unit)
+
+    local gps_function = CLIENTMENU:NewEntry(client, "GPS", tools_menu, AddGPSCommandToPlayer, {unit})
 end

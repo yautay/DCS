@@ -19,6 +19,7 @@ scripts_order = OrderedDict()
 scripts_order["\n--0_1_const.lua\n"] = PATH_SCRIPT_CONST
 scripts_order["\n--1_1_variables.lua\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--1_2_common.lua\n"] = PATH_SCRIPT_COMMON
+scripts_order["\n--1_3_spawn.lua\n"] = PATH_SCRIPT_SPAWN
 scripts_order["\n--2_2_clients.lua\n"] = PATH_SCRIPT_CLIENTS
 scripts_order["\n--3_2_airboss.lua\n"] = PATH_SCRIPT_AIRBOSS
 scripts_order["\n--3.3_RANGES\n"] = PATH_SCRIPT_RANGE
