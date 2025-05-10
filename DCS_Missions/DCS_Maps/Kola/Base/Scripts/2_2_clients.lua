@@ -24,21 +24,11 @@ local function AddGPSCommandToPlayer(unit)
         local alt_feet = alt_meters * 3.28084
 
         -- Prędkość w węzłach
-        local velocity = unit_data:GetVelocity()
-        if velocity and velocity.x and velocity.y and velocity.z then
-            local speed_mps = math.sqrt(velocity.x ^ 2 + velocity.y ^ 2 + velocity.z ^ 2)
-            speed_knots = speed_mps * 1.94384
-        end
-
+        speed_knots = unit_data:GetVelocityKNOTS()
+        env.info("SOG: " .. speed_knots)
         -- Kurs
-        if velocity and velocity.x and velocity.z then
-            local heading_rad = math.atan2(velocity.x, velocity.z)
-            heading_deg = math.deg(heading_rad)
-            if heading_deg < 0 then
-                heading_deg = heading_deg + 360
-            end
-        end
-
+        heading_deg = unit_data:GetHeading()
+        env.info("COG: " .. heading_deg)
         -- MGRS
         local coordObj = COORDINATE:New(pos)
         local mgrsFull = coordObj:ToStringMGRS()
