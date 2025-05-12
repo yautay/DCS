@@ -51,22 +51,21 @@ local function AddGPSCommandToPlayer(unit)
         -- Wiadomość
         local formattedLatLon = formatLatLon(lat, lon)
 
-        local messageText =
-            string.format(
-            "%-6s %s\n%-6s %s\n%-6s %s\n%-6s %.1f ft\n%-6s %.1f knots\n%-6s %.1f°",
-            "POS      :",
-            formattedLatLon,
-            "MGRS 100m:",
-            mgrsFormatted,
-            "MGRS Full:",
-            mgrsFullFormatted,
-            "ALT      :",
-            alt_feet,
-            "SOG      :",
-            speed_knots,
-            "COG      :",
-            heading_deg
-            )
+        local messageText = string.format(
+                "%-6s %s\n%-6s %s\n%-6s %s\n%-6s %.1f ft\n%-6s %.1f knots\n%-6s %.1f°",
+                "POS      :",
+                formattedLatLon,
+                "MGRS 100m:",
+                mgrsFormatted,
+                "MGRS Full:",
+                mgrsFullFormatted,
+                "ALT      :",
+                alt_feet,
+                "SOG      :",
+                speed_knots,
+                "COG      :",
+                heading_deg
+        )
 
         env.info(messageText)
         MESSAGE:New(messageText, 30):ToUnit(unit_data)
@@ -76,10 +75,17 @@ local function AddGPSCommandToPlayer(unit)
 end
 
 function AddSpawnAdversaryCommandToPlayer(args_dict)
-    SpawnAdversary(args_dict[2], args_dict[1], args_dict[3], args_dict[4])
+    local blue_unit = args_dict[1]
+    local adversary_data = args_dict[2]
+    local adversary_skill = args_dict[3]
+    local template_name = adversary_data[1]
+    local engagement_type = adversary_data[2]
+    local spawn_distance = adversary_data[3]
+    local description = adversary_data[4]
+    SpawnAdversary(template_name, blue_unit, spawn_distance, adversary_skill)
     local messageText = string.format(
-        "SPAWNED: %s | Distance: %.1f NM | Skill: %s",
-        args_dict[2], args_dict[3], args_dict[4]
+            "SPAWNED: %s | Distance: %.1f NM | Skill: %s",
+            description .. " @ " .. engagement_type, spawn_distance, adversary_skill
     )
     MESSAGE:New(messageText, 5):ToAll()
 end
@@ -98,19 +104,18 @@ function ClientSet:OnEventPlayerEnterAircraft(event_data)
         for _, skill in ipairs(SKILL_LEVELS) do
             local skill_menu = CLIENTMENU:NewEntry(client, skill, spawn_menu)
 
-            for aircraftName, templateName in pairs(TEMPLATE.AIR.ADVERSARY) do
+            for aircraftName, aircraftData in pairs(TEMPLATE.AIR.ADVERSARY) do
                 CLIENTMENU:NewEntry(
-                    client,
-                    aircraftName,
-                    skill_menu,
-                    AddSpawnAdversaryCommandToPlayer,
-                    { unit, templateName, 50 , skill }
+                        client,
+                        aircraftName,
+                        skill_menu,
+                        AddSpawnAdversaryCommandToPlayer,
+                        { unit, aircraftData, skill }
                 )
             end
         end
     end
 
     BuildAdversaryMenu(client, unit)
-
-    local gps_function = CLIENTMENU:NewEntry(client, "GPS", tools_menu, AddGPSCommandToPlayer, {unit})
+    gps_function = CLIENTMENU:NewEntry(client, "GPS", tools_menu, AddGPSCommandToPlayer, { unit })
 end

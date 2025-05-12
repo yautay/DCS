@@ -47,6 +47,11 @@ VAR_KOLA = {
             btn16 = { 260.30, "B-16 AIRBOSS/HUMAN Marshal UHF", "AM" },
             btn17 = { 260.40, "B-17 HUMAN CCA Fianal B", "AM" },
         },
+        LHA_1 = {
+            dcs = { 128.50, "DCS LHA ATC VHF", "AM" },
+            btn1 = { 261.00, "B-1 HUMAN Paddles/Tower C1 UHF", "AM" },
+            btn16 = { 261.30, "B-16 AIRBOSS/HUMAN Marshal UHF", "AM" },
+        },
         SPECIAL = {
             guard_hi = { 243.00, "Guard UHF", "AM" },
             guard_lo = { 121.50, "Guard VHF", "AM" },
@@ -54,11 +59,13 @@ VAR_KOLA = {
         }
     },
     ICLS = {
-        sc_75 = { 11, "CV5", "ICLS CVN-75" },
+        sc_75 = { 11, "C75", "ICLS CVN-75" },
+        lha_1 = { 13, "LHA", "ICLS LHA-1" },
     },
     TACAN = {
         sc_75 = { 75, "X", "CVN", "CVN-75" },
-        navy_one = { 1, "Y", "RCV", "Recovery Tanker CVN-75", true },
+        lha_1 = { 51, "X", "LHA", "LHA-1" },
+        navy_one = { 1, "Y", "RCV", "Recovery Tanker CVN-75", false },
         texaco_one = { 52, "Y", "TX1", "Tanker Texaco One", true },
         texaco_two = { 54, "Y", "TX2", "Tanker Texaco Two", true },
         shell_one = { 51, "Y", "SH1", "Tanker Shell One", true },
