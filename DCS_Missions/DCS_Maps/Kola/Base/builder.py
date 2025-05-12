@@ -28,7 +28,6 @@ scripts_order["\n--4_1_BLUE_BASES.lua\n"] = PATH_SCRIPT_BLUE_BASES
 scripts_order["\n--4_2_BLUE_SQUADRONS.lua\n"] = PATH_SCRIPT_BLUE_SQUADRONS
 scripts_order["\n--4_3_BLUE_AIRWINGS.lua\n"] = PATH_SCRIPT_BLUE_AIRWINGS
 
-# scripts_order["\n--PVE TRAINER\n"] = PATH_SCRIPT_PVE_TRAINER
 scripts_order["\n--9.1 - MANTIS\n"] = PATH_SCRIPT_MANTIS
 scripts_order["\n--9.2 - RAT\n"] = PATH_SCRIPT_RAT
 scripts_order["\n--9.3 - CSAR\n"] = PATH_SCRIPT_CSAR
