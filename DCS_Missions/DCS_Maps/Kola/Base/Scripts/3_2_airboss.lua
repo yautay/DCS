@@ -82,43 +82,43 @@ env.info("AIRBOSS LOAD")
  lha_1_sar = RESCUEHELO:New(UNIT:FindByName(TEMPLATE.SEA.LHA_1), TEMPLATE.AIR.LHA.LHA_SAR)
  lha_1_sar:Start()
 
- -- AIRBOSS object.
- lha_1_airboss = AIRBOSS:New(TEMPLATE.SEA.LHA_1)
- lha_1_airboss:SetTACAN(VAR_KOLA.TACAN.lha_1[1], VAR_KOLA.TACAN.lha_1[2], VAR_KOLA.TACAN.lha_1[3])
- lha_1_airboss:SetICLS(VAR_KOLA.ICLS.lha_1[1], VAR_KOLA.ICLS.lha_1[2])
- lha_1_airboss:SetMarshalRadio(VAR_KOLA.FREQUENCIES.LHA_1.btn16[1], VAR_KOLA.FREQUENCIES.LHA_1.btn16[3])
- lha_1_airboss:SetRadioRelayMarshal(TEMPLATE.OTHERS.CVN_RELAY_MARSHAL)
- lha_1_airboss:SetLSORadio(VAR_KOLA.FREQUENCIES.LHA_1.btn1[1], VAR_KOLA.FREQUENCIES.LHA_1.btn1[3])
- lha_1_airboss:SetRadioRelayLSO(TEMPLATE.OTHERS.LHA_RELAY_LSO)
- lha_1_airboss:SetQueueUpdateTime(15)
- lha_1_airboss:SetDefaultPlayerSkill("Naval Aviator")
- lha_1_airboss:SetMenuRecovery(30, 7, false)
- lha_1_airboss:SetDespawnOnEngineShutdown()
- lha_1_airboss:SetHandleAION()
- lha_1_airboss:Start()
-
-
-
- function lha_1_airboss:OnAfterStart(From, Event, To)
-     env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
- end
- --- Function called when a player gets graded by the LSO.
- function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
-     local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
-     local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
-     local score = tonumber(Grade.points)
-     local wire = tonumber(Grade.wire)
-     local name = tostring(PlayerData.name)
-
-     ----------------------------------------
-     --- Interface your Discord bot here! ---
-     ----------------------------------------
-     -- Report LSO grade to dcs.log file.
-     env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
- end
-
-
-
+ ---- AIRBOSS object.
+ --lha_1_airboss = AIRBOSS:New(TEMPLATE.SEA.LHA_1)
+ --lha_1_airboss:SetTACAN(VAR_KOLA.TACAN.lha_1[1], VAR_KOLA.TACAN.lha_1[2], VAR_KOLA.TACAN.lha_1[3])
+ --lha_1_airboss:SetICLS(VAR_KOLA.ICLS.lha_1[1], VAR_KOLA.ICLS.lha_1[2])
+ --lha_1_airboss:SetMarshalRadio(VAR_KOLA.FREQUENCIES.LHA_1.btn16[1], VAR_KOLA.FREQUENCIES.LHA_1.btn16[3])
+ --lha_1_airboss:SetRadioRelayMarshal(TEMPLATE.OTHERS.LHA_RELAY_MARSHAL)
+ --lha_1_airboss:SetLSORadio(VAR_KOLA.FREQUENCIES.LHA_1.btn1[1], VAR_KOLA.FREQUENCIES.LHA_1.btn1[3])
+ --lha_1_airboss:SetRadioRelayLSO(TEMPLATE.OTHERS.LHA_RELAY_LSO)
+ --lha_1_airboss:SetQueueUpdateTime(15)
+ --lha_1_airboss:SetDefaultPlayerSkill("Naval Aviator")
+ --lha_1_airboss:SetMenuRecovery(30, 7, true)
+ --lha_1_airboss:SetDespawnOnEngineShutdown()
+ --lha_1_airboss:SetHandleAION()
+ --lha_1_airboss:Start()
+ --
+ --
+ --
+ --function lha_1_airboss:OnAfterStart(From, Event, To)
+ --    env.info(string.format("CUSTOM ARIBOSS EVENT %S from %s to %s", Event, From, To))
+ --end
+ ----- Function called when a player gets graded by the LSO.
+ --function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
+ --    local PlayerData = playerData --Ops.Airboss#AIRBOSS.PlayerData
+ --    local Grade = grade --Ops.Airboss#AIRBOSS.LSOgrade
+ --    local score = tonumber(Grade.points)
+ --    local wire = tonumber(Grade.wire)
+ --    local name = tostring(PlayerData.name)
+ --
+ --    ----------------------------------------
+ --    --- Interface your Discord bot here! ---
+ --    ----------------------------------------
+ --    -- Report LSO grade to dcs.log file.
+ --    env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
+ --end
+ --
+ --
+ --
 
 
 
