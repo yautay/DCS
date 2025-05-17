@@ -49,6 +49,13 @@ TEMPLATE = {
             MIG21_PAIR = { "TEMPLATE_MiG21-2", "VVR", 30, "MiG-21 2-ship" },
             MIG31_PAIR = { "TEMPLATE_MiG31-2", "BVR", 200, "MiG-31 2-ship" },
             MIG29_PAIR = { "TEMPLATE_MiG-29-GUNS-2", "GUNS ONLY", 5, "MiG-29 2-ship" },
+        },
+        AAR = {
+            SHELL = "TEMPLATE-SHELL",
+            TEXACO = "TEMPLATE-TEXACO",
+        },
+        AWACS = {
+            DARKSTAR = "TEMPLATE-DARKSTAR"
         }
     }
 }
