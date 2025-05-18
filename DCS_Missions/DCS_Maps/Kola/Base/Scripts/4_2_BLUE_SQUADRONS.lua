@@ -9,13 +9,14 @@ function get_aar_squadron(template_str, name_str, airframes_int, callsign_list, 
     return aar_squadron
 end
 
-Squadron_AWACS_e3a = SQUADRON:New(TEMPLATE.AIR.AWACS.DARKSTAR, 2, "5th AWACS Squadron")
+Squadron_AWACS_e3a = SQUADRON:New(TEMPLATE.AIR.AWACS.DARKSTAR, 4, "5th AWACS Squadron")
 Squadron_AWACS_e3a:SetCallsign(CALLSIGN.AWACS.Darkstar, 1)
 Squadron_AWACS_e3a:SetSkill(AI.Skill.EXCELLENT)
 Squadron_AWACS_e3a:SetRadio(VAR_KOLA.FREQUENCIES.AWACS.darkstar[1], VAR_KOLA.FREQUENCIES.AWACS.darkstar[3])
 Squadron_AWACS_e3a:SetFuelLowThreshold(0.3)
 Squadron_AWACS_e3a:SetFuelLowRefuel(true)
-Squadron_AWACS_e3a:AddMissionCapability({ AUFTRAG.Type.AWACS }, 100)
+Squadron_AWACS_e3a:SetTurnoverTime(10, 20)
+Squadron_AWACS_e3a:AddMissionCapability({ AUFTRAG.Type.ORBIT }, 100)
 
 Squadron_TANKER_kc135 = get_aar_squadron(
         TEMPLATE.AIR.AAR.TEXACO,
@@ -32,6 +33,13 @@ Squadron_TANKER_kc135mprs = get_aar_squadron(
         { CALLSIGN.Tanker.Shell, 1 },
         VAR_KOLA.FREQUENCIES.AAR.shell_one,
         VAR_KOLA.TACAN.shell_one)
+
+Squadron_ESCORTS_F15 = SQUADRON:New(TEMPLATE.AIR.AI.F15C_ESCORTS, 12, "Escorts F15") -- taking a template with 2 planes here, will result in a group of 2 escorts which can fly in formation escorting the AWACS.
+Squadron_ESCORTS_F15:AddMissionCapability({ AUFTRAG.Type.ESCORT })
+Squadron_ESCORTS_F15:SetFuelLowRefuel(true)
+Squadron_ESCORTS_F15:SetFuelLowThreshold(0.3)
+Squadron_ESCORTS_F15:SetTurnoverTime(10, 20)
+Squadron_ESCORTS_F15:SetRadio(VAR_KOLA.FREQUENCIES.AWACS.darkstar[1], VAR_KOLA.FREQUENCIES.AWACS.darkstar[2])
 
 
 

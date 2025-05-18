@@ -1,3 +1,7 @@
+AI_CSAR = AICSAR:New("COMBAT-SAR", coalition.side.BLUE, "Downed Pilot", "Rescue Helo", AIRBASE:FindByName("CSAR FARP"), ZONE:New("Zone MASH"))
+AI_CSAR.maxdistance = 185200 * 2  -- maximum operational distance in meters. Defaults to 50NM or 92.6km
+AI_CSAR.autoonoff = false  -- stop operations when human helicopter pilots are around. Defaults to true.
+
 -- -- Instantiate and start a CSAR for the blue side, with template "Downed Pilot" and alias "Luftrettung"
 -- blueCSAR = CSAR:New(coalition.side.BLUE, "Downed Pilot", "MIA")
 -- blueCSAR.immortalcrew = true -- downed pilot spawn is immortal

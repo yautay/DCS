@@ -2,12 +2,17 @@ AIRWING_EFRO = AIRWING:New("EFRO WH", "EFRO Air Wing")
 AIRWING_EFRO:SetAirbase(AIRBASE:FindByName(AIRBASE.Kola.Rovaniemi))
 
 AIRWING_EFRO:SetReportOff()
-AIRWING_EFRO:SetMarker(true)
+AIRWING_EFRO:SetMarker(false)
+AIRWING_EFRO:SetRespawnAfterDestroyed(900)
 --
 AIRWING_EFRO:AddSquadron(Squadron_TANKER_kc135)
 AIRWING_EFRO:AddSquadron(Squadron_TANKER_kc135mprs)
--- AIRWING_EFRO:AddSquadron(Squadron_TANKER_kc10)
 AIRWING_EFRO:AddSquadron(Squadron_AWACS_e3a)
+AIRWING_EFRO:AddSquadron(Squadron_ESCORTS_F15)
+
+AIRWING_EFRO:NewPayload(TEMPLATE.AIR.AWACS.DARKSTAR, -1, { AUFTRAG.Type.ORBIT }, 100)
+AIRWING_EFRO:NewPayload(TEMPLATE.AIR.AI.F15C_ESCORTS, -1, { AUFTRAG.Type.ESCORT }, 100)
+
 -- AIRWING_EFRO:AddSquadron(Squadron_MRA_Viggen_F13)
 -- AIRWING_EFRO:AddSquadron(Squadron_MRA_F1_SQ142)
 --
@@ -26,15 +31,16 @@ AIRWING_EFRO:AddSquadron(Squadron_AWACS_e3a)
 ZoneTankers = ZONE:FindByName("Zone AAR EFRO")
 ZoneAwacs = ZONE:FindByName("Zone AWACS EFRO")
 ZoneCAP = ZONE:FindByName("Zone CAP EFRO")
+ZoneFEZ = ZONE:FindByName("Zone FEZ EFRO")
 --
-AIRWING_EFRO:AddPatrolPointTANKER(ZoneTankers, 25000, UTILS.KnotsToAltKIAS(363, 30000), 335, 30, Unit.RefuelingSystem.BOOM_AND_RECEPTACLE)
-AIRWING_EFRO:AddPatrolPointTANKER(ZoneTankers, 20000, UTILS.KnotsToAltKIAS(363, 28000), 135, 30, Unit.RefuelingSystem.PROBE_AND_DROGUE)
-AIRWING_EFRO:AddPatrolPointAWACS(ZoneAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 0, 40)
-AIRWING_EFRO:AddPatrolPointCAP(ZoneCAP, 12000, UTILS.KnotsToAltKIAS(300, 25000), 205, 30)
+AIRWING_EFRO:AddPatrolPointTANKER(ZoneTankers, 30000, UTILS.KnotsToAltKIAS(363, 30000), 335, 50, Unit.RefuelingSystem.BOOM_AND_RECEPTACLE)
+AIRWING_EFRO:AddPatrolPointTANKER(ZoneTankers, 28000, UTILS.KnotsToAltKIAS(363, 28000), 335, 50, Unit.RefuelingSystem.PROBE_AND_DROGUE)
+--AIRWING_EFRO:AddPatrolPointAWACS(ZoneAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 0, 40)
+--AIRWING_EFRO:AddPatrolPointCAP(ZoneCAP, 12000, UTILS.KnotsToAltKIAS(300, 25000), 205, 30)
 --
 AIRWING_EFRO:SetNumberTankerBoom(1)
 AIRWING_EFRO:SetNumberTankerProbe(1)
-AIRWING_EFRO:SetNumberAWACS(1)
+--AIRWING_EFRO:SetNumberAWACS(1)
 -- AIRWING_EFRO:SetNumberRescuehelo(1)
 -- AIRWING_EFRO:SetNumberCAP(1)
 --
@@ -42,7 +48,41 @@ AIRWING_EFRO:SetNumberAWACS(1)
 -- AIRWING_EFRO:SetCAPFormation(ENUMS.Formation.FixedWing.EchelonLeft.Close)
 --
 AIRWING_EFRO:Start()
---
+
+AWACS_DARKSTAR = AWACS:New("AWACS DARKSTAR", AIRWING_EFRO, "blue", AIRBASE.Kola.Rovaniemi, "Zone AWACS EFRO", ZoneFEZ, "Zone CAP EFRO", VAR_KOLA.FREQUENCIES.AWACS.darkstar[1], VAR_KOLA.FREQUENCIES.AWACS.darkstar[2])
+-- set one escort group; this example has two units in the template group, so they can fly a nice formation.
+AWACS_DARKSTAR:SetEscort(1, ENUMS.Formation.FixedWing.FingerFour.Group, { x = -500, y = 50, z = 500 }, 45)
+-- Callsign will be "Focus". We'll be a Angels 30, doing 300 knots, orbit leg to 88deg with a length of 25nm.
+AWACS_DARKSTAR:SetAwacsDetails(CALLSIGN.AWACS.DARKSTAR, 1, 32, 300, 335, 50)
+-- Set up SRS on port 5010 - change the below to your path and port
+AWACS_DARKSTAR:SetSRS(SRS_PATH, "female", "en-GB", SRS_PORT)
+-- Add a "red" border we don't want to cross, set up in the mission editor with a late activated helo named "Red Border#ZONE_POLYGON"
+AWACS_DARKSTAR:SetRejectionZone(ZONE:FindByName("ZONE RED"))
+-- Our CAP flight will have the callsign "Ford", we want 4 AI planes, Time-On-Station is four hours, doing 300 kn IAS.
+--AWACS_DARKSTAR:SetAICAPDetails(CALLSIGN.Aircraft.Ford, 4, 4, 300)
+-- We're modern (default), e.g. we have EPLRS and get more fill-in information on detections
+AWACS_DARKSTAR:SetModernEra()
+
+AWACS_DARKSTAR.PlayerGuidance = true -- allow missile warning call-outs.
+AWACS_DARKSTAR.NoGroupTags = true -- use group tags like Alpha, Bravo .. etc in call outs.
+AWACS_DARKSTAR.callsignshort = true -- use short callsigns, e.g. "Moose 1", not "Moose 1-1".
+AWACS_DARKSTAR.DeclareRadius = 5 -- you need to be this close to the lead unit for declare/VID to work, in NM.
+AWACS_DARKSTAR.MenuStrict = true -- Players need to check-in to see the menu; check-in still require to use the menu.
+AWACS_DARKSTAR.maxassigndistance = 100 -- Don't assign targets further out than this, in NM.
+AWACS_DARKSTAR.debug = false -- set to true to produce more log output.
+AWACS_DARKSTAR.NoMissileCalls = false -- suppress missile callouts
+AWACS_DARKSTAR.PlayerCapAssignment = true -- no intercept task assignments for players
+AWACS_DARKSTAR.invisible = true -- set AWACS to be invisible to hostiles
+AWACS_DARKSTAR.immortal = true -- set AWACS to be immortal
+AWACS_DARKSTAR.PikesSpecialSwitch = true -- if set to true, AWACS will omit the "doing xy knots" on the station assignement callout
+AWACS_DARKSTAR.IncludeHelicopters = false -- if set to true, Helicopter pilots will also get the AWACS Menu and options
+
+-- And start
+AWACS_DARKSTAR:__Start(5)
+
+
+
+
 -- --- Function called each time a flight group goes on a mission. Can be used to fine tune.
 function AIRWING_EFRO:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission)
     local flightgroup = Flightgroup --Ops.FlightGroup#FLIGHTGROUP

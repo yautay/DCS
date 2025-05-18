@@ -25,10 +25,8 @@ local function AddGPSCommandToPlayer(unit)
 
         -- Prędkość w węzłach
         speed_knots = unit_data:GetVelocityKNOTS()
-        env.info("SOG: " .. speed_knots)
         -- Kurs
         heading_deg = unit_data:GetHeading()
-        env.info("COG: " .. heading_deg)
         -- MGRS
         local coordObj = COORDINATE:New(pos)
         local mgrsFull = coordObj:ToStringMGRS()
@@ -36,8 +34,6 @@ local function AddGPSCommandToPlayer(unit)
         mgrsFull = string.sub(mgrsFull, 6)
         -- Usuń wszystkie spacje
         mgrsFull = string.gsub(mgrsFull, "%s+", "")
-        env.info("Raw MGRS: " .. mgrsFull)
-        env.info("Length of MGRS: " .. tostring(string.len(mgrsFull)))
         local zoneNumber = string.sub(mgrsFull, 1, 2) -- 35
         local zoneLetter = string.sub(mgrsFull, 3, 3) -- W
         local squareId = string.sub(mgrsFull, 4, 5) -- MP
@@ -66,8 +62,6 @@ local function AddGPSCommandToPlayer(unit)
                 "COG      :",
                 heading_deg
         )
-
-        env.info(messageText)
         MESSAGE:New(messageText, 30):ToUnit(unit_data)
     else
         MESSAGE:New("GPS SYSTEM ERROR", 5):ToUnit(unit_data)
@@ -107,7 +101,7 @@ function ClientSet:OnEventPlayerEnterAircraft(event_data)
             for aircraftName, aircraftData in pairs(TEMPLATE.AIR.ADVERSARY) do
                 CLIENTMENU:NewEntry(
                         client,
-                        aircraftName,
+                        aircraftData[4] .. " " .. aircraftData[2],
                         skill_menu,
                         AddSpawnAdversaryCommandToPlayer,
                         { unit, aircraftData, skill }
