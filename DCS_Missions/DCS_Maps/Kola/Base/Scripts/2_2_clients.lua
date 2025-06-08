@@ -87,7 +87,9 @@ end
 function ClientSet:OnEventPlayerEnterAircraft(event_data)
     local client = CLIENT:FindByPlayerName(event_data.IniPlayerName)
     local unit = UNIT:FindByName(event_data.IniUnitName)
-
+    env.info("MENU DEBUG")
+    env.info(client)
+    env.info(unit)
     local tools_menu = CLIENTMENU:NewEntry(client, "TOOLS")
     local spawn_menu = CLIENTMENU:NewEntry(client, "SPAWN ADVERSARY", tools_menu)
 

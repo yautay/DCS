@@ -12,7 +12,7 @@
  local heading = 0
  local foulline = 150
 
- --RangeAG:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
+--  RangeAG:AddStrafePit(targetnames, boxlength, boxwidth, heading, inverseheading, goodpass, foulline)
  RangeAG:AddStrafePit(StrafeTargets, boxlength, boxwidth, heading, false, 10, foulline)
 
  -- Start range.
