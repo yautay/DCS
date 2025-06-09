@@ -27,6 +27,7 @@ scripts_order["\n--3.3_RANGES\n"] = PATH_SCRIPT_RANGE
 scripts_order["\n--4_1_BLUE_BASES.lua\n"] = PATH_SCRIPT_BLUE_BASES
 scripts_order["\n--4_2_BLUE_SQUADRONS.lua\n"] = PATH_SCRIPT_BLUE_SQUADRONS
 scripts_order["\n--4_3_BLUE_AIRWINGS.lua\n"] = PATH_SCRIPT_BLUE_AIRWINGS
+scripts_order["\n--5_2_RED_VVS.lua\n"] = PATH_SCRIPT_RED_VVS
 
 scripts_order["\n--9.1 - MANTIS\n"] = PATH_SCRIPT_MANTIS
 scripts_order["\n--9.2 - RAT\n"] = PATH_SCRIPT_RAT
