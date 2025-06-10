@@ -27,9 +27,9 @@ cvn_75_airboss = AIRBOSS:New(TEMPLATE.SEA.CVN_75)
 cvn_75_airboss:SetTACAN(VAR_KOLA.TACAN.sc_75[1], VAR_KOLA.TACAN.sc_75[2], VAR_KOLA.TACAN.sc_75[3])
 cvn_75_airboss:SetICLS(VAR_KOLA.ICLS.sc_75[1], VAR_KOLA.ICLS.sc_75[2])
 cvn_75_airboss:SetMarshalRadio(VAR_KOLA.FREQUENCIES.CVN_75.btn16[1], VAR_KOLA.FREQUENCIES.CVN_75.btn16[3])
-cvn_75_airboss:SetRadioRelayMarshal(TEMPLATE.OTHERS.RELAY_MARSHAL)
+cvn_75_airboss:SetRadioRelayMarshal(TEMPLATE.OTHERS.CVN_RELAY_MARSHAL)
 cvn_75_airboss:SetLSORadio(VAR_KOLA.FREQUENCIES.CVN_75.btn1[1], VAR_KOLA.FREQUENCIES.CVN_75.btn1[3])
-cvn_75_airboss:SetRadioRelayLSO(TEMPLATE.OTHERS.RELAY_LSO)
+cvn_75_airboss:SetRadioRelayLSO(TEMPLATE.OTHERS.CVN_RELAY_LSO)
 cvn_75_airboss:SetQueueUpdateTime(10)
 
 -- RECOVERIES
@@ -113,5 +113,115 @@ function lha_1_airboss:OnAfterLSOGrade(From, Event, To, playerData, grade)
     -- Report LSO grade to dcs.log file.
     env.info(string.format("CUSTOM LHA LSO REPORT! : Player %s scored %.1f - wire %d", name, score, wire))
 end
+
+local cvn = UNIT:FindByName(TEMPLATE.SEA.CVN_75)
+local lha = UNIT:FindByName(TEMPLATE.SEA.LHA_1)
+
+local cvn_relay_marshal = GROUP:FindByName(TEMPLATE.OTHERS.CVN_RELAY_MARSHAL)
+local cvn_relay_lso = GROUP:FindByName(TEMPLATE.OTHERS.CVN_RELAY_LSO)
+
+local lha_relay_marshal = GROUP:FindByName(TEMPLATE.OTHERS.LHA_RELAY_MARSHAL)
+local lha_relay_lso = GROUP:FindByName(TEMPLATE.OTHERS.LHA_RELAY_LSO)
+
+-- Offset względem lotniskowca (metry)
+local offsetVec3_1 = { x = 1000, y = 0, z = 200 }  -- 200m w prawo
+local offsetVec3_2 = { x = 1500, y = 0, z = 200 }  -- 200m w prawo
+
+-- Funkcja do przeliczania pozycji z offsetem
+local function GetOffsetPosition(unit, offset)
+    local pos = unit:GetVec3()
+    local heading = unit:GetHeading()
+    local rad = math.rad(heading)
+    return {
+        x = pos.x + offset.x * math.cos(rad) - offset.z * math.sin(rad),
+        y = pos.y + offset.y,
+        z = pos.z + offset.x * math.sin(rad) + offset.z * math.cos(rad)
+    }
+end
+
+-- Harmonogram aktualizacji co 5 sekund
+SCHEDULER:New(nil, function()
+
+    if cvn_relay_marshal:IsAlive() and cvn:IsAlive() then
+        local newPos = GetOffsetPosition(cvn, offsetVec3_2)
+        local route = {
+            [1] = {
+                type = 'Turning Point',
+                action = 'Turning Point',
+                x = newPos.x,
+                y = newPos.y,
+                z = newPos.z,
+                speed = 60,
+                speed_locked = true,
+                task = {
+                    id = 'ComboTask',
+                    params = { tasks = {} }
+                }
+            }
+        }
+        cvn_relay_marshal:Route(route)
+    end
+
+    if cvn_relay_lso:IsAlive() and cvn:IsAlive() then
+        local newPos = GetOffsetPosition(cvn, offsetVec3_1)
+        local route = {
+            [1] = {
+                type = 'Turning Point',
+                action = 'Turning Point',
+                x = newPos.x,
+                y = newPos.y,
+                z = newPos.z,
+                speed = 60,
+                speed_locked = true,
+                task = {
+                    id = 'ComboTask',
+                    params = { tasks = {} }
+                }
+            }
+        }
+        cvn_relay_lso:Route(route)
+    end
+
+    if lha_relay_marshal:IsAlive() and lha:IsAlive() then
+        local newPos = GetOffsetPosition(lha, offsetVec3_2)
+        local route = {
+            [1] = {
+                type = 'Turning Point',
+                action = 'Turning Point',
+                x = newPos.x,
+                y = newPos.y,
+                z = newPos.z,
+                speed = 60,
+                speed_locked = true,
+                task = {
+                    id = 'ComboTask',
+                    params = { tasks = {} }
+                }
+            }
+        }
+        lha_relay_marshal:Route(route)
+    end
+
+    if lha_relay_lso:IsAlive() and lha:IsAlive() then
+        local newPos = GetOffsetPosition(lha, offsetVec3_2)
+        local route = {
+            [1] = {
+                type = 'Turning Point',
+                action = 'Turning Point',
+                x = newPos.x,
+                y = newPos.y,
+                z = newPos.z,
+                speed = 60,
+                speed_locked = true,
+                task = {
+                    id = 'ComboTask',
+                    params = { tasks = {} }
+                }
+            }
+        }
+        lha_relay_lso:Route(route)
+    end
+
+end, {}, 0, 30)
 
 
