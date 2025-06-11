@@ -51,9 +51,9 @@ TEMPLATE = {
     }
 }
 
-ZoneRedAccept=ZONE_POLYGON:NewFromGroupName("Red Accept Zone")
+ZoneRedAccept=ZONE_POLYGON:NewFromGroupName("Red Accept Zone"):DrawZone()
 ZoneRedReject=ZONE_POLYGON:NewFromGroupName("Red Reject Zone")
-ZoneRedDefend=ZONE_POLYGON:NewFromGroupName("Red Defend Zone")
+ZoneRedDefend=ZONE_POLYGON:NewFromGroupName("Red Defend Zone"):DrawZone()
 
 
 ZoneRedTankers = ZONE:FindByName("Zone RED AAR")
