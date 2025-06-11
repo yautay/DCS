@@ -1,134 +1,157 @@
-Squadron_A50 = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_AWACS, 2, "RED_AWACS")
-Squadron_A50:SetSkill(AI.Skill.EXCELLENT)
-Squadron_A50:SetFuelLowThreshold(0.4)
-Squadron_A50:SetFuelLowRefuel(true)
-Squadron_A50:SetTurnoverTime(10, 20)
-Squadron_A50:SetTakeoffHot()
-Squadron_A50:AddMissionCapability({ AUFTRAG.Type.AWACS, AUFTRAG.Type.ALERT5 }, 100)
-
-Squadron_RED_AAR = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_AAR, 3, "RED_AAR")
-Squadron_RED_AAR:SetSkill(AI.Skill.EXCELLENT)
-Squadron_RED_AAR:SetFuelLowThreshold(0.4)
-Squadron_RED_AAR:SetFuelLowRefuel(false)
-Squadron_RED_AAR:SetTurnoverTime(10, 20)
-Squadron_RED_AAR:SetTakeoffHot()
-Squadron_RED_AAR:AddMissionCapability({ AUFTRAG.Type.TANKER, AUFTRAG.Type.ALERT5 }, 100)
-
-Squadron_A50_ESCORT = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_ESCORT, 6, "RED_AWACS_ESCORT")
-Squadron_A50_ESCORT:SetSkill(AI.Skill.EXCELLENT)
-Squadron_A50_ESCORT:AddMissionCapability({ AUFTRAG.Type.ESCORT, AUFTRAG.Type.ALERT5 }, 100)
-Squadron_A50_ESCORT:SetFuelLowThreshold(0.4)
-Squadron_A50_ESCORT:SetFuelLowRefuel(true)
-Squadron_A50_ESCORT:SetTakeoffHot()
-Squadron_A50_ESCORT:SetMissionRange(100)
-
-Squadron_RED_CAP = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_CAP, 12, "RED_CAP")
-Squadron_RED_CAP:SetSkill(AI.Skill.EXCELLENT)
-Squadron_RED_CAP:SetFuelLowThreshold(0.4)
-Squadron_RED_CAP:SetFuelLowRefuel(true)
-Squadron_RED_CAP:SetGrouping(2)
-Squadron_RED_CAP:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ALERT5 }, 100)
-Squadron_RED_CAP:AddMissionCapability({ AUFTRAG.Type.INTERCEPT }, 50)
-Squadron_RED_CAP:SetTakeoffHot()
-Squadron_RED_CAP:SetMissionRange(120)
-
-Squadron_RED_INTERCEPT = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_INTERCEPT, 3, "RED_INTERCEPT")
-Squadron_RED_INTERCEPT:SetSkill(AI.Skill.EXCELLENT)
-Squadron_RED_INTERCEPT:SetFuelLowThreshold(0.4)
-Squadron_RED_INTERCEPT:SetFuelLowRefuel(true)
-Squadron_RED_INTERCEPT:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ALERT5 }, 50)
-Squadron_RED_INTERCEPT:AddMissionCapability({ AUFTRAG.Type.INTERCEPT }, 100)
-Squadron_RED_INTERCEPT:SetTakeoffHot()
-Squadron_RED_INTERCEPT:SetMissionRange(120)
+RED = {}
+RED.Squadrons = {}
+RED.Airwings = {}
+RED.Commander = nil
 
 
-VVS=AIRWING:New("WH Olena", "AW Olena") --Ops.AirWing#AIRWING
-VVS:SetAirbase(AIRBASE:FindByName(AIRBASE.Kola.Olenya))
+RED.Squadrons.AWACS = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_AWACS, 2, "RED_AWACS")
+RED.Squadrons.AWACS:SetSkill(AI.Skill.EXCELLENT)
+RED.Squadrons.AWACS:SetFuelLowThreshold(0.4)
+RED.Squadrons.AWACS:SetFuelLowRefuel(true)
+RED.Squadrons.AWACS:SetTurnoverTime(10, 20)
+RED.Squadrons.AWACS:SetTakeoffHot()
+RED.Squadrons.AWACS:AddMissionCapability({AUFTRAG.Type.ALERT5})
+RED.Squadrons.AWACS:AddMissionCapability({ AUFTRAG.Type.ORBIT, AUFTRAG.Type.AWACS }, 100)
 
-VVS:AddSquadron(Squadron_A50)
-VVS:AddSquadron(Squadron_RED_AAR)
-VVS:AddSquadron(Squadron_A50_ESCORT)
-VVS:AddSquadron(Squadron_RED_CAP)
-VVS:AddSquadron(Squadron_RED_INTERCEPT)
+RED.Squadrons.AAR = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_AAR, 3, "RED_AAR")
+RED.Squadrons.AAR:SetSkill(AI.Skill.EXCELLENT)
+RED.Squadrons.AAR:SetFuelLowThreshold(0.4)
+RED.Squadrons.AAR:SetFuelLowRefuel(false)
+RED.Squadrons.AAR:SetTurnoverTime(10, 20)
+RED.Squadrons.AAR:SetTakeoffHot()
+RED.Squadrons.AAR:AddMissionCapability({AUFTRAG.Type.ALERT5})
+RED.Squadrons.AAR:AddMissionCapability({ AUFTRAG.Type.ORBIT, AUFTRAG.Type.TANKER }, 100)
 
-VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_AAR, -1, { AUFTRAG.Type.TANKER, AUFTRAG.Type.ALERT5 }, 100)
-VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_AWACS, -1, { AUFTRAG.Type.AWACS, AUFTRAG.Type.ALERT5 }, 100)
-VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_INTERCEPT, -1, { AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ALERT5 }, 100)
-VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_ESCORT, -1, { AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ESCORT, AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP }, 80)
-VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_CAP, -1, { AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ESCORT, AUFTRAG.Type.ALERT5, AUFTRAG.Type.CAP }, 100)
+RED.Squadrons.MiG29 = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_ESCORT, 6, "RED_MiG29")
+RED.Squadrons.MiG29:SetSkill(AI.Skill.EXCELLENT)
+RED.Squadrons.MiG29:SetFuelLowThreshold(0.4)
+RED.Squadrons.MiG29:SetFuelLowRefuel(true)
+-- RED.Squadrons.MiG29:SetGrouping(2)
+RED.Squadrons.MiG29:SetTakeoffHot()
+RED.Squadrons.MiG29:AddMissionCapability({AUFTRAG.Type.ORBIT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.CAP}, 70)
+RED.Squadrons.MiG29:AddMissionCapability({AUFTRAG.Type.INTERCEPT}, 50)
+RED.Squadrons.MiG29:AddMissionCapability({AUFTRAG.Type.ESCORT}, 100)
+RED.Squadrons.MiG29:AddMissionCapability({AUFTRAG.Type.ALERT5})
+RED.Squadrons.MiG29:SetMissionRange(100)
 
--- RedBlue agents.
-RedAgents=SET_GROUP:New():FilterCoalitions("Red"):FilterStart()
+RED.Squadrons.Su27 = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_CAP, 12, "RED_Su27")
+RED.Squadrons.Su27:SetSkill(AI.Skill.EXCELLENT)
+RED.Squadrons.Su27:SetFuelLowThreshold(0.4)
+RED.Squadrons.Su27:SetFuelLowRefuel(true)
+-- RED.Squadrons.Su27:SetGrouping(2)
+RED.Squadrons.Su27:SetTakeoffHot()
+RED.Squadrons.Su27:AddMissionCapability({AUFTRAG.Type.ORBIT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.CAP}, 100)
+RED.Squadrons.Su27:AddMissionCapability({AUFTRAG.Type.INTERCEPT}, 80)
+RED.Squadrons.Su27:AddMissionCapability({AUFTRAG.Type.ESCORT}, 90)
+RED.Squadrons.Su27:AddMissionCapability({AUFTRAG.Type.ALERT5})
+RED.Squadrons.Su27:SetMissionRange(120)
 
--- Define CHIEF.
-RedChief=CHIEF:New(coalition.side.RED, RedAgents)
-RedChief:SetVerbosity(3)
-RedChief:SetClusterAnalysis(true, true, true)
-RedChief:SetTacticalOverviewOn()
+RED.Squadrons.MiG31 = SQUADRON:New(TEMPLATE.AIR.ADVERSARY.RED_INTERCEPT, 3, "RED_MiG31")
+RED.Squadrons.MiG31:SetSkill(AI.Skill.EXCELLENT)
+RED.Squadrons.MiG31:SetFuelLowThreshold(0.4)
+RED.Squadrons.MiG31:SetFuelLowRefuel(true)
+-- RED.Squadrons.MiG31:SetGrouping(2)
+RED.Squadrons.MiG31:SetTakeoffHot()
+RED.Squadrons.MiG31:AddMissionCapability({AUFTRAG.Type.ORBIT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.CAP}, 50)
+RED.Squadrons.MiG31:AddMissionCapability({AUFTRAG.Type.INTERCEPT}, 100)
+RED.Squadrons.MiG31:AddMissionCapability({AUFTRAG.Type.ESCORT}, 50)
+RED.Squadrons.MiG31:AddMissionCapability({AUFTRAG.Type.ALERT5})
+RED.Squadrons.MiG31:SetMissionRange(120)
 
-RedChief:AddBorderZone(ZoneRedAccept)
-RedChief:AddRejectZone(ZoneRedReject)
+--- Airbases of the Kola map
+--
+-- * AIRBASE.Kola.Banak
+-- * AIRBASE.Kola.Bodo
+-- * AIRBASE.Kola.Ivalo
+-- * AIRBASE.Kola.Jokkmokk
+-- * AIRBASE.Kola.Kalixfors
+-- * AIRBASE.Kola.Kallax
+-- * AIRBASE.Kola.Kemi_Tornio
+-- * AIRBASE.Kola.Kirkenes
+-- * AIRBASE.Kola.Kiruna
+-- * AIRBASE.Kola.Kuusamo
+-- * AIRBASE.Kola.Monchegorsk
+-- * AIRBASE.Kola.Murmansk_International
+-- * AIRBASE.Kola.Olenya
+-- * AIRBASE.Kola.Rovaniemi
+-- * AIRBASE.Kola.Severomorsk_1
+-- * AIRBASE.Kola.Severomorsk_3
+-- * AIRBASE.Kola.Vidsel
+-- * AIRBASE.Kola.Vuojarvi
+-- * AIRBASE.Kola.Andoya
+-- * AIRBASE.Kola.Alakourtti
+-- * AIRBASE.Kola.Kittila
+-- * AIRBASE.Kola.Bardufoss
+-- * AIRBASE.Kola.Alta
+-- * AIRBASE.Kola.Sodankyla
+-- * AIRBASE.Kola.Enontekio
+-- * AIRBASE.Kola.Evenes
+-- * AIRBASE.Kola.Hosio
 
-RedChief:AddAirwing(VVS)
+RED.Airwings.Olenya=AIRWING:New("WH Olenya", "AW Olenya") --Ops.AirWing#AIRWING
+RED.Airwings.Olenya:SetAirbase(AIRBASE:FindByName(AIRBASE.Kola.Olenya))
+RED.Airwings.Monchegorsk=AIRWING:New("WH Monchegorsk", "AW Monchegorsk")
+RED.Airwings.Monchegorsk:SetAirbase(AIRBASE:FindByName(AIRBASE.Kola.Monchegorsk))
+RED.Airwings.Severomorsk_1=AIRWING:New("WH Severomorsk 1", "AW WH Severomorsk 1")
+RED.Airwings.Severomorsk_1:SetAirbase(AIRBASE:FindByName(AIRBASE.Kola.Severomorsk_1))
+RED.Airwings.Murmansk_International=AIRWING:New("WH Murmansk_International", "AW Murmansk_International")
+RED.Airwings.Murmansk_International:SetAirbase(AIRBASE:FindByName(AIRBASE.Kola.Murmansk_International))
 
-RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
+RED.Airwings.Murmansk_International:AddSquadron(RED.Squadrons.AAR)
+RED.Airwings.Murmansk_International:AddSquadron(RED.Squadrons.AWACS)
+RED.Airwings.Monchegorsk:AddSquadron(RED.Squadrons.MiG29)
+RED.Airwings.Severomorsk_1:AddSquadron(RED.Squadrons.MiG31)
+RED.Airwings.Olenya:AddSquadron(RED.Squadrons.Su27)
 
-RedChief:AddCapZone(ZoneRedCAP, 30000, UTILS.KnotsToAltKIAS(400, 33000), 320, 30)
-RedChief:AddGciCapZone(ZoneRedCAP, 30000, UTILS.KnotsToAltKIAS(400, 33000), 320, 30)
-RedChief:AddAwacsZone(ZoneRedAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 345, 30)
-RedChief:AddTankerZone(ZoneRedTankers, 30000, UTILS.KnotsToAltKIAS(363, 33000), 345, 30, Unit.RefuelingSystem.PROBE_AND_DROGUE)
+RED.Airwings.Murmansk_International:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_AAR, -1, { AUFTRAG.Type.TANKER }, 100)
+RED.Airwings.Murmansk_International:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_AWACS, -1, { AUFTRAG.Type.AWACS }, 100)
+RED.Airwings.Severomorsk_1:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_INTERCEPT, -1, { AUFTRAG.Type.INTERCEPT }, 100)
+RED.Airwings.Monchegorsk:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_MiG29_CAP, -1, { AUFTRAG.Type.CAP, AUFTRAG.Type.GCICAP, AUFTRAG.Type.PATROLZONE }, 100)
+RED.Airwings.Monchegorsk:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_ESCORT, -1, { AUFTRAG.Type.ESCORT }, 100)
+RED.Airwings.Olenya:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_CAP, -1, { AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.CAP }, 100)
 
-RedChief:SetLimitMission(2, AUFTRAG.Type.INTERCEPT)
-RedChief:SetLimitMission(2, AUFTRAG.Type.CAP)
-RedChief:SetLimitMission(1, AUFTRAG.Type.TANKER)
-RedChief:SetLimitMission(1, AUFTRAG.Type.AWACS)
+RED.Airwings.Murmansk_International:AddPatrolPointTANKER(ZoneRedTankers, 28000, UTILS.KnotsToAltKIAS(363, 28000), 335, 30, Unit.RefuelingSystem.PROBE_AND_DROGUE)
+-- RED.Airwings.Murmansk_International:AddPatrolPointAWACS(ZoneRedAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 335, 30)
 
-RedChief:SetResponseOnTarget(1, 2, 6, TARGET.Category.AIRCRAFT, AUFTRAG.Type.INTERCEPT)
-RedChief:SetResponseOnTarget(1, 2, 0, nil, AUFTRAG.Type.CAP, nil, CHIEF.DEFCON.GREEN)
+RED.Airwings.Murmansk_International:SetNumberTankerProbe(1)
+-- RED.Airwings.Murmansk_International:SetNumberAWACS(1)
 
-local InterceptAlert5=AUFTRAG:NewALERT5(AUFTRAG.Type.INTERCEPT)
-InterceptAlert5:SetRequiredAssets(3)
+Olena_Alert5_CAP=AUFTRAG:NewALERT5(AUFTRAG.Type.CAP)
+Olena_Alert5_CAP:SetRequiredAssets(12)
+RED.Airwings.Olenya:AddMission(Olena_Alert5_CAP)
 
--- Add the mission to the airwing.
--- NOTE: We could also add the mission to the CHIEF. But then we would not know which airwing he choses if he has more than one. Here it does not matter.
-VVS:AddMission(InterceptAlert5)
+Severomorsk_1_Alert5_INTERCEPT=AUFTRAG:NewALERT5(AUFTRAG.Type.INTERCEPT)
+Severomorsk_1_Alert5_INTERCEPT:SetRequiredAssets(3)
+RED.Airwings.Severomorsk_1:AddMission(Severomorsk_1_Alert5_INTERCEPT)
 
---Set out 2 Groups of Ground-Controlled CAP fighters.
-local CAPAlert5s=AUFTRAG:NewALERT5(AUFTRAG.Type.CAP)
-CAPAlert5s:SetRequiredAssets(12)
+Monchegorsk_Alert5_ESCORT=AUFTRAG:NewALERT5(AUFTRAG.Type.ESCORT)
+Monchegorsk_Alert5_ESCORT:SetRequiredAssets(6)
+RED.Airwings.Monchegorsk:AddMission(Monchegorsk_Alert5_ESCORT)
 
--- Add mission to airwing.
-VVS:AddMission(CAPAlert5s)
+Murmansk_International_Alert5_AWACS=AUFTRAG:NewALERT5(AUFTRAG.Type.AWACS)
+Murmansk_International_Alert5_AWACS:SetRequiredAssets(2)
+RED.Airwings.Murmansk_International:AddMission(Murmansk_International_Alert5_AWACS)
 
-RedChief:__Start(1)
+Murmansk_International_Alert5_TANKER=AUFTRAG:NewALERT5(AUFTRAG.Type.TANKER)
+Murmansk_International_Alert5_TANKER:SetRequiredAssets(3)
+RED.Airwings.Murmansk_International:AddMission(Murmansk_International_Alert5_TANKER)
 
-function RedChief:OnAfterNewContact(From, Event, To, Contact)
+Murmansk_International_Mission_AWACS=AUFTRAG:NewAWACS(ZoneRedAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 335, 30)
+Murmansk_International_Mission_AWACS:SetPriority(1)
+Murmansk_International_Mission_AWACS:SetRequiredAssets(1)
+Murmansk_International_Mission_AWACS:AssignSquadrons({RED.Squadrons.AWACS})
+Murmansk_International_Mission_AWACS:SetRequiredEscorts(1, 1)
 
-  -- Gather info of contact.
-  local ContactName=RedChief:GetContactName(Contact)
-  local ContactType=RedChief:GetContactTypeName(Contact)
-  local ContactThreat=RedChief:GetContactThreatlevel(Contact)
+RED.Commander = COMMANDER:New(coalition.side.BLUE)
+RED.Commander:AddAirwing(RED.Airwings.Murmansk_International)
+RED.Commander:AddAirwing(RED.Airwings.Severomorsk_1)
+RED.Commander:AddAirwing(RED.Airwings.Monchegorsk)
+RED.Commander:AddAirwing(RED.Airwings.Olenya)
+RED.Commander:AddMission(Murmansk_International_Mission_AWACS)
 
-  -- Text message.
-  local text=string.format("Detected NEW contact: Name=%s, Type=%s, Threat Level=%d", ContactName, ContactType, ContactThreat)
-  MESSAGE:New(text, 120):ToAll()
-  -- Show message in log file.
-  env.info(text)
+-- RED.Commander:AddCapZone(ZoneRedCAP, 30000, UTILS.KnotsToAltKIAS(350, 33000), 320, 30)
+-- RED.Commander:AddGciCapZone(ZoneRedCAP, 30000, UTILS.KnotsToAltKIAS(350, 30000), 320, 30)
+-- RED.Commander:AddAwacsZone(ZoneRedAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 345, 30)
+-- RED.Commander:AddTankerZone(ZoneRedTankers, 30000, UTILS.KnotsToAltKIAS(363, 33000), 345, 30, Unit.RefuelingSystem.PROBE_AND_DROGUE)
 
-end
-
---- Function called each time the Chief sends an asset group on a mission.
-function RedChief:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
-  local opsgroup=OpsGroup --Ops.OpsGroup#OPSGROUP
-  local mission=Mission   --Ops.Auftrag#AUFTRAG
-
-  -- Info message to log file which group is launched on which mission.
-  local text=string.format("Group %s is on mission %s [%s]", opsgroup:GetName(), mission:GetName(), mission:GetType())
-  MESSAGE:New(text, 120):ToAll()
-  env.info(text)
-
-end
--- VVS:AddPatrolPointTANKER(ZoneRedTankers, 30000, UTILS.KnotsToAltKIAS(363, 33000), 345, 20, Unit.RefuelingSystem.PROBE_AND_DROGUE)
--- VVS:AddPatrolPointAWACS(ZoneRedAwacs, 33000, UTILS.KnotsToAltKIAS(363, 33000), 345, 20)
--- VVS:SetNumberTankerProbe(1)
--- VVS:SetNumberAWACS(1)
+RED.Commander:__Start(1)

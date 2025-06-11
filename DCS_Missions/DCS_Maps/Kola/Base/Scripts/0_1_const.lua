@@ -35,7 +35,8 @@ TEMPLATE = {
             RED_AAR = "TEMPLATE_Il78",
             RED_CAP = "TEMPLATE_RED_CAP",
             RED_ESCORT = "TEMPLATE_RED_ESCORT",
-            RED_INTERCEPT = "TEMPLATE_RED_INTERCEPT"
+            RED_INTERCEPT = "TEMPLATE_RED_INTERCEPT",
+            RED_MiG29_CAP = "TEMPLATE_RED_ESCORT-CAP"
 
         },
         AAR = {
