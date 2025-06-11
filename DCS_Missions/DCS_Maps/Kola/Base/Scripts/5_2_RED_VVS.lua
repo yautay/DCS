@@ -57,25 +57,17 @@ VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_CAP, -1, { AUFTRAG.Type.ESCORT }, 60)
 VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_AAR, -1, { AUFTRAG.Type.ORBIT, AUFTRAG.Type.TANKER }, 100)
 VVS:NewPayload(TEMPLATE.AIR.ADVERSARY.RED_AWACS, -1, { AUFTRAG.Type.ORBIT, AUFTRAG.Type.AWACS }, 100)
 
----
--- CHIEF OF STAFF
----
-ZoneRedTankers = ZONE:FindByName("Zone RED AAR")
-ZoneRedAwacs = ZONE:FindByName("Zone RED AWACS")
-ZoneRedCAP = ZONE:FindByName("Zone RED CAP")
--- Zone defining the border of the blue territory.
-local ZoneRedBorder=ZONE_POLYGON:NewFromGroupName("Red Accept Zone")
-
 -- RedBlue agents.
-local RedAgents=SET_GROUP:New():FilterCoalitions("Red"):FilterStart()
+RedAgents=SET_GROUP:New():FilterCoalitions("Red"):FilterStart()
 
 -- Define CHIEF.
-local RedChief=CHIEF:New(coalition.side.RED, RedAgents)
+RedChief=CHIEF:New(coalition.side.RED, RedAgents)
 RedChief:SetVerbosity(3)
 RedChief:SetClusterAnalysis(true, true, true)
 RedChief:SetTacticalOverviewOn()
 
-RedChief:AddBorderZone(ZoneRedBorder)
+RedChief:AddBorderZone(ZoneRedAccept)
+RedChief:AddRejectZone(ZoneRedReject)
 RedChief:AddAirwing(VVS)
 
 RedChief:SetStrategy(CHIEF.Strategy.DEFENSIVE)
@@ -90,6 +82,7 @@ RedChief:SetLimitMission(1, AUFTRAG.Type.CAP)
 RedChief:SetLimitMission(1, AUFTRAG.Type.TANKER)
 RedChief:SetLimitMission(1, AUFTRAG.Type.AWACS)
 
+RedChief:SetVerbosity(3)
 RedChief:__Start(1)
 
 -- VVS:AddPatrolPointTANKER(ZoneRedTankers, 30000, UTILS.KnotsToAltKIAS(363, 33000), 345, 20, Unit.RefuelingSystem.PROBE_AND_DROGUE)

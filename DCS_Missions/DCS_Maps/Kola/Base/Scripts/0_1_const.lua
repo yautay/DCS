@@ -31,7 +31,7 @@ TEMPLATE = {
             LHA_SAR = "LHA-SAR",
         },
         ADVERSARY = {
-            RED_AWACS = "TEMPLATE_A50",
+            RED_AWACS = "Red EWR AWACS",
             RED_AAR = "TEMPLATE_Il78",
             RED_CAP = "TEMPLATE_RED_CAP",
             RED_ESCORT = "TEMPLATE_RED_ESCORT",
@@ -51,4 +51,11 @@ TEMPLATE = {
     }
 }
 
+ZoneRedAccept=ZONE_POLYGON:NewFromGroupName("Red Accept Zone")
+ZoneRedReject=ZONE_POLYGON:NewFromGroupName("Red Reject Zone")
+ZoneRedDefend=ZONE_POLYGON:NewFromGroupName("Red Defend Zone")
 
+
+ZoneRedTankers = ZONE:FindByName("Zone RED AAR")
+ZoneRedAwacs = ZONE:FindByName("Zone RED AWACS")
+ZoneRedCAP = ZONE:FindByName("Zone RED CAP")
