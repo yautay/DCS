@@ -107,26 +107,67 @@ function AIRWING_EFRO:OnAfterFlightOnMission(From, Event, To, Flightgroup, Missi
     end
 end
 
--- --- Display mission status on screen.
--- local function MissionStatus()
---     local text = "Missions:"
---     for _, _mission in pairs(AIRWING_EFRO.missionqueue) do
---         local m = _mission --Ops.Auftrag#AUFTRAG
---         text = text .. string.format("\n- %s %s %s*%d/%d [%d %%]  (%s*%d/%d)",
---                 m:GetName(), m:GetState():upper(), m:GetTargetName(), m:CountMissionTargets(), m:GetTargetInitialNumber(), m:GetTargetDamage(), m:GetType(), m:CountOpsGroups(), m:GetNumberOfRequiredAssets())
---     end
---     -- Payloads
---     text = text .. "\n\nPayloads:"
---     for _, aname in pairs(AUFTRAG.Type) do
---         local n = AIRWING_EFRO:CountPayloadsInStock({ aname })
---         if n > 0 then
---             text = text .. string.format("\n%s %d", aname, n)
---         end
---     end
---     -- Info message to all.
---     MESSAGE:New(text, 25):ToAll()
--- end
---
--- -- Display primary and secondary mission status every 60 seconds.
--- --TIMER:New(MissionStatus):Start(5, 30)
---
+
+AIRWING_CVN = AIRWING:New("CVN-75", "CVN-75 Air Wing")
+AIRWING_CVN:SetReportOff()
+AIRWING_CVN:SetMarker(false)
+AIRWING_CVN:AddSquadron(Squadron_RELAY_HELI_CVN)
+AIRWING_CVN:NewPayload(TEMPLATE.AIR.AI.RELAY_HELI, -1, { AUFTRAG.Type.ORBIT, AUFTRAG.Type.PATROLZONE }, 100)
+
+MISSION_CVN_MARSHALL_RELAY=AUFTRAG:NewPATROLZONE(ZoneCVN, 50, 500)
+MISSION_CVN_MARSHALL_RELAY:SetRequiredAssets(1)
+MISSION_CVN_MARSHALL_RELAY.name = "CVN Marshall Relay"
+MISSION_CVN_LSO_RELAY=AUFTRAG:NewPATROLZONE(ZoneCVN, 50, 300)
+MISSION_CVN_LSO_RELAY:SetRequiredAssets(1)
+MISSION_CVN_LSO_RELAY.name = "CVN LSO Relay"
+
+AIRWING_CVN:AddMission(MISSION_CVN_MARSHALL_RELAY)
+AIRWING_CVN:AddMission(MISSION_CVN_LSO_RELAY)
+AIRWING_CVN:Start()
+
+AIRWING_LHA = AIRWING:New("LHA-1", "LHA-1 Air Wing")
+AIRWING_LHA:SetReportOff()
+AIRWING_LHA:SetMarker(false)
+AIRWING_LHA:AddSquadron(Squadron_RELAY_HELI_LHA)
+AIRWING_LHA:NewPayload(TEMPLATE.AIR.AI.RELAY_HELI, -1, { AUFTRAG.Type.ORBIT, AUFTRAG.Type.PATROLZONE }, 100)
+
+AIRWING_LHA_MARSHALL_RELAY=AUFTRAG:NewPATROLZONE(ZoneLHA, 50, 500)
+AIRWING_LHA_MARSHALL_RELAY:SetRequiredAssets(1)
+AIRWING_LHA_MARSHALL_RELAY.name = "LHA Marshall Relay"
+AIRWING_LHA_LSO_RELAY=AUFTRAG:NewPATROLZONE(ZoneLHA, 50, 300)
+AIRWING_LHA_LSO_RELAY:SetRequiredAssets(1)
+AIRWING_LHA_LSO_RELAY.name = "LHA LSO Relay"
+
+AIRWING_LHA:AddMission(AIRWING_LHA_MARSHALL_RELAY)
+AIRWING_LHA:AddMission(AIRWING_LHA_LSO_RELAY)
+AIRWING_LHA:Start()
+
+function AIRWING_CVN:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission)
+    local mission = Mission --Ops.Auftrag#AUFTRAG
+    local group = flightgroup:GetGroup()
+    if not mission.name then
+        BASE:W("OnAfterFlightOnMission: mission.name is nil")
+        return
+    end
+
+    if mission.name == "CVN Marshall Relay" then
+        cvn_75_airboss:SetRadioRelayMarshal(group)
+    elseif mission.name == "CVN LSO Relay" then
+        cvn_75_airboss:SetRadioRelayLSO(group)
+    end
+    end
+
+function AIRWING_LHA:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission)
+    local mission = Mission --Ops.Auftrag#AUFTRAG
+    local group = flightgroup:GetGroup()
+    if not mission.name then
+        BASE:W("OnAfterFlightOnMission: mission.name is nil")
+        return
+    end
+
+    if mission.name == "LHA Marshall Relay" then
+        lha_1_airboss:SetRadioRelayMarshal(group)
+    elseif mission.name == "LHA LSO Relay" then
+        lha_1_airboss:SetRadioRelayLSO(group)
+    end
+    end

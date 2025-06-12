@@ -41,6 +41,13 @@ Squadron_ESCORTS_F15:SetFuelLowThreshold(0.3)
 Squadron_ESCORTS_F15:SetTurnoverTime(10, 20)
 Squadron_ESCORTS_F15:SetRadio(VAR_KOLA.FREQUENCIES.AWACS.darkstar[1], VAR_KOLA.FREQUENCIES.AWACS.darkstar[2])
 
+Squadron_RELAY_HELI_CVN = SQUADRON:New(TEMPLATE.AIR.AI.RELAY_HELI, 12, "RELAY HELI CVN")
+Squadron_RELAY_HELI_CVN:AddMissionCapability({ AUFTRAG.Type.ORBIT, AUFTRAG.Type.PATROLZONE }, 100)
+Squadron_RELAY_HELI_CVN:SetTakeoffHot()
+
+Squadron_RELAY_HELI_LHA = SQUADRON:New(TEMPLATE.AIR.AI.RELAY_HELI, 12, "RELAY HELI LHA")
+Squadron_RELAY_HELI_LHA:AddMissionCapability({ AUFTRAG.Type.ORBIT, AUFTRAG.Type.PATROLZONE }, 100)
+Squadron_RELAY_HELI_LHA:SetTakeoffHot()
 
 
 -- Squadron_MRA_Viggen_F13 = SQUADRON:New(TEMPLATE.viggen_aa_light, 22, "F13 Squadron") --Ops.Squadron#SQUADRON

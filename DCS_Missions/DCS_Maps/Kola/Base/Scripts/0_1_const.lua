@@ -47,7 +47,8 @@ TEMPLATE = {
             DARKSTAR = "TEMPLATE-DARKSTAR"
         },
         AI = {
-            F15C_ESCORTS = "TEMPLATE-ESCORT-F15"
+            F15C_ESCORTS = "TEMPLATE-ESCORT-F15",
+            RELAY_HELI = "TEMPLATE-RELAY_HELI"
         }
     }
 }
@@ -60,3 +61,6 @@ ZoneRedDefend=ZONE_POLYGON:NewFromGroupName("Red Defend Zone"):DrawZone()
 ZoneRedTankers = ZONE:FindByName("Zone RED AAR")
 ZoneRedAwacs = ZONE:FindByName("Zone RED AWACS")
 ZoneRedCAP = ZONE:FindByName("Zone RED CAP")
+
+ZoneCVN = ZONE_UNIT:New("Zone CVN", UNIT:FindByName("CVN-75"), 500, { rho = 1000, theta = 090, relative_to_unit = true })
+ZoneLHA = ZONE_UNIT:New("Zone LHA", UNIT:FindByName("LHA-1"), 500, { rho = 1000, theta = 090, relative_to_unit = true })
