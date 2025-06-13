@@ -142,32 +142,23 @@ AIRWING_LHA:AddMission(AIRWING_LHA_MARSHALL_RELAY)
 AIRWING_LHA:AddMission(AIRWING_LHA_LSO_RELAY)
 AIRWING_LHA:Start()
 
-function AIRWING_CVN:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission)
-    local mission = Mission --Ops.Auftrag#AUFTRAG
-    local group = flightgroup:GetGroup()
-    if not mission.name then
-        BASE:W("OnAfterFlightOnMission: mission.name is nil")
-        return
-    end
-
-    if mission.name == "CVN Marshall Relay" then
+function AIRWING_CVN:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
+    local mission = Mission.name
+    local group = OpsGroup:GetGroup()
+    local unit =
+    if mission == "CVN Marshall Relay" then
         cvn_75_airboss:SetRadioRelayMarshal(group)
-    elseif mission.name == "CVN LSO Relay" then
+    elseif mission == "CVN LSO Relay" then
         cvn_75_airboss:SetRadioRelayLSO(group)
     end
     end
 
-function AIRWING_LHA:OnAfterFlightOnMission(From, Event, To, Flightgroup, Mission)
-    local mission = Mission --Ops.Auftrag#AUFTRAG
-    local group = flightgroup:GetGroup()
-    if not mission.name then
-        BASE:W("OnAfterFlightOnMission: mission.name is nil")
-        return
-    end
-
-    if mission.name == "LHA Marshall Relay" then
+function AIRWING_LHA:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
+    local mission = Mission.name
+    local group = OpsGroup:GetGroup()
+    if mission == "LHA Marshall Relay" then
         lha_1_airboss:SetRadioRelayMarshal(group)
-    elseif mission.name == "LHA LSO Relay" then
+    elseif mission == "LHA LSO Relay" then
         lha_1_airboss:SetRadioRelayLSO(group)
     end
     end
