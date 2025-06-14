@@ -114,10 +114,14 @@ AIRWING_CVN:SetMarker(false)
 AIRWING_CVN:AddSquadron(Squadron_RELAY_HELI_CVN)
 AIRWING_CVN:NewPayload(TEMPLATE.AIR.AI.RELAY_HELI, -1, { AUFTRAG.Type.ORBIT, AUFTRAG.Type.PATROLZONE }, 100)
 
-MISSION_CVN_MARSHALL_RELAY=AUFTRAG:NewPATROLZONE(ZoneCVN, 50, 500)
+CVN_UNIT = UNIT:FindByName(TEMPLATE.SEA.CVN_75)
+
+-- MISSION_CVN_MARSHALL_RELAY=AUFTRAG:NewPATROLZONE(ZoneCVN, 50, 500)
+MISSION_CVN_MARSHALL_RELAY=AUFTRAG:NewORBIT_GROUP(CVN_UNIT, 400, 50, nil, nil, {r=3, phi=45}, 0.2)
 MISSION_CVN_MARSHALL_RELAY:SetRequiredAssets(1)
 MISSION_CVN_MARSHALL_RELAY.name = "CVN Marshall Relay"
-MISSION_CVN_LSO_RELAY=AUFTRAG:NewPATROLZONE(ZoneCVN, 50, 300)
+-- MISSION_CVN_LSO_RELAY=AUFTRAG:NewPATROLZONE(ZoneCVN, 50, 300)
+MISSION_CVN_LSO_RELAY=AUFTRAG:NewORBIT_GROUP(CVN_UNIT, 300, 50, nil, nil, {r=2, phi=45}, 0.2)
 MISSION_CVN_LSO_RELAY:SetRequiredAssets(1)
 MISSION_CVN_LSO_RELAY.name = "CVN LSO Relay"
 
@@ -131,10 +135,14 @@ AIRWING_LHA:SetMarker(false)
 AIRWING_LHA:AddSquadron(Squadron_RELAY_HELI_LHA)
 AIRWING_LHA:NewPayload(TEMPLATE.AIR.AI.RELAY_HELI, -1, { AUFTRAG.Type.ORBIT, AUFTRAG.Type.PATROLZONE }, 100)
 
-AIRWING_LHA_MARSHALL_RELAY=AUFTRAG:NewPATROLZONE(ZoneLHA, 50, 500)
+LHA_UNIT = UNIT:FindByName(TEMPLATE.SEA.LHA_1)
+
+-- AIRWING_LHA_MARSHALL_RELAY=AUFTRAG:NewPATROLZONE(ZoneLHA, 50, 500)
+AIRWING_LHA_MARSHALL_RELAY=AUFTRAG:NewORBIT_GROUP(LHA_UNIT, 400, 50, nil, nil, {r=3, phi=45}, 0.2)
 AIRWING_LHA_MARSHALL_RELAY:SetRequiredAssets(1)
 AIRWING_LHA_MARSHALL_RELAY.name = "LHA Marshall Relay"
-AIRWING_LHA_LSO_RELAY=AUFTRAG:NewPATROLZONE(ZoneLHA, 50, 300)
+-- AIRWING_LHA_LSO_RELAY=AUFTRAG:NewPATROLZONE(ZoneLHA, 50, 300)
+AIRWING_LHA_LSO_RELAY=AUFTRAG:NewORBIT_GROUP(LHA_UNIT, 300, 50, nil, nil, {r=2, phi=45}, 0.2)
 AIRWING_LHA_LSO_RELAY:SetRequiredAssets(1)
 AIRWING_LHA_LSO_RELAY.name = "LHA LSO Relay"
 
@@ -145,20 +153,46 @@ AIRWING_LHA:Start()
 function AIRWING_CVN:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
     local mission = Mission.name
     local group = OpsGroup:GetGroup()
-    local unit =
+    local unit = group:GetFirstUnit():Name()
+
     if mission == "CVN Marshall Relay" then
-        cvn_75_airboss:SetRadioRelayMarshal(group)
+        timer.scheduleFunction(function()
+            cvn_75_airboss:SetRadioRelayMarshal(unit)
+            env.info("Marshal relay set after delay for unit: " .. unit)
+        end, {}, timer.getTime() + 60)
+
     elseif mission == "CVN LSO Relay" then
-        cvn_75_airboss:SetRadioRelayLSO(group)
+        timer.scheduleFunction(function()
+            cvn_75_airboss:SetRadioRelayLSO(unit)
+            env.info("LSO relay set after delay for unit: " .. unit)
+        end, {}, timer.getTime() + 60)
     end
-    end
+    env.info("CVN-FREQ")
+    env.info(cvn_75_airboss.LSOFreq)
+    env.info(cvn_75_airboss.AirbossFreq)
+    env.info(cvn_75_airboss.MarshalFreq)
+
+end
 
 function AIRWING_LHA:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
     local mission = Mission.name
     local group = OpsGroup:GetGroup()
+    local unit = group:GetFirstUnit():Name()
+
     if mission == "LHA Marshall Relay" then
-        lha_1_airboss:SetRadioRelayMarshal(group)
+        timer.scheduleFunction(function()
+            lha_1_airboss:SetRadioRelayMarshal(unit)
+            env.info("LHA Marshal relay set after delay for unit: " .. unit)
+        end, {}, timer.getTime() + 60)
+
     elseif mission == "LHA LSO Relay" then
-        lha_1_airboss:SetRadioRelayLSO(group)
+        timer.scheduleFunction(function()
+            lha_1_airboss:SetRadioRelayLSO(unit)
+            env.info("LHA LSO relay set after delay for unit: " .. unit)
+        end, {}, timer.getTime() + 60)
     end
-    end
+    env.info("LHA-FREQ")
+    env.info(cvn_75_airboss.LSOFreq)
+    env.info(cvn_75_airboss.AirbossFreq)
+    env.info(cvn_75_airboss.MarshalFreq)
+end
