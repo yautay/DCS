@@ -3,7 +3,7 @@ SERVER = true
 SERVER_DCS_PATH = "D:\\repo\\DCS\\DCS_Missions"
 LOCAL_DCS_PATH = "F:\\repo\\DCS\\DCS_Missions"
 
-SCRIPTS_PATH = "\\DCS_Maps\\Kola\\Base\\Scripts\\"
+SCRIPTS_PATH = "\\DCS_Maps\\Guam44\\Base\\Scripts\\"
 
 LIBS_PATH = "\\lib"
 
