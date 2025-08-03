@@ -22,6 +22,17 @@ New-NetFirewallRule -DisplayName "DCS UDP Inbound" -Direction Inbound -LocalPort
 # DCS WebGUI TCP inbound  rules
 New-NetFirewallRule -DisplayName "DCS WebGUI TCP Inbound" -Direction Inbound -LocalPort 8088 -Protocol TCP -Action Allow
 
+#IL2 DSERVER
+
+# DSERVER TCP inbound rules
+New-NetFirewallRule -DisplayName "DCS TCP Inbound" -Direction Inbound -LocalPort 28000 -Protocol TCP -Action Allow
+
+# DSERVER UDP inbound rules
+New-NetFirewallRule -DisplayName "DCS UDP Inbound" -Direction Inbound -LocalPort 28000 -Protocol UDP -Action Allow
+
+# DSERVER TCP inbound  rules
+New-NetFirewallRule -DisplayName "DCS WebGUI TCP Inbound" -Direction Inbound -LocalPort 28100 -Protocol TCP -Action Allow
+
 
 #TAC_VIEW
 
@@ -41,6 +52,13 @@ New-NetFirewallRule -DisplayName "DCS SRS TCP2" -Direction Inbound -LocalPort 50
 
 # DCS SRS Transponder
 New-NetFirewallRule -DisplayName "DCS SRS Transponder" -Direction Inbound -LocalPort 10712 -Protocol UDP -Action Allow
+
+# IL-2 SRS TCP
+New-NetFirewallRule -DisplayName "DCS SRS TCP" -Direction Inbound -LocalPort 6002 -Protocol TCP -Action Allow
+
+# IL-2 SRS UDP
+New-NetFirewallRule -DisplayName "DCS SRS TCP" -Direction Inbound -LocalPort 6002 -Protocol UDP -Action Allow
+
 
 #LotATC
 
