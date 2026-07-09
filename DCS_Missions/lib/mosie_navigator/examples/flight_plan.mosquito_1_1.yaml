@@ -1,0 +1,52 @@
+group: "MOSQUITO 1-1"
+plan: "Operation Jericho"
+
+waypoints:
+  - name: "Tangmere"
+    type: TAKE_OFF
+    lat: 50.8453
+    lon: -0.7061
+    alt_ft: 0
+
+  - name: "Coast Out"
+    type: NAV
+    lat: 50.7901
+    lon: -0.2350
+    alt_ft: 500
+
+  - name: "Rendezvous"
+    type: RENDEZVOUS
+    lat: 50.6000
+    lon: 0.1000
+    alt_ft: 1000
+
+  - name: "Hold"
+    type: HOLD
+    lat: 50.2000
+    lon: 1.2000
+    alt_ft: 1000
+
+  - name: "Ingress"
+    type: INGRESS
+    lat: 49.9200
+    lon: 2.2400
+    alt_ft: 200
+    notes: "IP is represented as INGRESS."
+
+  - name: "Target"
+    type: TARGET
+    lat: 49.8940
+    lon: 2.3000
+    alt_ft: 150
+
+  - name: "Egress"
+    type: EGRESS
+    lat: 49.9600
+    lon: 2.1000
+    alt_ft: 300
+
+  - name: "Tangmere"
+    type: LANDING
+    lat: 50.8453
+    lon: -0.7061
+    alt_ft: 0
