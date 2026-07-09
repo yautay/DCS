@@ -58,7 +58,7 @@ Fields:
 - `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`.
 - `__T<TOT>`: optional planned time on target, using `HH:MM` or `HH:MM:SS`, for example `__T14:30`.
 
-If both ends of a leg define `__T`, `MosieNavigator.lua` may calculate required leg TAS in knots. If either end has no `__T`, TAS for that leg must be omitted or displayed as `---`.
+If both ends of a leg define `__T`, `MosieNavigator.lua` may calculate required leg TAS in knots. If either end has no `__T`, TAS for that leg must be omitted or displayed as `---`. Static FP/navlog output may also show IAS calculated from the row waypoint altitude (`__A`) and magnetic course corrected for declination only. Wind-corrected magnetic heading belongs to active navigator guidance, not static FP/navlog output.
 
 Example:
 
@@ -138,6 +138,7 @@ Flight plan zones must not define beacons. Beacon zones must not assign beacons 
 - `MosieNavigator.lua` may discover zones and draw F10 debug markup.
 - `MosieNavigator.lua` may write plain text navlog files for discovered plans.
 - `MosieNavigator.lua` may periodically refresh group menus for client aircraft that become active after mission start.
+- `MosieNavigator.lua` may provide an active text navigator per assigned group, with configurable report intervals, manual waypoint changes, wind-corrected magnetic heading, XTE guidance, and mandatory 60/30 second waypoint callouts.
 - It may depend on MOOSE being loaded before it.
 - It must not require YAML files.
 - It must not implement player navigation state until explicitly requested.

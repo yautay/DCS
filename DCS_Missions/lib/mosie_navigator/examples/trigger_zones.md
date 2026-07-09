@@ -16,6 +16,8 @@ SPITFIRE 2-1 [MN:ESCORT]
 The tag value must match the plan name used in `MN_` trigger zones.
 The optional `__R...` group suffix applies a ROLEX delay to that group's displayed/exported TOT values only.
 
+Assigned groups receive a Mosie Navigator F10 menu with `Show FP`, active navigator controls, and report interval selection.
+
 ## Flight Plan Zones
 
 Use this format:

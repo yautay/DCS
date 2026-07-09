@@ -66,6 +66,23 @@ F10 Other > Mosie Navigator > Show FP
 
 `Show FP` displays a simplified flight plan for that group.
 
+The same menu also provides an active text navigator:
+
+```text
+Navigator On
+Navigator Off
+Status Now
+Next WP
+Prev WP
+Report Interval > 30 sec / 60 sec / 120 sec / 300 sec
+```
+
+When enabled, the navigator sends compact text reports to the group. The regular report interval is selectable from the menu and defaults to 120 seconds. Regardless of the selected interval, the navigator always reports at 60 seconds and 30 seconds before the active waypoint TOT, and when it switches guidance to the next waypoint.
+
+Active navigator reports use current aircraft altitude for IAS, include wind-corrected magnetic heading (`HDG ...M`), required TAS/IAS to meet TOT, fast/slow guidance, and XTE in 1 NM-style whole-mile guidance when off track.
+
+Navigator reports are driven by one global scheduler ticking every 5 seconds, so the runtime cost is intentionally low. The main practical limit is message/audio spam, not computation.
+
 Menus are refreshed after mission start and then periodically, so client aircraft that become active after a player enters a slot should receive the menu shortly after spawning.
 
 It also writes one text navlog per assigned group. If no group assignments are found, it writes one fallback debug navlog per discovered plan. By default files are written to:
@@ -80,11 +97,15 @@ The navlog is a single compact plain ASCII table with:
 - latitude in decimal minutes format, for example `N51 19.43`
 - longitude in decimal minutes format, for example `E000 01.60`
 - true course from the waypoint to the next waypoint
+- magnetic course from the waypoint to the next waypoint
 - cumulative distance from start in NM
 - leg distance from previous waypoint in NM
 - planned altitude, if defined with `__A`
 - planned TOT, if defined with `__T`
 - calculated leg TAS in knots, if both ends of the leg define `__T`
+- calculated leg IAS in knots, if both ends of the leg define `__T` and the row waypoint defines `__A`
+
+Static FP/navlog magnetic course is declination-corrected but does not include wind correction. Wind-corrected magnetic heading is used by active navigator guidance.
 
 For assigned groups with `__R...`, `Show FP` and the generated group navlog show ROLEX-adjusted TOT values.
 
