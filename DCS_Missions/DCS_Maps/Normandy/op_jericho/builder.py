@@ -1,29 +1,35 @@
+import os
+import sys
+
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 from DCS_Missions.lib import *
 from DCS_Missions.DCS_Maps.Normandy.op_jericho.Scripts import *
-from DCS_Missions.lib import *
-from collections import OrderedDict
-import os
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 FRAMEWORK_FILE = "frameworks.lua"
 SCRIPTS_FILE = "script.lua"
 DYNAMIC_LOAD_LUA = "dynamic_load.lua"
 
-frameworks_order = OrderedDict()
-frameworks_order["\n--1 - PATHS\n"] = PATH_SCRIPT_PATHS
-# frameworks_order["\n--2 - MOOSE\n"] = PATH_LIBS_MOOSE_CUSTOM
-frameworks_order["\n--2 - MOOSE\n"] = PATH_LIB_MOOSE
-frameworks_order["\n--4 - STTS\n"] = PATH_LIB_STTS
+frameworks_order = {
+    "\n--1 - PATHS\n": PATH_SCRIPT_PATHS,
+    "\n--2 - MOOSE\n": PATH_LIB_MOOSE,
+    "\n--4 - STTS\n": PATH_LIB_STTS,
+}
 
-scripts_order = OrderedDict()
-scripts_order["\n--0_1_const.lua\n"] = PATH_SCRIPT_CONST
-scripts_order["\n--1_1_variables.lua\n"] = PATH_SCRIPT_VARIABLES
-scripts_order["\n--1_2_common.lua\n"] = PATH_SCRIPT_COMMON
-scripts_order["\n--2_2_clients.lua\n"] = PATH_SCRIPT_CLIENTS
-scripts_order["\n--3.3_RANGES\n"] = PATH_SCRIPT_RANGE
+scripts_order = {
+    "\n--0_1_const.lua\n": PATH_SCRIPT_CONST,
+    "\n--1_1_variables.lua\n": PATH_SCRIPT_VARIABLES,
+    "\n--1_2_common.lua\n": PATH_SCRIPT_COMMON,
+    "\n--2_2_clients.lua\n": PATH_SCRIPT_CLIENTS,
+    "\n--3.3_RANGES\n": PATH_SCRIPT_RANGE,
+}
 
 
 def delete_old_files(filename: str):
+    filename = os.path.join(CWD, filename)
     if os.path.exists(filename):
         print(f"Deleting old {filename}")
         os.remove(filename)
@@ -35,6 +41,10 @@ delete_old_files(DYNAMIC_LOAD_LUA)
 
 content_scripts = ""
 content_frameworks = ""
+
+
+def output_path(filename: str):
+    return os.path.join(CWD, filename)
 
 
 def open_script(path):
@@ -53,7 +63,7 @@ def write_lines(path, lines):
 
 
 def append_script(path, content):
-    with open(path, "a") as file:
+    with open(path, "a", encoding="utf-8") as file:
         file.write(content)
 
 
@@ -62,18 +72,14 @@ def append_binary(path, content):
         file.write(content)
 
 
-for file in [FRAMEWORK_FILE, SCRIPTS_FILE]:
-    if os.path.exists(file):
-        os.remove(file)
-
 for k, v in frameworks_order.items():
-    append_script(FRAMEWORK_FILE, k)
-    append_binary(FRAMEWORK_FILE, open_script(v))
+    append_script(output_path(FRAMEWORK_FILE), k)
+    append_binary(output_path(FRAMEWORK_FILE), open_script(v))
     content_frameworks += '"{}", '.format(v.replace("\\", "\\\\"))
 
 for k, v in scripts_order.items():
-    append_script(SCRIPTS_FILE, k)
-    append_binary(SCRIPTS_FILE, open_script(v))
+    append_script(output_path(SCRIPTS_FILE), k)
+    append_binary(output_path(SCRIPTS_FILE), open_script(v))
     content_scripts += '"{}", '.format(v.replace("\\", "\\\\"))
 
 content_scripts = "{" + content_scripts + "}"
@@ -82,7 +88,7 @@ content_frameworks = "{" + content_frameworks + "}"
 dynamic_load_scripts = f"local SCRIPTS = {content_scripts}\n"
 dynamic_load_frameworks = f"local FRAMEWORKS = {content_frameworks}\n"
 
-template = read_lines("dynamic_load.template")
+template = read_lines(output_path("dynamic_load.template"))
 
 for i in range(len(template)):
     if template[i].__contains__("FRAMEWORKS_PLACEHOLDER"):
@@ -90,5 +96,5 @@ for i in range(len(template)):
     elif template[i].__contains__("SCRIPTS_PLACEHOLDER"):
         template[i] = dynamic_load_scripts
 
-write_lines(DYNAMIC_LOAD_LUA, template)
+write_lines(output_path(DYNAMIC_LOAD_LUA), template)
 # append_script(DYNAMIC_LOAD_LUA, dynamic_load_lua)
