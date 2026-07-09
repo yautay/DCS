@@ -13,7 +13,7 @@ SRS_PORT = nil
 
 SRS_SERVER_PATH = "C:\\DCS-SimpleRadio-Standalone"
 SRS_SERVER_PORT = 5002
-SRS_LOCAL_PATH = "D:\\DCS-SimpleRadio-Standalone"
+SRS_LOCAL_PATH = "Z:\\DCS-SimpleRadio-Standalone"
 SRS_LOCAL_PORT = 5002
 
 SERVER_SAVE_SHEET_PATH = "C:\\DCS_Data\\"

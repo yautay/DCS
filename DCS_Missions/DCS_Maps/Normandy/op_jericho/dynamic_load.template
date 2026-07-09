@@ -20,11 +20,11 @@ end
 
 __Script.Includes = {}
 
-for i, v in pairs(FRAMEWORKS) do
+for i, v in ipairs(FRAMEWORKS) do
 	__Script.Include(v)
 end
 
-for i, v in pairs(SCRIPTS) do
+for i, v in ipairs(SCRIPTS) do
 	__Script.Include(v)
 end
 

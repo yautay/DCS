@@ -16,15 +16,14 @@ DYNAMIC_LOAD_LUA = "dynamic_load.lua"
 frameworks_order = {
     "\n--1 - PATHS\n": PATH_SCRIPT_PATHS,
     "\n--2 - MOOSE\n": PATH_LIB_MOOSE,
-    "\n--4 - STTS\n": PATH_LIB_STTS,
+    "\n--3 - STTS\n": PATH_LIB_STTS,
+    "\n--4 - MOSIE NAVIGATOR\n": PATH_LIB_MOSIE_NAVIGATOR,
 }
 
 scripts_order = {
     "\n--0_1_const.lua\n": PATH_SCRIPT_CONST,
     "\n--1_1_variables.lua\n": PATH_SCRIPT_VARIABLES,
     "\n--1_2_common.lua\n": PATH_SCRIPT_COMMON,
-    "\n--2_2_clients.lua\n": PATH_SCRIPT_CLIENTS,
-    "\n--3.3_RANGES\n": PATH_SCRIPT_RANGE,
 }
 
 
