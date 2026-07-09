@@ -17,7 +17,7 @@ RangeObject_IRON:AddStrafePitGroup(GROUP:FindByName(StrafeTargetsGroupMs[1]), bo
 
 -- Start range.
 RangeObject_IRON:SetDefaultPlayerSmokeBomb(true)
-RangeObject_IRON:SetTargetSheet(SHEET_PATH, "Range-")
+RangeObject_IRON:SetTargetSheet(SHEET_PATH, "\\Range-")
 RangeObject_IRON:SetAutosaveOn()
 RangeObject_IRON:SetMessageTimeDuration(5)
 RangeObject_IRON:SetFunkManOn(10042, "127.0.0.1")
