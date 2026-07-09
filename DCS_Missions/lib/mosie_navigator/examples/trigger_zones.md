@@ -8,22 +8,25 @@ Add a plan tag to the DCS group name:
 
 ```text
 MOSQUITO 1-1 [MN:JERICHO]
-MOSQUITO 1-2 [MN:JERICHO]
+MOSQUITO 1-2 [MN:JERICHO]__R0:05
+MOSQUITO 1-3 [MN:JERICHO]__R0:00:30
 SPITFIRE 2-1 [MN:ESCORT]
 ```
 
 The tag value must match the plan name used in `MN_` trigger zones.
+The optional `__R...` group suffix applies a ROLEX delay to that group's displayed/exported TOT values only.
 
 ## Flight Plan Zones
 
 Use this format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>]
 ```
 
 `PLAN` must not contain underscores. Use names like `JERICHO`, `ESCORT`, or `MOSSIE1`.
 `NAME` is optional. If omitted, the waypoint type is used as the display name.
+`__A<ALT_FT>` and `__T<TOT>` are optional. If two adjacent waypoints both define `__T`, Mosie Navigator calculates the required leg TAS in knots.
 
 Example Operation Jericho plan:
 
@@ -36,6 +39,16 @@ MN_JERICHO_05_INGRESS_IP
 MN_JERICHO_06_TARGET_Prison
 MN_JERICHO_07_EGRESS_Egress
 MN_JERICHO_08_LANDING_Tangmere
+```
+
+Example with planned altitude and time on target:
+
+```text
+MN_JERICHO_01_TAKE_OFF_Tangmere__A0__T14:00
+MN_JERICHO_02_NAV_Channel__A500__T14:12
+MN_JERICHO_05_INGRESS_IP__A50__T14:28
+MN_JERICHO_06_TARGET_Prison__A50__T14:30
+MN_JERICHO_08_LANDING_Tangmere__A0
 ```
 
 Example escort plan:

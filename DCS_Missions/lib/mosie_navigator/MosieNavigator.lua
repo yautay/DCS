@@ -16,6 +16,8 @@ MosieNavigator.Config = MosieNavigator.Config or {
   groupPlanTagPattern = "%[MN:([%w%-]+)%]",
   menuName = "Mosie Navigator",
   flightPlanMessageDuration = 30,
+  menuRefreshDelay = 5,
+  menuRefreshInterval = 15,
 }
 
 MosieNavigator.WaypointTypes = {
@@ -56,6 +58,24 @@ function MosieNavigator:_Split(value, separator)
   return result
 end
 
+function MosieNavigator:_SplitPlain(value, delimiter)
+  local result = {}
+  local startIndex = 1
+
+  while true do
+    local delimiterStart, delimiterEnd = string.find(value, delimiter, startIndex, true)
+    if not delimiterStart then
+      table.insert(result, string.sub(value, startIndex))
+      break
+    end
+
+    table.insert(result, string.sub(value, startIndex, delimiterStart - 1))
+    startIndex = delimiterEnd + 1
+  end
+
+  return result
+end
+
 function MosieNavigator:_Join(tokens, startIndex, separator)
   local result = {}
 
@@ -66,8 +86,114 @@ function MosieNavigator:_Join(tokens, startIndex, separator)
   return table.concat(result, separator)
 end
 
+function MosieNavigator:_ParseTimeOnTarget(value)
+  local hours, minutes, seconds = string.match(value or "", "^(%d%d?):(%d%d):(%d%d)$")
+
+  if not hours then
+    hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
+    seconds = "0"
+  end
+
+  if not hours or not minutes then
+    return nil
+  end
+
+  hours = tonumber(hours)
+  minutes = tonumber(minutes)
+  seconds = tonumber(seconds ~= "" and seconds or "0")
+
+  if hours > 23 or minutes > 59 or seconds > 59 then
+    return nil
+  end
+
+  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60 + seconds
+end
+
+function MosieNavigator:_ParseRolexDuration(value)
+  local parts = self:_Split(value or "", ":")
+  local hours = 0
+  local minutes = 0
+  local seconds = 0
+
+  if #parts == 1 then
+    minutes = tonumber(parts[1])
+  elseif #parts == 2 then
+    hours = tonumber(parts[1])
+    minutes = tonumber(parts[2])
+  elseif #parts == 3 then
+    hours = tonumber(parts[1])
+    minutes = tonumber(parts[2])
+    seconds = tonumber(parts[3])
+  else
+    return nil
+  end
+
+  if not hours or not minutes or not seconds or minutes > 59 or seconds > 59 then
+    return nil
+  end
+
+  return hours * 3600 + minutes * 60 + seconds
+end
+
+function MosieNavigator:_FormatClock(seconds)
+  seconds = seconds % 86400
+
+  local hours = math.floor(seconds / 3600)
+  local minutes = math.floor((seconds % 3600) / 60)
+  local clockSeconds = seconds % 60
+
+  if clockSeconds == 0 then
+    return string.format("%02d:%02d", hours, minutes)
+  end
+
+  return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
+end
+
+function MosieNavigator:_FormatRolex(seconds)
+  if not seconds or seconds == 0 then
+    return "+00:00"
+  end
+
+  local hours = math.floor(seconds / 3600)
+  local minutes = math.floor((seconds % 3600) / 60)
+  local clockSeconds = seconds % 60
+
+  if clockSeconds == 0 then
+    return string.format("+%02d:%02d", hours, minutes)
+  end
+
+  return string.format("+%02d:%02d:%02d", hours, minutes, clockSeconds)
+end
+
+function MosieNavigator:_ParseWaypointMetadata(metadataTokens)
+  local metadata = {}
+
+  for _, token in ipairs(metadataTokens) do
+    local upperToken = string.upper(token)
+    local altitude = string.match(upperToken, "^A(%-?%d+)$")
+      or string.match(upperToken, "^A(%-?%d+)FT$")
+      or string.match(upperToken, "^ALT(%-?%d+)$")
+      or string.match(upperToken, "^ALT(%-?%d+)FT$")
+    local timeText = string.match(token, "^TOT(.+)$") or string.match(token, "^T(.+)$")
+
+    if altitude then
+      metadata.altitudeFt = tonumber(altitude)
+    elseif timeText then
+      metadata.timeOnTarget, metadata.timeOnTargetSeconds = self:_ParseTimeOnTarget(timeText)
+      if not metadata.timeOnTarget then
+        self:_Log("Ignoring invalid waypoint TOT token: " .. token)
+      end
+    else
+      self:_Log("Ignoring unknown waypoint metadata token: " .. token)
+    end
+  end
+
+  return metadata
+end
+
 function MosieNavigator:_ParseWaypointZoneName(zoneName)
-  local tokens = self:_Split(zoneName, "_")
+  local zoneParts = self:_SplitPlain(zoneName, "__")
+  local tokens = self:_Split(zoneParts[1], "_")
 
   if tokens[1] ~= "MN" then
     return nil
@@ -92,11 +218,21 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
     name = waypointType
   end
 
+  local metadataTokens = {}
+  for index = 2, #zoneParts do
+    table.insert(metadataTokens, zoneParts[index])
+  end
+
+  local metadata = self:_ParseWaypointMetadata(metadataTokens)
+
   return {
     plan = plan,
     order = order,
     type = waypointType,
     name = name,
+    altitudeFt = metadata.altitudeFt,
+    timeOnTarget = metadata.timeOnTarget,
+    timeOnTargetSeconds = metadata.timeOnTargetSeconds,
   }
 end
 
@@ -160,31 +296,118 @@ function MosieNavigator:_FormatHeading(heading)
   return string.format("%03d", math.floor(heading + 0.5) % 360)
 end
 
+function MosieNavigator:_FormatOptional(value)
+  if value == nil then
+    return "---"
+  end
+
+  return tostring(value)
+end
+
+function MosieNavigator:_FormatWaypointTot(waypoint, rolexSeconds)
+  if not waypoint.timeOnTargetSeconds then
+    return "---"
+  end
+
+  return self:_FormatClock(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
+end
+
+function MosieNavigator:_FormatDecimalMinutes(value, positiveHemisphere, negativeHemisphere, degreeWidth)
+  local hemisphere = positiveHemisphere
+  if value < 0 then
+    hemisphere = negativeHemisphere
+    value = -value
+  end
+
+  local degrees = math.floor(value)
+  local minutes = (value - degrees) * 60
+
+  if minutes >= 59.995 then
+    degrees = degrees + 1
+    minutes = 0
+  end
+
+  return string.format("%s%0" .. degreeWidth .. "d %05.2f", hemisphere, degrees, minutes)
+end
+
 function MosieNavigator:_FormatCoordinate(coordinate)
   local lat, lon = coordinate:GetLLDDM()
-  return lat, lon
+  return self:_FormatDecimalMinutes(lat, "N", "S", 2), self:_FormatDecimalMinutes(lon, "E", "W", 3)
+end
+
+function MosieNavigator:_FitText(value, width)
+  value = tostring(value or "")
+
+  if string.len(value) > width then
+    return string.sub(value, 1, width)
+  end
+
+  return value
+end
+
+function MosieNavigator:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legDistanceNm)
+  if not previousWaypoint or not previousWaypoint.timeOnTargetSeconds or not waypoint.timeOnTargetSeconds then
+    return nil
+  end
+
+  local deltaSeconds = waypoint.timeOnTargetSeconds - previousWaypoint.timeOnTargetSeconds
+  if deltaSeconds < 0 then
+    deltaSeconds = deltaSeconds + 86400
+  end
+
+  if deltaSeconds <= 0 then
+    return nil
+  end
+
+  return legDistanceNm / (deltaSeconds / 3600)
 end
 
 function MosieNavigator:_ExtractPlanFromGroupName(groupName)
   return string.match(groupName, self.Config.groupPlanTagPattern)
 end
 
+function MosieNavigator:_ExtractRolexFromGroupName(groupName)
+  local rolexText = string.match(groupName, "__[Rr]([%d:]+)")
+  if not rolexText then
+    return 0
+  end
+
+  local rolexSeconds = self:_ParseRolexDuration(rolexText)
+  if not rolexSeconds then
+    self:_Log("Ignoring invalid group ROLEX token: __R" .. rolexText)
+    return 0
+  end
+
+  return rolexSeconds
+end
+
 function MosieNavigator:_DiscoverGroupAssignments(plans)
   local assignments = {}
+  self.InactiveGroupLogs = self.InactiveGroupLogs or {}
+
   local groupSet = SET_GROUP:New():FilterStart()
 
   groupSet:ForEachGroup(function(group)
     local groupName = group:GetName()
     local planName = self:_ExtractPlanFromGroupName(groupName)
+    local rolexSeconds = self:_ExtractRolexFromGroupName(groupName)
 
     if planName then
       if plans[planName] then
-        table.insert(assignments, {
-          groupName = groupName,
-          group = group,
-          planName = planName,
-          plan = plans[planName],
-        })
+        if group:IsAlive() then
+          table.insert(assignments, {
+            groupName = groupName,
+            group = group,
+            planName = planName,
+            plan = plans[planName],
+            rolexSeconds = rolexSeconds,
+          })
+        else
+          if not self.InactiveGroupLogs[groupName] then
+            self:_Log(string.format("group %s references plan %s but is not active yet", groupName, planName))
+            self.InactiveGroupLogs[groupName] = true
+          end
+        end
       else
         self:_Log(string.format("group %s references missing plan %s", groupName, planName))
       end
@@ -328,84 +551,151 @@ function MosieNavigator:_DrawBeacon(beacon)
   ))
 end
 
-function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName)
+function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
   local lines = {}
+  local totalDistanceNm = 0
+  rolexSeconds = rolexSeconds or 0
 
   table.insert(lines, "MOSIE NAVIGATOR")
-  table.insert(lines, "GROUP: " .. groupName)
-  table.insert(lines, "PLAN: " .. plan.name)
+  table.insert(lines, "PLAN  : " .. plan.name)
+  table.insert(lines, "GROUP : " .. groupName)
+  if rolexSeconds ~= 0 then
+    table.insert(lines, "ROLEX : " .. self:_FormatRolex(rolexSeconds))
+  end
   table.insert(lines, "")
 
   for index, waypoint in ipairs(plan.waypoints) do
+    local previousWaypoint = plan.waypoints[index - 1]
     local nextWaypoint = plan.waypoints[index + 1]
     local trueCourse = nil
     local legDistanceNm = nil
+    local legSpeedKnots = nil
+
+    if previousWaypoint then
+      legDistanceNm = UTILS.MetersToNM(previousWaypoint.coordinate:Get2DDistance(waypoint.coordinate))
+      totalDistanceNm = totalDistanceNm + legDistanceNm
+      legSpeedKnots = self:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legDistanceNm)
+    end
 
     if nextWaypoint then
       trueCourse = waypoint.coordinate:HeadingTo(nextWaypoint.coordinate)
-      legDistanceNm = UTILS.MetersToNM(waypoint.coordinate:Get2DDistance(nextWaypoint.coordinate))
     end
 
     table.insert(lines, string.format(
-      "%02d %-10s %-16s CRS %s LEG %s",
+      "[%02d] %s %s: ALT %s ft, TOT %s, CRS %s, LEG %s NM, TAS %s kt, DIST %.1f NM",
       waypoint.order,
-      waypoint.type,
-      waypoint.name,
+      self:_FitText(waypoint.type, 10),
+      self:_FitText(waypoint.name, 12),
+      self:_FormatOptional(waypoint.altitudeFt),
+      self:_FormatWaypointTot(waypoint, rolexSeconds),
       self:_FormatHeading(trueCourse),
-      legDistanceNm and string.format("%.1fNM", legDistanceNm) or "---"
+      legDistanceNm and string.format("%.1f", legDistanceNm) or "---",
+      legSpeedKnots and string.format("%.0f", legSpeedKnots) or "---",
+      totalDistanceNm
     ))
   end
 
   return table.concat(lines, "\n")
 end
 
-function MosieNavigator:_ShowFlightPlanForGroup(group, plan)
+function MosieNavigator:_ShowFlightPlanForGroup(group, plan, rolexSeconds)
   if not group or not plan then
     return
   end
 
-  local text = self:_BuildSimplifiedFlightPlanMessage(plan, group:GetName())
+  local text = self:_BuildSimplifiedFlightPlanMessage(plan, group:GetName(), rolexSeconds)
   MESSAGE:New(text, self.Config.flightPlanMessageDuration, "Mosie Navigator"):ToGroup(group)
 end
 
 function MosieNavigator:_CreateGroupMenus(plans)
+  self.MenusCreated = self.MenusCreated or {}
+
   local assignments = self:_DiscoverGroupAssignments(plans)
+  local createdCount = 0
 
   for _, assignment in ipairs(assignments) do
     local group = assignment.group
     local plan = assignment.plan
-    local rootMenu = MENU_GROUP:New(group, self.Config.menuName)
-    MENU_GROUP_COMMAND:New(group, "Show FP", rootMenu, function()
-      MosieNavigator:_ShowFlightPlanForGroup(group, plan)
-    end)
+    local menuKey = assignment.groupName .. "::" .. assignment.planName
+
+    if not self.MenusCreated[menuKey] then
+      local rootMenu = MENU_GROUP:New(group, self.Config.menuName)
+      MENU_GROUP_COMMAND:New(group, "Show FP", rootMenu, function()
+        MosieNavigator:_ShowFlightPlanForGroup(group, plan, assignment.rolexSeconds)
+      end)
+      self.MenusCreated[menuKey] = true
+      createdCount = createdCount + 1
+    end
   end
 
-  if #assignments > 0 then
-    self:_Log(string.format("created navigation menu for %d assigned groups", #assignments))
+  if createdCount > 0 then
+    self:_Log(string.format("created navigation menu for %d assigned groups", createdCount))
   end
 end
 
-function MosieNavigator:_BuildFlightPlanTable(plan, groupName)
+function MosieNavigator:RefreshMenus()
+  if not self.Plans then
+    return
+  end
+
+  self:_CreateGroupMenus(self.Plans)
+end
+
+function MosieNavigator:_StartMenuRefreshScheduler()
+  if self.MenuRefreshScheduler then
+    return
+  end
+
+  self.MenuRefreshScheduler = SCHEDULER:New(nil, function()
+    MosieNavigator:RefreshMenus()
+  end, {}, self.Config.menuRefreshDelay, self.Config.menuRefreshInterval)
+
+  self:_Log(string.format(
+    "menu refresh scheduled every %d seconds",
+    self.Config.menuRefreshInterval
+  ))
+end
+
+function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
   local lines = {}
   local totalDistanceNm = 0
+  rolexSeconds = rolexSeconds or 0
 
   table.insert(lines, "MOSIE NAVIGATOR FLIGHT PLAN")
   table.insert(lines, "PLAN: " .. plan.name)
   if groupName then
     table.insert(lines, "GROUP: " .. groupName)
   end
+  if rolexSeconds ~= 0 then
+    table.insert(lines, "ROLEX: " .. self:_FormatRolex(rolexSeconds))
+  end
   table.insert(lines, "")
-  table.insert(lines, string.format("%-4s %-12s %-12s %-10s %-14s %-12s %-12s %-s", "NO", "LAT", "LON", "TRUE_CRS", "DIST_START_NM", "LEG_DIST_NM", "TYPE", "NAME"))
-  table.insert(lines, string.rep("-", 98))
+  table.insert(lines, string.format(
+    "%-2s %-10s %-12s %10s %11s %5s %-5s %3s %6s %6s %6s",
+    "NO",
+    "TYPE",
+    "NAME",
+    "LAT",
+    "LON",
+    "ALTFT",
+    "TOT",
+    "CRS",
+    "LEG",
+    "TAS",
+    "DIST"
+  ))
+  table.insert(lines, string.rep("-", 86))
 
   for index, waypoint in ipairs(plan.waypoints) do
     local previousWaypoint = plan.waypoints[index - 1]
     local nextWaypoint = plan.waypoints[index + 1]
     local legDistanceNm = 0
+    local legSpeedKnots = nil
 
     if previousWaypoint then
       legDistanceNm = UTILS.MetersToNM(previousWaypoint.coordinate:Get2DDistance(waypoint.coordinate))
       totalDistanceNm = totalDistanceNm + legDistanceNm
+      legSpeedKnots = self:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legDistanceNm)
     end
 
     local trueCourse = nil
@@ -416,15 +706,18 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName)
     local lat, lon = self:_FormatCoordinate(waypoint.coordinate)
 
     table.insert(lines, string.format(
-      "%-4d %-12.6f %-12.6f %-10s %-14.1f %-12.1f %-12s %-s",
+      "%02d %-10s %-12s %10s %11s %5s %-5s %3s %6.1f %6s %6.1f",
       waypoint.order,
+      self:_FitText(waypoint.type, 10),
+      self:_FitText(waypoint.name, 12),
       lat,
       lon,
+      self:_FormatOptional(waypoint.altitudeFt),
+      self:_FormatWaypointTot(waypoint, rolexSeconds),
       self:_FormatHeading(trueCourse),
-      totalDistanceNm,
       legDistanceNm,
-      waypoint.type,
-      waypoint.name
+      legSpeedKnots and string.format("%.0f", legSpeedKnots) or "---",
+      totalDistanceNm
     ))
   end
 
@@ -434,7 +727,7 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName)
   return table.concat(lines, "\n") .. "\n"
 end
 
-function MosieNavigator:_WriteFlightPlanFile(plan, groupName)
+function MosieNavigator:_WriteFlightPlanFile(plan, groupName, rolexSeconds)
   if not io then
     self:_Log("cannot write flight plan file: io is not available")
     return
@@ -457,7 +750,7 @@ function MosieNavigator:_WriteFlightPlanFile(plan, groupName)
     return
   end
 
-  file:write(self:_BuildFlightPlanTable(plan, groupName))
+  file:write(self:_BuildFlightPlanTable(plan, groupName, rolexSeconds))
   file:close()
 
   self:_Log("wrote flight plan file: " .. path)
@@ -472,7 +765,7 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
 
   if #assignments > 0 then
     for _, assignment in ipairs(assignments) do
-      self:_WriteFlightPlanFile(assignment.plan, assignment.groupName)
+      self:_WriteFlightPlanFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
     end
     return
   end
@@ -488,6 +781,8 @@ function MosieNavigator:DrawDebug()
   self.MarkIds = self.MarkIds or {}
 
   local plans, beacons = self:_DiscoverZones()
+  self.Plans = plans
+
   local planIndex = 0
   local waypointCount = 0
 
@@ -514,8 +809,11 @@ end
 
 function MosieNavigator:Start()
   self.MarkIds = {}
+  self.MenusCreated = {}
+  self.InactiveGroupLogs = {}
   self:_Log("starting debug discovery")
   self:DrawDebug()
+  self:_StartMenuRefreshScheduler()
 end
 
 if MOSIE_NAVIGATOR_AUTO_START ~= false then

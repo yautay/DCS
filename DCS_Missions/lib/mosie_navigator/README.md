@@ -30,18 +30,27 @@ Mission-specific navigation data should be created as trigger zones in the DCS M
 Assign a DCS aircraft group to a plan by adding a plan tag to the group name:
 
 ```text
-<GROUP NAME> [MN:<PLAN>]
+<GROUP NAME> [MN:<PLAN>][__R<H:MM|H:MM:SS|M>]
 ```
 
 Examples:
 
 ```text
 MOSQUITO 1-1 [MN:JERICHO]
-MOSQUITO 1-2 [MN:JERICHO]
+MOSQUITO 1-2 [MN:JERICHO]__R0:05
+MOSQUITO 1-3 [MN:JERICHO]__R0:00:30
 SPITFIRE 2-1 [MN:ESCORT]
 ```
 
 `PLAN` must match the plan identifier from trigger zones, for example `MN_JERICHO_01_TAKE_OFF_Tangmere` uses plan `JERICHO`.
+
+`__R...` is an optional group ROLEX offset. It shifts all displayed and exported TOT values for that group only. Examples:
+
+- `__R5`: delay all TOT values by 5 minutes.
+- `__R0:05`: delay all TOT values by 5 minutes.
+- `__R0:00:30`: delay all TOT values by 30 seconds.
+
+ROLEX does not change calculated TAS, because every waypoint TOT in that group is shifted by the same amount.
 
 For independent player state later, prefer one client aircraft per DCS group.
 
@@ -57,20 +66,27 @@ F10 Other > Mosie Navigator > Show FP
 
 `Show FP` displays a simplified flight plan for that group.
 
+Menus are refreshed after mission start and then periodically, so client aircraft that become active after a player enters a slot should receive the menu shortly after spawning.
+
 It also writes one text navlog per assigned group. If no group assignments are found, it writes one fallback debug navlog per discovered plan. By default files are written to:
 
 ```text
 <Saved Games DCS>/Logs/MosieNavigator_<GROUP>_<PLAN>.txt
 ```
 
-The navlog is a plain ASCII table with:
+The navlog is a single compact plain ASCII table with:
 
 - waypoint number
-- latitude
-- longitude
+- latitude in decimal minutes format, for example `N51 19.43`
+- longitude in decimal minutes format, for example `E000 01.60`
 - true course from the waypoint to the next waypoint
 - cumulative distance from start in NM
 - leg distance from previous waypoint in NM
+- planned altitude, if defined with `__A`
+- planned TOT, if defined with `__T`
+- calculated leg TAS in knots, if both ends of the leg define `__T`
+
+For assigned groups with `__R...`, `Show FP` and the generated group navlog show ROLEX-adjusted TOT values.
 
 By default the script starts automatically. To disable auto-start, set this before loading the file:
 
@@ -98,7 +114,7 @@ Flight plans are discovered from trigger zone names.
 Use this format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>]
 ```
 
 Fields:
@@ -108,6 +124,10 @@ Fields:
 - `ORDER`: zero-padded waypoint order, for example `01`, `02`, `03`.
 - `TYPE`: one of the supported waypoint types.
 - `NAME`: optional human-readable waypoint name without spaces. If omitted, the waypoint type is used as the display name.
+- `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`.
+- `__T<TOT>`: optional planned time on target for that waypoint, using `HH:MM` or `HH:MM:SS`, for example `__T14:30`.
+
+If both ends of a leg have `__T`, Mosie Navigator calculates the required leg TAS in knots from leg distance and elapsed planned time. If either waypoint has no `__T`, TAS for that leg is shown as `---`.
 
 Example:
 
@@ -120,6 +140,16 @@ MN_JERICHO_05_INGRESS_IP
 MN_JERICHO_06_TARGET_Prison
 MN_JERICHO_07_EGRESS_Egress
 MN_JERICHO_08_LANDING_Tangmere
+```
+
+Example with planned altitude and time on target:
+
+```text
+MN_JERICHO_01_TAKE_OFF_Tangmere__A0__T14:00
+MN_JERICHO_02_NAV_Channel__A500__T14:12
+MN_JERICHO_05_INGRESS_IP__A50__T14:28
+MN_JERICHO_06_TARGET_Prison__A50__T14:30
+MN_JERICHO_08_LANDING_Tangmere__A0
 ```
 
 Supported waypoint types:

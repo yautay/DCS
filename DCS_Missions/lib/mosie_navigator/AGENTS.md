@@ -22,18 +22,21 @@ This directory defines the trigger-zone contract for the future Mosie Navigator 
 Assign a DCS group to a plan by adding this tag to the group name:
 
 ```text
-<GROUP NAME> [MN:<PLAN>]
+<GROUP NAME> [MN:<PLAN>][__R<H:MM|H:MM:SS|M>]
 ```
 
 Examples:
 
 ```text
 MOSQUITO 1-1 [MN:JERICHO]
-MOSQUITO 1-2 [MN:JERICHO]
+MOSQUITO 1-2 [MN:JERICHO]__R0:05
+MOSQUITO 1-3 [MN:JERICHO]__R0:00:30
 SPITFIRE 2-1 [MN:ESCORT]
 ```
 
 `PLAN` must match a plan identifier discovered from `MN_` trigger zones.
+
+`__R...` is an optional group ROLEX delay that shifts all displayed/exported TOT values for that group only. Accepted examples: `__R5`, `__R0:05`, `__R0:00:30`. It must not change calculated TAS because the whole plan is shifted by the same amount.
 
 ## Flight Plan Trigger Zone Contract
 
@@ -42,7 +45,7 @@ Flight plans are discovered from trigger zone names.
 Required format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>]
 ```
 
 Fields:
@@ -52,6 +55,10 @@ Fields:
 - `ORDER`: zero-padded waypoint order.
 - `TYPE`: waypoint type enum.
 - `NAME`: optional human-readable waypoint name without spaces. If omitted, the waypoint type is used as the display name.
+- `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`.
+- `__T<TOT>`: optional planned time on target, using `HH:MM` or `HH:MM:SS`, for example `__T14:30`.
+
+If both ends of a leg define `__T`, `MosieNavigator.lua` may calculate required leg TAS in knots. If either end has no `__T`, TAS for that leg must be omitted or displayed as `---`.
 
 Example:
 
@@ -64,6 +71,13 @@ MN_JERICHO_05_INGRESS_IP
 MN_JERICHO_06_TARGET_Prison
 MN_JERICHO_07_EGRESS_Egress
 MN_JERICHO_08_LANDING_Tangmere
+```
+
+Optional planned altitude and TOT example:
+
+```text
+MN_JERICHO_05_INGRESS_IP__A50__T14:28
+MN_JERICHO_06_TARGET_Prison__A50__T14:30
 ```
 
 Allowed waypoint `type` values:
@@ -123,6 +137,7 @@ Flight plan zones must not define beacons. Beacon zones must not assign beacons 
 
 - `MosieNavigator.lua` may discover zones and draw F10 debug markup.
 - `MosieNavigator.lua` may write plain text navlog files for discovered plans.
+- `MosieNavigator.lua` may periodically refresh group menus for client aircraft that become active after mission start.
 - It may depend on MOOSE being loaded before it.
 - It must not require YAML files.
 - It must not implement player navigation state until explicitly requested.
