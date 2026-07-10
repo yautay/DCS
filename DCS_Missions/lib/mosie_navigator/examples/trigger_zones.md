@@ -23,19 +23,19 @@ Assigned groups receive a Mosie Navigator F10 menu with `Show FP`, active naviga
 Use this format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>][__S<GS_KT>]
 ```
 
 `PLAN` must not contain underscores. Use names like `JERICHO`, `ESCORT`, or `MOSSIE1`.
 `NAME` is optional. If omitted, the waypoint type is used as the display name.
-`__A<ALT_FT>` and `__T<TOT>` are optional. If two adjacent waypoints both define `__T`, Mosie Navigator calculates the required leg TAS in knots.
+`__A<ALT_FT>` is optional. `__T<TOT>` is mandatory on `TAKE_OFF`; later `__T` tokens are timing constraints. `__S<GS_KT>` overrides speed; if omitted on `TAKE_OFF`, the default cruise speed is 240 mph / 208.6 kt.
 
 Example Operation Jericho plan:
 
 ```text
-MN_JERICHO_01_TAKE_OFF_Tangmere
+MN_JERICHO_01_TAKE_OFF_Tangmere__T12:00
 MN_JERICHO_02_NAV
-MN_JERICHO_03_RENDEZVOUS_Rendezvous
+MN_JERICHO_03_NAV_Checkpoint
 MN_JERICHO_04_HOLD_Hold
 MN_JERICHO_05_INGRESS_IP
 MN_JERICHO_06_TARGET_Prison
@@ -56,8 +56,8 @@ MN_JERICHO_08_LANDING_Tangmere__A0
 Example escort plan:
 
 ```text
-MN_ESCORT_01_TAKE_OFF_Tangmere
-MN_ESCORT_02_RENDEZVOUS_Rendezvous
+MN_ESCORT_01_TAKE_OFF_Tangmere__T12:00
+MN_ESCORT_02_NAV_Checkpoint
 MN_ESCORT_03_NAV_CoverNorth
 MN_ESCORT_04_EGRESS_Return
 MN_ESCORT_05_LANDING_Tangmere

@@ -29,33 +29,84 @@ function MosieNavigator:_ConvertIasToTas(iasKt, altitudeFt)
 end
 
 function MosieNavigator:_MatchProfile(iasKt, altFt)
-  local aircraft = self.Aircraft
-  local candidates = {}
+  return self:_EstimateFuelProfile(iasKt, altFt)
+end
 
-  for _, p in ipairs(aircraft.profiles) do
-    if p.altMinFt and altFt < p.altMinFt then
-      -- skip
-    elseif p.altMaxFt and altFt > p.altMaxFt then
-      -- skip
-    elseif iasKt < p.iasKtMin or iasKt > p.iasKtMax then
-      -- skip
-    else
-      table.insert(candidates, p)
+function MosieNavigator:_GetEngineSettingById(id)
+  for _, setting in ipairs(self.Aircraft.engineSettings or {}) do
+    if setting.id == id then
+      return setting
+    end
+  end
+  return nil
+end
+
+function MosieNavigator:_GetFuelCurveSettings()
+  local curve = {}
+  for _, id in ipairs(self.Aircraft.fuelCurveSettingIds or {}) do
+    local setting = self:_GetEngineSettingById(id)
+    if setting and setting.fuelImpGph and setting.seaLevelIasKt then
+      table.insert(curve, setting)
     end
   end
 
-  if #candidates == 0 then
-    return nil
+  table.sort(curve, function(a, b)
+    return a.seaLevelIasKt < b.seaLevelIasKt
+  end)
+
+  return curve
+end
+
+function MosieNavigator:_FuelProfileName(a, b)
+  local aName = a.profileCode or a.profileName or a.id
+  if not b or a.id == b.id then
+    return aName
+  end
+  return aName .. "-" .. (b.profileCode or b.profileName or b.id)
+end
+
+function MosieNavigator:_EstimateFuelProfile(iasKt, altFt)
+  local curve = self:_GetFuelCurveSettings()
+
+  if #curve == 0 then
+    return { name = "fuel_unknown", burnImpGph = 0, interpolated = false }
   end
 
-  local best = candidates[1]
-  for i = 2, #candidates do
-    if candidates[i].burnImpGph < best.burnImpGph then
-      best = candidates[i]
+  if iasKt <= curve[1].seaLevelIasKt then
+    return {
+      name = self:_FuelProfileName(curve[1]),
+      burnImpGph = curve[1].fuelImpGph,
+      interpolated = false,
+      fromSetting = curve[1],
+      toSetting = curve[1],
+    }
+  end
+
+  for i = 1, #curve - 1 do
+    local a = curve[i]
+    local b = curve[i + 1]
+    if iasKt <= b.seaLevelIasKt then
+      local span = b.seaLevelIasKt - a.seaLevelIasKt
+      local ratio = span > 0 and ((iasKt - a.seaLevelIasKt) / span) or 0
+      local burn = a.fuelImpGph + ratio * (b.fuelImpGph - a.fuelImpGph)
+      return {
+        name = self:_FuelProfileName(a, b),
+        burnImpGph = burn,
+        interpolated = ratio > 0 and ratio < 1,
+        fromSetting = a,
+        toSetting = b,
+      }
     end
   end
 
-  return best
+  local last = curve[#curve]
+  return {
+    name = self:_FuelProfileName(last),
+    burnImpGph = last.fuelImpGph,
+    interpolated = false,
+    fromSetting = last,
+    toSetting = last,
+  }
 end
 
 function MosieNavigator:_ClampSpeed(requiredIasKt, warnings, context)

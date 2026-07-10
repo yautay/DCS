@@ -1,10 +1,5 @@
 function MosieNavigator:_ParseTimeOnTarget(value)
-  local hours, minutes, seconds = string.match(value or "", "^(%d%d?):(%d%d):(%d%d)$")
-
-  if not hours then
-    hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
-    seconds = "0"
-  end
+  local hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
 
   if not hours or not minutes then
     return nil
@@ -12,13 +7,12 @@ function MosieNavigator:_ParseTimeOnTarget(value)
 
   hours = tonumber(hours)
   minutes = tonumber(minutes)
-  seconds = tonumber(seconds ~= "" and seconds or "0")
 
-  if hours > 23 or minutes > 59 or seconds > 59 then
+  if hours > 23 or minutes > 59 then
     return nil
   end
 
-  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60 + seconds
+  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60
 end
 
 function MosieNavigator:_ParseRolexDuration(value)
@@ -101,6 +95,10 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
   if waypointType == "TAKE" and tokens[5] == "OFF" then
     waypointType = "TAKE_OFF"
     nameStartIndex = 6
+  end
+
+  if waypointType == "LAND" then
+    waypointType = "LANDING"
   end
 
   if not plan or not order or not waypointType or not self.WaypointTypes[waypointType] then

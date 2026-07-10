@@ -349,9 +349,8 @@ suite("ParseTimeOnTarget", function()
     local text, sec = M:_ParseTimeOnTarget("14:30")
     assertEq(text, "14:30"); assertEq(sec, 14 * 3600 + 30 * 60)
   end)
-  it("parses HH:MM:SS", function()
-    local text, sec = M:_ParseTimeOnTarget("14:30:45")
-    assertEq(text, "14:30"); assertEq(sec, 14 * 3600 + 30 * 60 + 45)
+  it("rejects HH:MM:SS", function()
+    assertNil(M:_ParseTimeOnTarget("14:30:45"))
   end)
   it("rejects invalid", function()
     assertNil(M:_ParseTimeOnTarget("garbage"))
@@ -489,8 +488,8 @@ suite("ParseWaypointZoneName", function()
     assertEq(wp.type, "NAV"); assertEq(wp.name, "NAV")
   end)
   it("with NAME", function()
-    local wp = M:_ParseWaypointZoneName("MN_JERICHO_03_RENDEZVOUS_Rendezvous")
-    assertEq(wp.name, "Rendezvous")
+    local wp = M:_ParseWaypointZoneName("MN_JERICHO_03_NAV_Checkpoint")
+    assertEq(wp.name, "Checkpoint")
   end)
   it("TAKE_OFF with NAME", function()
     local wp = M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF_Tangmere")
@@ -499,6 +498,12 @@ suite("ParseWaypointZoneName", function()
   it("TAKE_OFF without NAME", function()
     local wp = M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF")
     assertEq(wp.type, "TAKE_OFF"); assertEq(wp.name, "TAKE_OFF")
+  end)
+  it("LAND alias normalizes to LANDING", function()
+    local wp = M:_ParseWaypointZoneName("MN_JERICHO_08_LAND_Tangmere")
+    assertNotNil(wp)
+    assertEq(wp.type, "LANDING")
+    assertEq(wp.name, "Tangmere")
   end)
   it("A and T metadata", function()
     local wp = M:_ParseWaypointZoneName("MN_JERICHO_05_INGRESS_IP__A50__T14:28")
@@ -527,8 +532,11 @@ suite("ParseWaypointZoneName", function()
     assertEq(M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF").nameExplicit, false)
   end)
   it("nameExplicit true when explicit name present", function()
-    assertEq(M:_ParseWaypointZoneName("MN_JERICHO_03_RENDEZVOUS_Rendezvous").nameExplicit, true)
+    assertEq(M:_ParseWaypointZoneName("MN_JERICHO_03_NAV_Checkpoint").nameExplicit, true)
     assertEq(M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF_Tangmere").nameExplicit, true)
+  end)
+  it("rejects removed RENDEZVOUS type", function()
+    assertNil(M:_ParseWaypointZoneName("MN_JERICHO_03_RENDEZVOUS_Rendezvous"))
   end)
   it("__S token parsed into speedKt", function()
     local wp = M:_ParseWaypointZoneName("MN_JERICHO_02_NAV__S180")
@@ -974,45 +982,58 @@ suite("CSV TOT formatting", function()
   it("HH:MM when seconds=0", function()
     assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 14 * 3600 + 30 * 60}), "14:30")
   end)
-  it("HH:MM:SS when seconds > 0", function()
-    assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 14 * 3600 + 30 * 60 + 45}), "14:30:45")
+  it("rounds seconds to nearest minute", function()
+    assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 14 * 3600 + 30 * 60 + 45}), "14:31")
   end)
   it("zero-pads single-digit hour", function()
     assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 5 * 3600}), "05:00")
   end)
 end)
 
-suite("MatchProfile", function()
-  it("econ_low: IAS 200 at 5000 ft", function()
-    local p = M:_MatchProfile(200, 5000)
-    assertNotNil(p, "expected profile match")
-    assertEq(p.name, "econ_low")
+suite("Fuel profile interpolation", function()
+  it("stores six engine settings", function()
+    assertEq(#M.Aircraft.engineSettings, 6)
   end)
-  it("econ_high: IAS 175 at 15000 ft", function()
-    local p = M:_MatchProfile(175, 15000)
-    assertNotNil(p)
-    assertEq(p.name, "econ_high")
+  it("stores takeoff/emergency +18 without fuel consumption", function()
+    local s = M:_GetEngineSettingById("takeoff_emergency_18")
+    assertNotNil(s)
+    assertNil(s.fuelImpGph)
   end)
-  it("fast_low: IAS 225 at 3000 ft", function()
-    local p = M:_MatchProfile(225, 3000)
-    assertNotNil(p)
-    assertEq(p.name, "fast_low")
+  it("stores takeoff +12 and cruise weak fuel values", function()
+    assertEq(M:_GetEngineSettingById("takeoff_12").fuelImpGph, 230)
+    assertEq(M:_GetEngineSettingById("cruise_weak").fuelImpGph, 84)
   end)
-  it("combat: IAS 250 at 8000 ft", function()
-    local p = M:_MatchProfile(250, 8000)
-    assertNotNil(p)
-    assertEq(p.name, "combat")
+  it("uses four route fuel curve settings", function()
+    local curve = M:_GetFuelCurveSettings()
+    assertEq(#curve, 4)
+    assertEq(curve[1].id, "cruise_weak")
+    assertEq(curve[4].id, "max_climb")
   end)
-  it("no match: IAS 200 at 15000 ft (econ_high alt range, IAS out)", function()
-    -- econ_high requires IAS 165-185; IAS 200 at 15000 ft has no match
-    local p = M:_MatchProfile(200, 15000)
-    assertNil(p)
+  it("180 IAS uses cruise weak burn", function()
+    local p = M:_EstimateFuelProfile(180, 0)
+    assertEq(p.name, "CRZ")
+    assertNear(p.burnImpGph, 84, 0.01)
   end)
-  it("picks lowest burn on tie", function()
-    -- If two profiles somehow both matched, lowest burn wins.
-    -- econ_low and econ_high don't overlap; just verify no crash.
-    local p = M:_MatchProfile(185, 5000)
-    assertNotNil(p)
+  it("215 IAS uses max continuous weak burn", function()
+    local p = M:_EstimateFuelProfile(215, 0)
+    assertEq(p.name, "CRZ-MCW")
+    assertNear(p.burnImpGph, 126, 0.01)
+  end)
+  it("227.5 IAS interpolates between weak and rich continuous", function()
+    local p = M:_EstimateFuelProfile(227.5, 0)
+    assertEq(p.name, "MCW-MCR")
+    assertNear(p.burnImpGph, 143, 0.01)
+  end)
+  it("250 IAS interpolates between rich continuous and climb", function()
+    local p = M:_EstimateFuelProfile(250, 0)
+    assertEq(p.name, "MCR-CLB")
+    assertNear(p.burnImpGph, 175, 0.01)
+  end)
+  it("below curve clamps to lowest documented burn", function()
+    assertNear(M:_EstimateFuelProfile(140, 0).burnImpGph, 84, 0.01)
+  end)
+  it("above curve clamps to highest route burn", function()
+    assertNear(M:_EstimateFuelProfile(280, 0).burnImpGph, 190, 0.01)
   end)
 end)
 
@@ -1051,36 +1072,49 @@ suite("ComputePlan — validation", function()
   it("error when first WP not TAKE_OFF", function()
     local plan = makePlan({
       { "MN_TEST_01_NAV__T12:00__S180", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
     })
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.valid, false)
     assertMatch(r.error, "TAKE_OFF")
   end)
 
+  it("error when last WP not LANDING", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T12:00__S180", 0 },
+      { "MN_TEST_02_NAV", NM * 20 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, false)
+    assertMatch(r.error, "LANDING")
+  end)
+
   it("error when TAKE_OFF missing __T", function()
     local plan = makePlan({
       { "MN_TEST_01_TAKE_OFF__S180", 0 },
-      { "MN_TEST_02_NAV", NM * 20 },
+      { "MN_TEST_02_LANDING", NM * 20 },
     })
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.valid, false)
     assertMatch(r.error, "__T")
   end)
 
-  it("error when TAKE_OFF missing __S and no downstream __T", function()
+  it("valid when TAKE_OFF missing __S uses 240 mph default cruise speed", function()
     local plan = makePlan({
       { "MN_TEST_01_TAKE_OFF__T12:00", 0 },
-      { "MN_TEST_02_NAV", NM * 20 },
+      { "MN_TEST_02_LANDING", NM * 20 },
     })
     local r = M:_ComputePlan(plan, 0)
-    assertEq(r.valid, false)
-    assertMatch(r.error, "cannot compute speeds")
+    assertEq(r.valid, true)
+    assertNear(M.Aircraft.defaultCruiseSpeedKt, 208.554, 0.001)
+    assertNear(r.waypoints[2].legGsKt, M.Aircraft.defaultCruiseSpeedKt, 0.01)
   end)
 
   it("valid when TAKE_OFF missing __S but has downstream __T pair", function()
     local plan = makePlan({
       { "MN_TEST_01_TAKE_OFF__T12:00", 0 },
       { "MN_TEST_02_TARGET__T12:10", NM * 20 },
+      { "MN_TEST_03_LANDING", NM * 30 },
     })
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.valid, true)
@@ -1503,14 +1537,58 @@ suite("ComputePlan — fuel calculation", function()
     assertNear(r.fuel.totalImpGal, expected, 0.01)
   end)
 
+  it("reserve uses 30 minutes at cruise weak burn", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.fuel.reserveImpGal, 42, 0.01)
+  end)
+
   it("margin = tank - total", function()
     local r = M:_ComputePlan(plan, 0)
     assertNear(r.fuel.marginImpGal, r.fuel.tankImpGal - r.fuel.totalImpGal, 0.01)
   end)
 
-  it("tank capacity matches Aircraft config", function()
+  it("tank capacity matches recommended DCS configuration", function()
     local r = M:_ComputePlan(plan, 0)
-    assertEq(r.fuel.tankImpGal, M.Aircraft.fuel.tankCapacity)
+    assertNear(r.fuel.tankImpGal, r.fuel.dcs.capacityGal, 0.01)
+  end)
+
+  it("DCS fuel conversion matches 200 gal = 1443 lbs", function()
+    assertNear(M:_FuelGalToLb(200), 1443, 0.01)
+  end)
+
+  it("DCS internal fuel capacity comes from 3269 lbs", function()
+    assertNear(M:_FuelLbToGal(3269), 453.1, 0.1)
+  end)
+
+  it("DCS short plan uses internal percent with +1 percent buffer", function()
+    local dcs = M:_BuildDcsFuelRecommendation(93.6)
+    assertEq(dcs.dropTankLabel, "NONE")
+    assertEq(dcs.internalPercent, 22)
+  end)
+
+  it("DCS recommendation uses 2x50 tanks above internal capacity", function()
+    local internal = M:_FuelLbToGal(M.Aircraft.fuel.internalFuelLb)
+    local dcs = M:_BuildDcsFuelRecommendation(internal + 50)
+    assertEq(dcs.internalPercent, 100)
+    assertEq(dcs.dropTankLabel, "2x50 GAL")
+  end)
+
+  it("DCS recommendation uses 2x100 tanks above internal plus 2x50 capacity", function()
+    local internal = M:_FuelLbToGal(M.Aircraft.fuel.internalFuelLb)
+    local dcs = M:_BuildDcsFuelRecommendation(internal + 150)
+    assertEq(dcs.internalPercent, 100)
+    assertEq(dcs.dropTankLabel, "2x100 GAL")
+  end)
+
+  it("DCS recommendation flags fuel above internal plus 2x100 capacity", function()
+    local internal = M:_FuelLbToGal(M.Aircraft.fuel.internalFuelLb)
+    local dcs = M:_BuildDcsFuelRecommendation(internal + 250)
+    assertEq(dcs.dropTankLabel, "2x100 GAL")
+    assertEq(dcs.exceedsCapacity, true)
+  end)
+
+  it("HOLD orbit burn uses cruise weak documented burn", function()
+    assertEq(M.Aircraft.holdBurnImpGph, 84)
   end)
 end)
 
@@ -1773,110 +1851,174 @@ local function splitLines(text)
   return lines
 end
 
+suite("Build flight plan messages", function()
+  it("F10 flight plan uses operational heading and speed columns", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_NAV", NM * 20 },
+      { "MN_TEST_03_LANDING", NM * 40 },
+    })
+    local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
+    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+HDG%(TRUE%)%s+VAR%s+HDG%(MAG%)%s+SOG%s+DIST%s+TIME%s+ETA")
+    assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:00")
+    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05")
+    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:11")
+  end)
+
+  it("F10 flight plan includes multi-line fuel summary", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
+    assertMatch(msg, "FUEL:\n  TAXI:%s+15%.0 IMP GAL")
+    assertMatch(msg, "\n  ROUTE:%s+%d+%.%d IMP GAL")
+    assertMatch(msg, "\n  RESERVE:%s+%d+%.%d IMP GAL%s+%(30 min%)")
+    assertMatch(msg, "\n  LANDING:%s+5%.0 IMP GAL")
+    assertMatch(msg, "\n  TOTAL:%s+%d+%.%d IMP GAL")
+    assertMatch(msg, "DCS FUEL:")
+    assertMatch(msg, "\n  REQUIRED:%s+%d+%.%d GAL /%s+%d+ LBS")
+    assertMatch(msg, "\n  INTERNAL:%s+%d+%%%s+%(3269 LBS max%)")
+    assertMatch(msg, "\n  DROP:%s+NONE")
+    assertTrue(not string.find(msg, "CAPACITY", 1, true), "DCS FUEL should not display capacity")
+    assertTrue(not string.find(msg, "MARGIN", 1, true), "DCS FUEL should not display margin")
+  end)
+
+  it("TXT navlog includes DCS fuel recommendation", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local text = M:_BuildFlightPlanTable(plan, nil, 0)
+    assertMatch(text, "DCS FUEL:")
+    assertMatch(text, "INTERNAL:%s+%d+%%")
+    assertMatch(text, "DROP:%s+NONE")
+    assertTrue(not string.find(text, "CAPACITY", 1, true), "DCS FUEL should not display capacity")
+    assertTrue(not string.find(text, "MARGIN", 1, true), "DCS FUEL should not display margin")
+  end)
+
+  it("TXT navlog ETA column uses minute-rounded display ETA without shifting COG", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_NAV", NM * 20 },
+      { "MN_TEST_03_LANDING", NM * 40 },
+    })
+    local lines = splitLines(M:_BuildFlightPlanTable(plan, nil, 0))
+    local header, row
+    for _, line in ipairs(lines) do
+      if string.find(line, "HDG(TRUE)", 1, true) then header = line end
+      if string.find(line, "02 NAV", 1, true) then row = line end
+    end
+    assertNotNil(header)
+    assertNotNil(row)
+    assertNotNil(string.find(header, "COG%s+HDG%(TRUE%)%s+VAR%s+HDG%(MAG%)"))
+    assertNotNil(string.find(row, "000%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05"))
+  end)
+
+  it("TXT navlog marks inherited ALT and IAS with star", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_NAV", NM * 20 },
+      { "MN_TEST_03_LANDING__S200", NM * 40 },
+    })
+    local text = M:_BuildFlightPlanTable(plan, nil, 0)
+    assertMatch(text, "02 NAV%s+1500%*%s+253%*")
+    assertMatch(text, "03 LANDING%s+1500%*%s+230%s")
+  end)
+end)
+
 suite("Build flight plan CSV", function()
-  it("headers and rows for minimal plan", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {
-        makeWaypointFromZone("MN_JERICHO_01_TAKE_OFF_Tangmere", {lat = 50.85, lon = -0.7}),
-        makeWaypointFromZone("MN_JERICHO_02_NAV", {lat = 50.9, lon = -0.65}),
-      },
-    }
+  it("headers and declared rows for plan", function()
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF_Tangmere__T07:00__S220__A1500", 0, 50.85, -0.7 },
+      { "MN_JERICHO_02_NAV", NM * 20, 50.9, -0.65 },
+      { "MN_JERICHO_03_LANDING", NM * 40, 50.95, -0.6 },
+    })
+    plan.name = "JERICHO"
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
     assertEq(lines[1], "# PLAN,JERICHO")
     assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
-    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,,,")
+    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,1500,07:00,220")
     assertEq(lines[4], "2,NAV,,50.900000,-0.650000,,,")
   end)
 
-  it("GROUP header included when groupName provided", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
-    }
-    local csv = M:_BuildFlightPlanCsv(plan, "MOSQUITO 1-1", 0)
+  it("GROUP and ROLEX headers are not included", function()
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_JERICHO_02_LANDING", NM * 20 },
+    })
+    plan.name = "JERICHO"
+    local csv = M:_BuildFlightPlanCsv(plan, "MOSQUITO 1-1", 300)
     local lines = splitLines(csv)
     assertEq(lines[1], "# PLAN,JERICHO")
-    assertEq(lines[2], "# GROUP,MOSQUITO 1-1")
-    assertEq(lines[3], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
-  end)
-
-  it("ROLEX_SEC header included only when non-zero", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
-    }
-    local csvZero = M:_BuildFlightPlanCsv(plan, "GRP", 0)
-    assertTrue(not string.find(csvZero, "ROLEX_SEC"), "ROLEX header should be absent")
-
-    local csvRolex = M:_BuildFlightPlanCsv(plan, "GRP", 300)
-    assertMatch(csvRolex, "# ROLEX_SEC,300")
+    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
+    assertTrue(not string.find(csv, "GROUP"), "CSV should not include group headers")
+    assertTrue(not string.find(csv, "ROLEX_SEC"), "CSV should not include ROLEX headers")
   end)
 
   it("empty NAME for zones with no explicit name", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
-    }
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_JERICHO_02_NAV", NM * 20 },
+      { "MN_JERICHO_03_LANDING", NM * 40 },
+    })
+    plan.name = "JERICHO"
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[3], "^2,NAV,,")  -- NAME empty, then coords, ALT, TOT, SPEED_KT all follow
+    assertMatch(lines[4], "^2,NAV,,")  -- NAME empty, then coords, ALT, TOT, SPEED_KT all follow
   end)
 
   it("explicit NAME preserved", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_03_RENDEZVOUS_Rendezvous")},
-    }
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_JERICHO_02_NAV_Checkpoint", NM * 20 },
+      { "MN_JERICHO_03_LANDING", NM * 40 },
+    })
+    plan.name = "JERICHO"
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[3], "^3,RENDEZVOUS,Rendezvous,")
+    assertMatch(lines[4], "^2,NAV,Checkpoint,")
   end)
 
-  it("altitude and TOT round-trip; SPEED_KT empty when no __S", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_05_INGRESS_IP__A50__T14:28")},
-    }
+  it("only declared altitude, TOT, and SPEED_KT are exported", function()
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF__A1500__T07:00__S220", 0 },
+      { "MN_JERICHO_02_NAV__A500__S200", NM * 20 },
+      { "MN_JERICHO_03_TARGET__T07:30", NM * 30 },
+      { "MN_JERICHO_04_LANDING", NM * 40 },
+    })
+    plan.name = "JERICHO"
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[3], "^5,INGRESS,IP,[^,]+,[^,]+,50,14:28,$")
-  end)
-
-  it("__S token round-trips as SPEED_KT", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_05_INGRESS_IP__A50__T14:28__S180")},
-    }
-    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
-    local lines = splitLines(csv)
-    assertMatch(lines[3], ",180$")
-  end)
-
-  it("missing altitude and TOT stay empty; SPEED_KT empty too", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
-    }
-    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
-    local lines = splitLines(csv)
-    assertMatch(lines[3], ",,,$")
+    assertMatch(lines[4], "^2,NAV,,[^,]+,[^,]+,500,,200$")
+    assertMatch(lines[5], "^3,TARGET,,[^,]+,[^,]+,,07:30,$")
+    assertMatch(lines[6], "^4,LANDING,,[^,]+,[^,]+,,,$")
   end)
 
   it("row count matches waypoint count", function()
-    local plan = {
-      name = "JERICHO",
-      waypoints = {
-        makeWaypointFromZone("MN_JERICHO_01_TAKE_OFF"),
-        makeWaypointFromZone("MN_JERICHO_02_NAV"),
-        makeWaypointFromZone("MN_JERICHO_03_RENDEZVOUS_RV"),
-      },
-    }
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_JERICHO_02_NAV", NM * 20 },
+      { "MN_JERICHO_03_LANDING", NM * 40 },
+    })
+    plan.name = "JERICHO"
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
     -- 1 PLAN header + 1 column header + 3 waypoint rows
     assertEq(#lines, 5)
+  end)
+
+  it("CSV exports declared rows without navlog validation", function()
+    local plan = makePlan({
+      { "MN_JERICHO_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_JERICHO_02_NAV", NM * 20 },
+    })
+    plan.name = "JERICHO"
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertEq(#lines, 4)
+    assertTrue(not string.find(csv, "# ERROR", 1, true), "CSV declaration export should not emit compute errors")
   end)
 end)
 
@@ -1956,8 +2098,8 @@ suite("WriteFlightPlanFiles flag interaction", function()
       assertEq(#txtCalls, 1)
       assertEq(#csvCalls, 1)
       assertEq(txtCalls[1].groupName, "MOSQUITO 1-1")
-      assertEq(csvCalls[1].groupName, "MOSQUITO 1-1")
-      assertEq(csvCalls[1].rolexSeconds, 300)
+      assertNil(csvCalls[1].groupName)
+      assertNil(csvCalls[1].rolexSeconds)
     end)
   end)
 
@@ -1974,6 +2116,19 @@ suite("WriteFlightPlanFiles flag interaction", function()
       M:_WriteFlightPlanFiles(samplePlans)
       assertEq(#txtCalls, 0)
       assertEq(#csvCalls, 1)
+      assertEq(csvCalls[1].plan, "JERICHO")
+      assertNil(csvCalls[1].groupName)
+    end)
+  end)
+
+  it("CSV writer is called once per plan, not per assigned group", function()
+    local secondAssignment = {plan = samplePlan, groupName = "MOSQUITO 1-2", rolexSeconds = 600}
+    withSpies({txt = true, csv = true, assignments = {sampleAssignment, secondAssignment}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 2)
+      assertEq(#csvCalls, 1)
+      assertEq(csvCalls[1].plan, "JERICHO")
+      assertNil(csvCalls[1].groupName)
     end)
   end)
 

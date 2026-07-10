@@ -1,3 +1,113 @@
+function MosieNavigator:_AppendFuelSummary(lines, fuel)
+  table.insert(lines, "FUEL:")
+  table.insert(lines, string.format("  TAXI:    %6.1f IMP GAL", fuel.taxiImpGal))
+  table.insert(lines, string.format("  ROUTE:   %6.1f IMP GAL", fuel.routeImpGal))
+  table.insert(lines, string.format("  RESERVE: %6.1f IMP GAL  (%d min)",
+    fuel.reserveImpGal, self.Aircraft.fuel.reserveMinutes))
+  table.insert(lines, string.format("  LANDING: %6.1f IMP GAL", fuel.landingImpGal))
+  table.insert(lines, string.format("  TOTAL:   %6.1f IMP GAL", fuel.totalImpGal))
+
+  local dcs = fuel.dcs
+  if dcs then
+    table.insert(lines, "")
+    table.insert(lines, "DCS FUEL:")
+    table.insert(lines, string.format("  REQUIRED: %6.1f GAL / %5.0f LBS", dcs.requiredGal, dcs.requiredLb))
+    table.insert(lines, string.format("  INTERNAL: %3d%%  (%4.0f LBS max)", dcs.internalPercent, dcs.internalFuelLb))
+    table.insert(lines, string.format("  DROP:     %s", dcs.dropTankLabel))
+  end
+end
+
+function MosieNavigator:_FormatVariation(value)
+  if value == nil then
+    return "---"
+  end
+
+  return string.format("%+.1f", value)
+end
+
+function MosieNavigator:_FormatDisplayLegTime(seconds)
+  if not seconds then
+    return "---"
+  end
+
+  return string.format("%d", math.floor(seconds / 60 + 0.5))
+end
+
+function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
+  if compact then
+    table.insert(lines, "ID TY ALT   IASMPH TASKN COG HDGT  VAR  HDGM SOG DIST TIME ETA")
+    table.insert(lines, "----------------------------------------------------------------")
+  else
+    table.insert(lines, string.format(
+      "%-2s %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
+      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "HDG(TRUE)", "VAR", "HDG(MAG)", "SOG", "DIST", "TIME", "ETA"
+    ))
+    table.insert(lines, string.rep("-", 91))
+  end
+
+  for _, ow in ipairs(waypoints) do
+    local altStr = ow.resolvedAltFt ~= nil
+      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
+    local speedMark = ow.legSpeedInherited and "*" or ""
+    local iasMph = ow.legIasKt and (string.format("%.0f", self:_KnotsToMph(ow.legIasKt)) .. speedMark) or "---"
+    local tasStr = ow.legTasKt and string.format("%.0f", ow.legTasKt) or "---"
+    local cogStr = self:_FormatHeading(ow.trueCourse)
+    local hdgTrueStr = self:_FormatHeading(ow.headingTrue)
+    local varStr = self:_FormatVariation(ow.magneticVar)
+    local hdgMagStr = self:_FormatMagneticHeading(ow.headingTrue, ow.coordinate)
+    local sogStr = ow.legGsKt and string.format("%.0f", ow.legGsKt) or "---"
+    local distStr = ow.legDistNm and string.format("%.1f", ow.legDistNm) or "---"
+    local timeStr = self:_FormatDisplayLegTime(ow.legTimeSec)
+    local etaStr = self:_FormatDisplayEta(ow.etaSec)
+
+    if compact then
+      table.insert(lines, string.format(
+        "%02d %-2s %-5s %6s %5s %3s %4s %5s %4s %3s %4s %4s %5s",
+        ow.order,
+        self:_FormatWaypointTypeShort(ow.type),
+        altStr,
+        iasMph,
+        tasStr,
+        cogStr,
+        hdgTrueStr,
+        varStr,
+        hdgMagStr,
+        sogStr,
+        distStr,
+        timeStr,
+        etaStr
+      ))
+    else
+      table.insert(lines, string.format(
+        "%02d %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
+        ow.order,
+        self:_FitText(ow.type, 10),
+        altStr,
+        iasMph,
+        tasStr,
+        cogStr,
+        hdgTrueStr,
+        varStr,
+        hdgMagStr,
+        sogStr,
+        distStr,
+        timeStr,
+        etaStr
+      ))
+    end
+
+    if ow.holdDurationSec and ow.holdDurationSec > 0 then
+      local holdMin = math.floor(ow.holdDurationSec / 60 + 0.5)
+      local exitSec = (ow.etaSec + ow.holdDurationSec) % 86400
+      table.insert(lines, string.format(
+        "   orbit %d min @ %d IAS: %.1f gal  (exit %s)",
+        holdMin, self.Aircraft.holdIasKt,
+        ow.holdFuelImpGal or 0, self:_FormatDisplayEta(exitSec)
+      ))
+    end
+  end
+end
+
 function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
   rolexSeconds = rolexSeconds or 0
   local computed = self:_ComputePlan(plan, rolexSeconds)
@@ -16,38 +126,11 @@ function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolex
     return table.concat(lines, "\n")
   end
 
-  for _, ow in ipairs(computed.waypoints) do
-    local altStr  = ow.resolvedAltFt ~= nil
-      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
-    local gsStr   = ow.legGsKt  and string.format("%.0f", ow.legGsKt)  or "---"
-    local iasStr  = ow.legIasKt and string.format("%.0f", ow.legIasKt) or "---"
-    local profStr = ow.legProfile or "---"
-    local fuelStr = ow.legFuelImpGal and string.format("%.1f", ow.legFuelImpGal) or "---"
-
-    table.insert(lines, string.format(
-      "[%02d] %-10s %-12s  ALT %s  ETA %s  GS %s IAS %s  PROF %s  LEG %s gal",
-      ow.order,
-      self:_FitText(ow.type, 10),
-      self:_FitText(ow.name, 12),
-      altStr, self:_FormatClock(ow.etaSec), gsStr, iasStr, profStr, fuelStr
-    ))
-
-    if ow.holdDurationSec and ow.holdDurationSec > 0 then
-      local holdMin  = math.floor(ow.holdDurationSec / 60)
-      local holdSec2 = ow.holdDurationSec % 60
-      local exitSec  = (ow.etaSec + ow.holdDurationSec) % 86400
-      table.insert(lines, string.format(
-        "     orbit %d:%02d @ %d IAS: %.1f gal  (exit %s)",
-        holdMin, holdSec2, self.Aircraft.holdIasKt,
-        ow.holdFuelImpGal or 0, self:_FormatClock(exitSec)
-      ))
-    end
-  end
+  self:_AppendFlightPlanRows(lines, computed.waypoints, false)
 
   local f = computed.fuel
   table.insert(lines, "")
-  table.insert(lines, string.format("FUEL: %.1f / %.1f IMP GAL  (%.1f%% margin)",
-    f.totalImpGal, f.tankImpGal, f.marginPercent))
+  self:_AppendFuelSummary(lines, f)
 
   if #computed.warnings > 0 then
     table.insert(lines, "WARNINGS:")
@@ -163,64 +246,18 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
     return table.concat(lines, "\n") .. "\n"
   end
 
-  local hdr = string.format(
-    "%-2s %-10s %-12s %10s %11s %6s %5s %5s %5s %6s %5s %5s %-9s %6s %7s",
-    "NO","TYPE","NAME","LAT","LON","ALT","ETA","CRS_T","CRS_M","LEG","GS","IAS","PROF","FUEL","CUM"
-  )
-  table.insert(lines, hdr)
-  table.insert(lines, string.rep("-", string.len(hdr)))
-
   local totalDist = 0
   for _, ow in ipairs(computed.waypoints) do
-    local lat, lon = self:_FormatCoordinate(ow.coordinate)
-    local altStr  = ow.resolvedAltFt ~= nil
-      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
-    local etaStr  = self:_FormatClock(ow.etaSec)
-    local crsT    = self:_FormatHeading(ow.trueCourse)
-    local crsM    = self:_FormatMagneticHeading(ow.trueCourse, ow.coordinate)
-    local legStr  = ow.legDistNm    and string.format("%6.1f", ow.legDistNm)    or "   ---"
-    local gsStr   = ow.legGsKt      and string.format("%5.0f", ow.legGsKt)      or "  ---"
-    local iasStr  = ow.legIasKt     and string.format("%5.0f", ow.legIasKt)     or "  ---"
-    local profStr = self:_FitText(ow.legProfile or "---", 9)
-    local fuelStr = ow.legFuelImpGal and string.format("%6.1f", ow.legFuelImpGal) or "   ---"
-    local cumStr  = string.format("%7.1f", ow.fuelCumImpGal or 0)
-
     if ow.legDistNm then totalDist = totalDist + ow.legDistNm end
-
-    table.insert(lines, string.format(
-      "%02d %-10s %-12s %10s %11s %6s %5s %5s %5s %s %s %s %-9s %s %s",
-      ow.order,
-      self:_FitText(ow.type, 10),
-      self:_FitText(ow.name, 12),
-      lat, lon, altStr, etaStr, crsT, crsM, legStr, gsStr, iasStr, profStr, fuelStr, cumStr
-    ))
-
-    if ow.holdDurationSec and ow.holdDurationSec > 0 then
-      local holdMin  = math.floor(ow.holdDurationSec / 60)
-      local holdSec2 = ow.holdDurationSec % 60
-      local exitSec  = (ow.etaSec + ow.holdDurationSec) % 86400
-      table.insert(lines, string.format(
-        "   orbit %d:%02d @ %d IAS: %.1f gal  (exit %s)",
-        holdMin, holdSec2, self.Aircraft.holdIasKt,
-        ow.holdFuelImpGal or 0, self:_FormatClock(exitSec)
-      ))
-    end
   end
+
+  self:_AppendFlightPlanRows(lines, computed.waypoints, false)
 
   local f = computed.fuel
   table.insert(lines, "")
   table.insert(lines, string.format("TOTAL_DIST: %.1f NM", totalDist))
   table.insert(lines, "")
-  table.insert(lines, "FUEL:")
-  table.insert(lines, string.format("  TAXI:    %6.1f IMP GAL", f.taxiImpGal))
-  table.insert(lines, string.format("  ROUTE:   %6.1f IMP GAL", f.routeImpGal))
-  table.insert(lines, string.format("  RESERVE: %6.1f IMP GAL  (%d min)",
-    f.reserveImpGal, self.Aircraft.fuel.reserveMinutes))
-  table.insert(lines, string.format("  LANDING: %6.1f IMP GAL", f.landingImpGal))
-  table.insert(lines, string.format("  TOTAL:   %6.1f IMP GAL", f.totalImpGal))
-  table.insert(lines, string.format("  TANK:    %6.1f IMP GAL", f.tankImpGal))
-  table.insert(lines, string.format("  MARGIN:  %6.1f IMP GAL  (%.1f%%)",
-    f.marginImpGal, f.marginPercent))
+  self:_AppendFuelSummary(lines, f)
 
   if #computed.warnings > 0 then
     table.insert(lines, "")

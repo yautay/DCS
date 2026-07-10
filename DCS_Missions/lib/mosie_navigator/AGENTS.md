@@ -51,7 +51,7 @@ Flight plans are discovered from trigger zone names.
 Required format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<HH:MM[:SS]>][__S<GS_KT>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<HH:MM>][__S<GS_KT>]
 ```
 
 Fields:
@@ -62,19 +62,21 @@ Fields:
 - `TYPE`: waypoint type enum.
 - `NAME`: optional human-readable waypoint name without spaces. If omitted, the waypoint type is used as the display name.
 - `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`. On `TAKE_OFF` this sets the default cruise altitude for the whole plan; individual waypoints may override it.
-- `__T<HH:MM[:SS]>`: planned time (ETA) at this waypoint, for example `__T14:30` or `__T14:30:15`. **Mandatory on `TAKE_OFF`** (brake release time). On other waypoints it acts as a timing constraint for the flight plan algorithm (see Flight Plan Semantics).
-- `__S<GS_KT>`: planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint, for example `__S180`. On `TAKE_OFF` this sets the default cruise GS for the whole plan.
+- `__T<HH:MM>`: planned time (ETA) at this waypoint, for example `__T14:30`. **Mandatory on `TAKE_OFF`** (brake release time). On other waypoints it acts as a timing constraint for the flight plan algorithm (see Flight Plan Semantics).
+- `__S<GS_KT>`: planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint, for example `__S180`. On `TAKE_OFF` this overrides the default cruise GS for the whole plan.
 
 Only the suffixes `__A` and `__T` and `__S` are recognised. The legacy aliases `__ALT`, `__TOT` are **not** supported and will be logged as unknown tokens and ignored.
 
-A `TAKE_OFF` waypoint **must** have `__T`. A plan without `__T` on `TAKE_OFF` will not generate a flight plan. A plan without `__S` on `TAKE_OFF` and without any downstream `__T` pair to derive speed from will also fail to generate.
+A `TAKE_OFF` waypoint **must** have `__T`. A plan without `__T` on `TAKE_OFF` will not generate a flight plan. When `TAKE_OFF` has no `__S`, the plan default cruise speed is 240 mph, converted to 208.6 kt.
+
+The last waypoint in every plan **must** be `LANDING`. A discovered plan ending with any other waypoint type fails flight-plan generation.
 
 Example:
 
 ```text
 MN_JERICHO_01_TAKE_OFF_Tangmere__T12:00__S180__A500
 MN_JERICHO_02_NAV
-MN_JERICHO_03_RENDEZVOUS_Rendezvous
+MN_JERICHO_03_NAV_Checkpoint
 MN_JERICHO_04_HOLD_Hold
 MN_JERICHO_05_INGRESS_IP__A50__S200
 MN_JERICHO_06_TARGET_Prison__A50__T14:30
@@ -86,7 +88,6 @@ Allowed waypoint `type` values:
 
 - `TAKE_OFF`
 - `LANDING`
-- `RENDEZVOUS`
 - `INGRESS`
 - `TARGET`
 - `EGRESS`
@@ -95,17 +96,19 @@ Allowed waypoint `type` values:
 
 Use `INGRESS` for IP / initial point semantics. Do not add a separate `IP` or `INITIAL_POINT` type unless the contract is explicitly changed.
 
+`LAND` is accepted as a mission-editor convenience alias and is normalized to `LANDING`.
+
 ## Flight Plan Semantics
 
 For prose, examples, and a worked tutorial see **[FLIGHT_PLANS.md](FLIGHT_PLANS.md)**.
 
-The flight plan algorithm (`_ComputePlan`) runs on every navlog / F10 / CSV generation.
+The flight plan algorithm (`_ComputePlan`) runs on every navlog / F10 generation. Flight plan CSV is a declaration export and does not run `_ComputePlan`.
 
 **Altitude cascade.** `__A` on `TAKE_OFF` is the default cruise altitude. Each waypoint without its own `__A` inherits the previous waypoint's resolved altitude. Inherited values are marked with `*` in the navlog.
 
 **Speed resolution (per leg).** Each leg is classified relative to `__T` anchors:
 
-1. Segment with a HOLD anywhere in it (HOLD at `segStart`, in the interior, or at `segEnd`): each leg uses its `__S` override or the plan default GS. The HOLD absorbs any slack — legs are **not** re-derived from the time budget.
+1. Segment with a HOLD anywhere in it (HOLD at `segStart`, in the interior, or at `segEnd`): each leg uses its `__S` override or the plan default GS. The plan default is `TAKE_OFF __S`, or 240 mph / 208.6 kt when `TAKE_OFF __S` is absent. The HOLD absorbs any slack — legs are **not** re-derived from the time budget.
 2. Segment between two `__T` anchors with **no HOLD** at any position:
    - If all legs are FIXED (`__S` declared): `__T` wins — uniform derived GS used for all legs; any `__S` values are ignored (warning emitted).
    - If some legs are FIXED, others FREE: FIXED legs use their `__S`; FREE legs share the remaining time budget proportionally (averaged GS, clamped to envelope).
@@ -128,9 +131,11 @@ The flight plan algorithm (`_ComputePlan`) runs on every navlog / F10 / CSV gene
 
 ## Aircraft Profiles & Fuel
 
-`MosieNavigator.Aircraft` defines the Mosquito FB Mk VI performance table used for fuel estimation. Each profile covers an IAS range and altitude band and specifies a burn rate in Imperial gallons per hour. The flight plan algorithm matches each leg to a profile and accumulates fuel across the route.
+`MosieNavigator.Aircraft` defines Mosquito FB Mk VI Merlin 25 engine settings used for fuel estimation. Route fuel burn is interpolated by computed IAS between documented engine settings with provisional sea-level IAS reference points. Internal fuel profile codes use short enums (`CRZ`, `MCW`, `MCR`, `CLB`, or interpolated pairs like `MCW-MCR`). These IAS reference points are calibration data and may be refined after DCS testing.
 
-Fuel summary components: taxi allowance + route burn + HOLD orbit burn + reserve (30 min at lowest-burn profile) + landing allowance. A warning is emitted if the total exceeds tank capacity (546 IMP GAL).
+Fuel summary components: taxi allowance + interpolated route burn + HOLD orbit burn + reserve (30 min at lowest documented route burn) + landing allowance. HOLD orbit burn uses the documented cruise weak burn rate.
+
+DCS fuel recommendation uses Mosquito internal fuel `3269 lb`, fuel density `7.215 lb/gal`, and drop tank options `NONE`, `2x50 GAL`, or `2x100 GAL`. Internal-only recommendations round up to the next full percent and add a 1% buffer, capped at 100%. Displayed DCS fuel output contains `REQUIRED`, `INTERNAL`, and `DROP`; capacity and margin remain internal for warning logic. If total required fuel exceeds internal plus `2x100 GAL`, a warning is emitted.
 
 ## Beacon Trigger Zone Contract
 
@@ -171,30 +176,31 @@ Flight plan zones must not define beacons. Beacon zones must not assign beacons 
 - Coordinates for the primary workflow come from DCS Mission Editor trigger zone positions.
 - Trigger zone names must not encode lat/lon.
 - The future script reads coordinates with MOOSE zone APIs such as `ZONE:New(name):GetCoordinate()`.
-- Lat/lon may appear in exported CSV files (see CSV Export Contract) because those files are the source of truth for the future import path.
+- Lat/lon may appear in exported CSV files (see CSV Export Contract) as Mission Editor declaration output.
 
 ## Debug Lua Contract
 
 - `MosieNavigator.lua` may discover zones and draw F10 debug markup.
 - `MosieNavigator.lua` may write plain text navlog files for discovered plans.
-- `MosieNavigator.lua` may write CSV flight plan files per assigned group and one mission-wide CSV beacons file, intended as source-of-truth for a future import path.
+- `MosieNavigator.lua` may write one declaration CSV flight plan file per discovered plan and one mission-wide CSV beacons file.
 - `MosieNavigator.lua` may periodically refresh group menus for client aircraft that become active after mission start.
 - `MosieNavigator.lua` may provide an active text navigator per assigned group, with configurable report intervals, manual waypoint changes, wind-corrected magnetic heading, XTE guidance, and mandatory 60/30 second waypoint callouts.
 - It may depend on MOOSE being loaded before it.
 - It must not require YAML files.
 - It must not implement player navigation state until explicitly requested.
 - It may implement minimal F10 debug menu actions explicitly requested by the user.
-- It must not implement CSV import until explicitly requested; the CSV export is only the write half of the round-trip.
+- It must not implement CSV import until explicitly requested; current flight plan CSV export is a Mission Editor declaration export, not a computed navlog.
 
 ## CSV Export Contract
 
-CSV files are the intended source of truth for a future import path (defining plans and beacons in files instead of in the Mission Editor). Export must remain round-trip-lossless so a future importer can rebuild the exact `MN_...` / `MNB_...` zone name.
+Flight plan CSV files are Mission Editor declaration exports. They contain one row per waypoint trigger zone and only values explicitly declared by the mission maker, plus trigger-zone coordinates.
+
+Beacon CSV remains a direct export of mission-wide beacon definitions.
 
 Filenames (written to the same directory as the text navlog):
 
 ```text
-MosieNavigator_<GROUP>_<PLAN>.csv
-MosieNavigator_<PLAN>.csv            (fallback when no group is assigned)
+MosieNavigator_<PLAN>.csv            (one per plan)
 MosieNavigator_Beacons.csv
 ```
 
@@ -202,16 +208,15 @@ Flight plan CSV layout:
 
 ```text
 # PLAN,<plan>
-# GROUP,<group>          (only when a group is assigned)
-# ROLEX_SEC,<seconds>    (only when non-zero)
 ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT
 ```
 
 - `LAT`, `LON` are signed decimal degrees to 6 dp.
 - `NAME` is empty when the source zone had no explicit `_<NAME>` token (the display name defaulted to the type).
-- `ALT_FT` is empty when the source zone had no `__A` token.
-- `TOT` is empty when the source zone had no `__T` token. When present, format is `HH:MM` or `HH:MM:SS`. TOT is the raw planned value; ROLEX shift is not applied in CSV (the group ROLEX is recorded in the header comment).
-- `SPEED_KT` is the raw `__S` value in knots (ground speed). Empty when the source zone had no `__S` token. Computed ETA and IAS values are **not** written to CSV — they are output-only in the navlog and F10 message.
+- `ALT_FT` is the declared `__A` value; empty when the waypoint has no `__A` token.
+- `TOT` is the declared `__T` value, formatted as `HH:MM`; empty when the waypoint has no `__T` token.
+- `SPEED_KT` is the declared `__S` value; empty when the waypoint has no `__S` token.
+- Inherited/default/computed values and group ROLEX offsets are not written to flight plan CSV.
 
 Beacon CSV layout:
 

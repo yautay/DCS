@@ -55,6 +55,71 @@ function MosieNavigator:_FormatClock(seconds)
   return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
 end
 
+function MosieNavigator:_FormatDisplayEta(seconds)
+  local rounded = math.floor((seconds or 0) / 60 + 0.5) * 60
+  return self:_FormatClock(rounded)
+end
+
+function MosieNavigator:_FormatWaypointTypeShort(waypointType)
+  local shortcuts = {
+    TAKE_OFF = "O",
+    LANDING = "L",
+    INGRESS = "I",
+    TARGET = "T",
+    EGRESS = "E",
+    NAV = "N",
+    HOLD = "H",
+  }
+
+  return shortcuts[waypointType] or string.sub(tostring(waypointType or "?"), 1, 1)
+end
+
+function MosieNavigator:_FuelGalToLb(gal)
+  return (gal or 0) * self.Aircraft.fuel.fuelLbPerGal
+end
+
+function MosieNavigator:_FuelLbToGal(lb)
+  return (lb or 0) / self.Aircraft.fuel.fuelLbPerGal
+end
+
+function MosieNavigator:_BuildDcsFuelRecommendation(requiredGal)
+  local fuel = self.Aircraft.fuel
+  local internalGal = self:_FuelLbToGal(fuel.internalFuelLb)
+  local options = fuel.dropTankOptions or {{ label = "NONE", gal = 0 }}
+  local selected = options[#options]
+
+  for _, option in ipairs(options) do
+    if requiredGal <= internalGal + option.gal then
+      selected = option
+      break
+    end
+  end
+
+  local capacityGal = internalGal + selected.gal
+  local internalPercent = 100
+  if selected.gal == 0 then
+    internalPercent = math.ceil(requiredGal / internalGal * 100) + (fuel.internalFuelBufferPercent or 0)
+    if internalPercent > 100 then internalPercent = 100 end
+  end
+
+  local marginGal = capacityGal - requiredGal
+  return {
+    requiredGal = requiredGal,
+    requiredLb = self:_FuelGalToLb(requiredGal),
+    internalFuelGal = internalGal,
+    internalFuelLb = fuel.internalFuelLb,
+    internalPercent = internalPercent,
+    dropTankLabel = selected.label,
+    dropTankGal = selected.gal,
+    capacityGal = capacityGal,
+    capacityLb = self:_FuelGalToLb(capacityGal),
+    marginGal = marginGal,
+    marginLb = self:_FuelGalToLb(marginGal),
+    marginPercent = capacityGal > 0 and (marginGal / capacityGal * 100) or 0,
+    exceedsCapacity = requiredGal > capacityGal,
+  }
+end
+
 function MosieNavigator:_FormatRolex(seconds)
   if not seconds or seconds == 0 then
     return "+00:00"
@@ -108,8 +173,23 @@ function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
     return "---"
   end
 
-  local declination = coordinate:GetMagneticDeclination() or 0
-  return self:_FormatHeading(trueHeading - declination)
+  return self:_FormatHeading(trueHeading + self:_GetMagneticVariation(coordinate))
+end
+
+function MosieNavigator:_GetMagneticVariation(coordinate)
+  if not coordinate or not coordinate.GetMagneticDeclination then
+    return 0
+  end
+
+  return -(coordinate:GetMagneticDeclination() or 0)
+end
+
+function MosieNavigator:_KnotsToMph(knots)
+  if not knots then
+    return nil
+  end
+
+  return knots * 1.15077945
 end
 
 function MosieNavigator:_FormatOptional(value)
@@ -125,7 +205,7 @@ function MosieNavigator:_FormatWaypointTot(waypoint, rolexSeconds)
     return "---"
   end
 
-  return self:_FormatClock(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
+  return self:_FormatDisplayEta(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
 end
 
 function MosieNavigator:_FormatSpeed(speedKt)

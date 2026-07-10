@@ -1,8 +1,8 @@
 # Mosie Navigator
 
-Mosie Navigator is a planned navigation assistant for DCS missions. This directory currently defines the data contract only: flight plans and mission beacons discovered from DCS Mission Editor trigger zones.
+Mosie Navigator is a navigation assistant for DCS missions. Flight plans and mission beacons are discovered from DCS Mission Editor trigger zones.
 
-Only the initial F10 debug drawing logic is implemented here. Player navigation, menus, reports, and radio simulation are not implemented yet.
+The current implementation draws debug markup, writes TXT navlogs, exports CSV route declarations, provides group F10 menus, and runs an active text navigator for assigned groups.
 
 ## Goals
 
@@ -44,7 +44,7 @@ SPITFIRE 2-1 [MN:ESCORT]
 
 `PLAN` must match the plan identifier from trigger zones, for example `MN_JERICHO_01_TAKE_OFF_Tangmere` uses plan `JERICHO`.
 
-`__R...` is an optional group ROLEX offset. It shifts all displayed and exported TOT values for that group only. Examples:
+`__R...` is an optional group ROLEX offset. It shifts displayed TOT values for that group only. Examples:
 
 - `__R5`: delay all TOT values by 5 minutes.
 - `__R0:05`: delay all TOT values by 5 minutes.
@@ -56,7 +56,7 @@ For independent player state later, prefer one client aircraft per DCS group.
 
 ## Debug Script
 
-`MosieNavigator.lua` is the first debug implementation. When loaded after MOOSE, it discovers `MN_` and `MNB_` trigger zones and draws them on the F10 map.
+`MosieNavigator.lua` is the current debug/runtime implementation. When loaded after MOOSE, it discovers `MN_` and `MNB_` trigger zones and draws them on the F10 map.
 
 For every group assigned with `[MN:<PLAN>]`, it creates a group F10 menu:
 
@@ -94,25 +94,22 @@ It also writes one text navlog per assigned group. If no group assignments are f
 The navlog is a single compact plain ASCII table with:
 
 - waypoint number
-- latitude in decimal minutes format, for example `N51 19.43`
-- longitude in decimal minutes format, for example `E000 01.60`
-- true course from the waypoint to the next waypoint
-- magnetic course from the waypoint to the next waypoint
-- cumulative distance from start in NM
-- leg distance from previous waypoint in NM
-- planned altitude, if defined with `__A`
-- planned TOT, if defined with `__T`
-- calculated leg TAS in knots, if both ends of the leg define `__T`
-- calculated leg IAS in knots, if both ends of the leg define `__T` and the row waypoint defines `__A`
+- waypoint type
+- resolved altitude, inherited from previous waypoints when needed
+- IAS in mph, TAS in knots, and SOG in knots for the incoming leg
+- COG, wind-corrected true heading, magnetic variation, and magnetic heading
+- leg distance and leg time
+- computed ETA, rounded to full minutes for display
+- DCS fuel recommendation for the Mosquito fuel slider and drop tanks
 
-Static FP/navlog magnetic course is declination-corrected but does not include wind correction. Wind-corrected magnetic heading is used by active navigator guidance.
+Static FP/navlog headings use wind from the waypoint coordinate when available. Magnetic variation is displayed so `HDG(TRUE) + VAR = HDG(MAG)`.
 
 For assigned groups with `__R...`, `Show FP` and the generated group navlog show ROLEX-adjusted TOT values.
 
-Alongside each text navlog, the script also writes a source-of-truth CSV per group and a single mission-wide beacons CSV, intended for a future import path (defining plans and beacons in files instead of trigger zones):
+The script also writes one Mission Editor route declaration CSV per plan and a single mission-wide beacons CSV:
 
 ```text
-<Saved Games DCS>/Logs/MosieNavigator_<GROUP>_<PLAN>.csv
+<Saved Games DCS>/Logs/MosieNavigator_<PLAN>.csv
 <Saved Games DCS>/Logs/MosieNavigator_Beacons.csv
 ```
 
@@ -120,9 +117,7 @@ Flight plan CSV columns:
 
 ```text
 # PLAN,<plan>
-# GROUP,<group>          (only when a group is assigned)
-# ROLEX_SEC,<seconds>    (only when non-zero)
-ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT
+ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT
 ```
 
 Beacons CSV columns:
@@ -131,7 +126,7 @@ Beacons CSV columns:
 ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON
 ```
 
-Coordinates are written as signed decimal degrees to 6 dp. `NAME`, `ALT_FT`, `TOT`, and `FREQUENCY` are left empty when the source zone does not define them, so an importer can reconstruct the exact zone name. `TOT` in the CSV is the raw planned value (no ROLEX shift); the group ROLEX lives in the `# ROLEX_SEC` header.
+Coordinates are written as signed decimal degrees to 6 dp. Flight plan CSV is a declaration export of the Mission Editor trigger zones, not a computed navlog: `NAME`, `ALT_FT`, `TOT`, and `SPEED_KT` are populated only when the mission maker declared the corresponding name, `__A`, `__T`, or `__S` token. Inherited/default/computed values and group ROLEX offsets are not written to flight plan CSV. Beacons CSV remains a direct beacon definition export.
 
 CSV output can be toggled independently via `MosieNavigator.Config.generateCsvFiles` (default `true`).
 
@@ -161,7 +156,7 @@ Flight plans are discovered from trigger zone names.
 Use this format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>][__S<GS_KT>]
 ```
 
 Fields:
@@ -172,16 +167,17 @@ Fields:
 - `TYPE`: one of the supported waypoint types.
 - `NAME`: optional human-readable waypoint name without spaces. If omitted, the waypoint type is used as the display name.
 - `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`.
-- `__T<TOT>`: optional planned time on target for that waypoint, using `HH:MM` or `HH:MM:SS`, for example `__T14:30`.
+- `__T<TOT>`: planned time at that waypoint, using `HH:MM`, for example `__T14:30`. Mandatory on `TAKE_OFF`.
+- `__S<GS_KT>`: optional speed override in knots. On `TAKE_OFF`, it overrides the default cruise speed for the whole plan.
 
-If both ends of a leg have `__T`, Mosie Navigator calculates the required leg TAS in knots from leg distance and elapsed planned time. If either waypoint has no `__T`, TAS for that leg is shown as `---`.
+If `TAKE_OFF` has no `__S`, the default cruise speed is 240 mph converted to 208.6 kt. Individual waypoint `__S` tokens override only the leg arriving at that waypoint. Segments between `__T` anchors may derive speeds to satisfy timing constraints.
 
 Example:
 
 ```text
-MN_JERICHO_01_TAKE_OFF_Tangmere
+MN_JERICHO_01_TAKE_OFF_Tangmere__T12:00
 MN_JERICHO_02_NAV
-MN_JERICHO_03_RENDEZVOUS_Rendezvous
+MN_JERICHO_03_NAV_Checkpoint
 MN_JERICHO_04_HOLD_Hold
 MN_JERICHO_05_INGRESS_IP
 MN_JERICHO_06_TARGET_Prison
@@ -203,7 +199,6 @@ Supported waypoint types:
 
 - `TAKE_OFF`
 - `LANDING`
-- `RENDEZVOUS`
 - `INGRESS`
 - `TARGET`
 - `EGRESS`
@@ -211,6 +206,13 @@ Supported waypoint types:
 - `HOLD`
 
 The initial point / IP concept should be represented as `INGRESS`.
+`LAND` is also accepted and normalized to `LANDING`.
+
+The first waypoint must be `TAKE_OFF`, and the last waypoint must be `LANDING`; otherwise the flight plan fails generation.
+
+Fuel output includes a DCS-specific recommendation for the Mosquito internal fuel slider and drop tanks. It uses 3269 lb internal fuel, 7.215 lb/gal, and `NONE` / `2x50 GAL` / `2x100 GAL` drop tank options. Internal-only recommendations add a 1% buffer after rounding up, capped at 100%.
+
+Route fuel burn is interpolated by IAS between Merlin 25 engine settings from the Mosquito manual. Internal profile codes are `CRZ`, `MCW`, `MCR`, `CLB`, or interpolated pairs such as `MCW-MCR`. The sea-level IAS references are provisional calibration values and can be refined after DCS testing.
 
 ## Beacon Trigger Zones
 

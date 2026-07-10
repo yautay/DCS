@@ -41,7 +41,6 @@ MosieNavigator.Config = MosieNavigator.Config or {
 MosieNavigator.WaypointTypes = {
   TAKE_OFF = true,
   LANDING = true,
-  RENDEZVOUS = true,
   INGRESS = true,
   TARGET = true,
   EGRESS = true,
@@ -63,11 +62,86 @@ MosieNavigator.BeaconColor = {0.20, 0.80, 0.20}
 
 MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
   name = "Mosquito FB Mk VI",
-  profiles = {
-    { name = "econ_low",  altMaxFt = 10000, iasKtMin = 185, iasKtMax = 215, burnImpGph = 78  },
-    { name = "econ_high", altMinFt = 10000, iasKtMin = 165, iasKtMax = 185, burnImpGph = 75  },
-    { name = "fast_low",  altMaxFt = 10000, iasKtMin = 215, iasKtMax = 240, burnImpGph = 90  },
-    { name = "combat",                      iasKtMin = 240, iasKtMax = 260, burnImpGph = 115 },
+  defaultCruiseSpeedMph = 240,
+  defaultCruiseSpeedKt = 240 * 0.8689762419,
+  engineSettings = {
+    {
+      id = "takeoff_emergency_18",
+      name = "Take-Off / Emergency +18",
+      rpm = 3000,
+      mixture = "rich",
+      boostPsi = 18,
+      limitMin = 5,
+      fuelImpGphPerEngine = nil,
+      fuelImpGph = nil,
+      seaLevelIasKt = nil,
+      notes = "+18 may not be used below 2850 RPM",
+    },
+    {
+      id = "takeoff_12",
+      name = "Take-Off +12",
+      rpm = 3000,
+      mixture = "rich",
+      boostPsi = 12,
+      fuelImpGphPerEngine = 115,
+      fuelImpGph = 230,
+      seaLevelIasKt = nil,
+    },
+    {
+      id = "max_climb",
+      name = "Max Climbing Power",
+      rpm = 2850,
+      mixture = "rich",
+      boostPsi = 9,
+      limitMin = 60,
+      fuelImpGphPerEngine = 95,
+      fuelImpGph = 190,
+      seaLevelIasKt = 260,
+      profileName = "climb",
+      profileCode = "CLB",
+    },
+    {
+      id = "max_cont_rich",
+      name = "Max Continuous Rich",
+      rpm = 2650,
+      mixture = "rich",
+      boostPsi = 7,
+      fuelImpGphPerEngine = 80,
+      fuelImpGph = 160,
+      seaLevelIasKt = 240,
+      profileName = "cont_r",
+      profileCode = "MCR",
+    },
+    {
+      id = "max_cont_weak",
+      name = "Max Continuous Weak",
+      rpm = 2650,
+      mixture = "weak",
+      boostPsi = 7,
+      fuelImpGphPerEngine = 63,
+      fuelImpGph = 126,
+      seaLevelIasKt = 215,
+      profileName = "cont_w",
+      profileCode = "MCW",
+    },
+    {
+      id = "cruise_weak",
+      name = "Cruise Weak",
+      rpm = 2300,
+      mixture = "weak",
+      boostPsi = 2,
+      fuelImpGphPerEngine = 42,
+      fuelImpGph = 84,
+      seaLevelIasKt = 180,
+      profileName = "cruise",
+      profileCode = "CRZ",
+    },
+  },
+  fuelCurveSettingIds = {
+    "cruise_weak",
+    "max_cont_weak",
+    "max_cont_rich",
+    "max_climb",
   },
   envelope = {
     minIasKt = 165,
@@ -75,13 +149,21 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
   },
   fuel = {
     unit           = "IMP_GAL",
-    tankCapacity   = 546,
+    tankCapacity   = 653.1,
+    internalFuelLb = 3269,
+    fuelLbPerGal   = 7.215,
+    internalFuelBufferPercent = 1,
+    dropTankOptions = {
+      { label = "NONE", gal = 0 },
+      { label = "2x50 GAL", gal = 100 },
+      { label = "2x100 GAL", gal = 200 },
+    },
     taxiAllowance  = 15,
     landingAllowance = 5,
     reserveMinutes = 30,
   },
   holdIasKt      = 140,
-  holdBurnImpGph = 65,
+  holdBurnImpGph = 84,
 }
 
 -- ==== 02_util.lua ====
@@ -143,6 +225,71 @@ function MosieNavigator:_FormatClock(seconds)
   return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
 end
 
+function MosieNavigator:_FormatDisplayEta(seconds)
+  local rounded = math.floor((seconds or 0) / 60 + 0.5) * 60
+  return self:_FormatClock(rounded)
+end
+
+function MosieNavigator:_FormatWaypointTypeShort(waypointType)
+  local shortcuts = {
+    TAKE_OFF = "O",
+    LANDING = "L",
+    INGRESS = "I",
+    TARGET = "T",
+    EGRESS = "E",
+    NAV = "N",
+    HOLD = "H",
+  }
+
+  return shortcuts[waypointType] or string.sub(tostring(waypointType or "?"), 1, 1)
+end
+
+function MosieNavigator:_FuelGalToLb(gal)
+  return (gal or 0) * self.Aircraft.fuel.fuelLbPerGal
+end
+
+function MosieNavigator:_FuelLbToGal(lb)
+  return (lb or 0) / self.Aircraft.fuel.fuelLbPerGal
+end
+
+function MosieNavigator:_BuildDcsFuelRecommendation(requiredGal)
+  local fuel = self.Aircraft.fuel
+  local internalGal = self:_FuelLbToGal(fuel.internalFuelLb)
+  local options = fuel.dropTankOptions or {{ label = "NONE", gal = 0 }}
+  local selected = options[#options]
+
+  for _, option in ipairs(options) do
+    if requiredGal <= internalGal + option.gal then
+      selected = option
+      break
+    end
+  end
+
+  local capacityGal = internalGal + selected.gal
+  local internalPercent = 100
+  if selected.gal == 0 then
+    internalPercent = math.ceil(requiredGal / internalGal * 100) + (fuel.internalFuelBufferPercent or 0)
+    if internalPercent > 100 then internalPercent = 100 end
+  end
+
+  local marginGal = capacityGal - requiredGal
+  return {
+    requiredGal = requiredGal,
+    requiredLb = self:_FuelGalToLb(requiredGal),
+    internalFuelGal = internalGal,
+    internalFuelLb = fuel.internalFuelLb,
+    internalPercent = internalPercent,
+    dropTankLabel = selected.label,
+    dropTankGal = selected.gal,
+    capacityGal = capacityGal,
+    capacityLb = self:_FuelGalToLb(capacityGal),
+    marginGal = marginGal,
+    marginLb = self:_FuelGalToLb(marginGal),
+    marginPercent = capacityGal > 0 and (marginGal / capacityGal * 100) or 0,
+    exceedsCapacity = requiredGal > capacityGal,
+  }
+end
+
 function MosieNavigator:_FormatRolex(seconds)
   if not seconds or seconds == 0 then
     return "+00:00"
@@ -196,8 +343,23 @@ function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
     return "---"
   end
 
-  local declination = coordinate:GetMagneticDeclination() or 0
-  return self:_FormatHeading(trueHeading - declination)
+  return self:_FormatHeading(trueHeading + self:_GetMagneticVariation(coordinate))
+end
+
+function MosieNavigator:_GetMagneticVariation(coordinate)
+  if not coordinate or not coordinate.GetMagneticDeclination then
+    return 0
+  end
+
+  return -(coordinate:GetMagneticDeclination() or 0)
+end
+
+function MosieNavigator:_KnotsToMph(knots)
+  if not knots then
+    return nil
+  end
+
+  return knots * 1.15077945
 end
 
 function MosieNavigator:_FormatOptional(value)
@@ -213,7 +375,7 @@ function MosieNavigator:_FormatWaypointTot(waypoint, rolexSeconds)
     return "---"
   end
 
-  return self:_FormatClock(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
+  return self:_FormatDisplayEta(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
 end
 
 function MosieNavigator:_FormatSpeed(speedKt)
@@ -251,12 +413,7 @@ end
 -- ==== 03_parser.lua ====
 
 function MosieNavigator:_ParseTimeOnTarget(value)
-  local hours, minutes, seconds = string.match(value or "", "^(%d%d?):(%d%d):(%d%d)$")
-
-  if not hours then
-    hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
-    seconds = "0"
-  end
+  local hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
 
   if not hours or not minutes then
     return nil
@@ -264,13 +421,12 @@ function MosieNavigator:_ParseTimeOnTarget(value)
 
   hours = tonumber(hours)
   minutes = tonumber(minutes)
-  seconds = tonumber(seconds ~= "" and seconds or "0")
 
-  if hours > 23 or minutes > 59 or seconds > 59 then
+  if hours > 23 or minutes > 59 then
     return nil
   end
 
-  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60 + seconds
+  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60
 end
 
 function MosieNavigator:_ParseRolexDuration(value)
@@ -353,6 +509,10 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
   if waypointType == "TAKE" and tokens[5] == "OFF" then
     waypointType = "TAKE_OFF"
     nameStartIndex = 6
+  end
+
+  if waypointType == "LAND" then
+    waypointType = "LANDING"
   end
 
   if not plan or not order or not waypointType or not self.WaypointTypes[waypointType] then
@@ -451,33 +611,84 @@ function MosieNavigator:_ConvertIasToTas(iasKt, altitudeFt)
 end
 
 function MosieNavigator:_MatchProfile(iasKt, altFt)
-  local aircraft = self.Aircraft
-  local candidates = {}
+  return self:_EstimateFuelProfile(iasKt, altFt)
+end
 
-  for _, p in ipairs(aircraft.profiles) do
-    if p.altMinFt and altFt < p.altMinFt then
-      -- skip
-    elseif p.altMaxFt and altFt > p.altMaxFt then
-      -- skip
-    elseif iasKt < p.iasKtMin or iasKt > p.iasKtMax then
-      -- skip
-    else
-      table.insert(candidates, p)
+function MosieNavigator:_GetEngineSettingById(id)
+  for _, setting in ipairs(self.Aircraft.engineSettings or {}) do
+    if setting.id == id then
+      return setting
+    end
+  end
+  return nil
+end
+
+function MosieNavigator:_GetFuelCurveSettings()
+  local curve = {}
+  for _, id in ipairs(self.Aircraft.fuelCurveSettingIds or {}) do
+    local setting = self:_GetEngineSettingById(id)
+    if setting and setting.fuelImpGph and setting.seaLevelIasKt then
+      table.insert(curve, setting)
     end
   end
 
-  if #candidates == 0 then
-    return nil
+  table.sort(curve, function(a, b)
+    return a.seaLevelIasKt < b.seaLevelIasKt
+  end)
+
+  return curve
+end
+
+function MosieNavigator:_FuelProfileName(a, b)
+  local aName = a.profileCode or a.profileName or a.id
+  if not b or a.id == b.id then
+    return aName
+  end
+  return aName .. "-" .. (b.profileCode or b.profileName or b.id)
+end
+
+function MosieNavigator:_EstimateFuelProfile(iasKt, altFt)
+  local curve = self:_GetFuelCurveSettings()
+
+  if #curve == 0 then
+    return { name = "fuel_unknown", burnImpGph = 0, interpolated = false }
   end
 
-  local best = candidates[1]
-  for i = 2, #candidates do
-    if candidates[i].burnImpGph < best.burnImpGph then
-      best = candidates[i]
+  if iasKt <= curve[1].seaLevelIasKt then
+    return {
+      name = self:_FuelProfileName(curve[1]),
+      burnImpGph = curve[1].fuelImpGph,
+      interpolated = false,
+      fromSetting = curve[1],
+      toSetting = curve[1],
+    }
+  end
+
+  for i = 1, #curve - 1 do
+    local a = curve[i]
+    local b = curve[i + 1]
+    if iasKt <= b.seaLevelIasKt then
+      local span = b.seaLevelIasKt - a.seaLevelIasKt
+      local ratio = span > 0 and ((iasKt - a.seaLevelIasKt) / span) or 0
+      local burn = a.fuelImpGph + ratio * (b.fuelImpGph - a.fuelImpGph)
+      return {
+        name = self:_FuelProfileName(a, b),
+        burnImpGph = burn,
+        interpolated = ratio > 0 and ratio < 1,
+        fromSetting = a,
+        toSetting = b,
+      }
     end
   end
 
-  return best
+  local last = curve[#curve]
+  return {
+    name = self:_FuelProfileName(last),
+    burnImpGph = last.fuelImpGph,
+    interpolated = false,
+    fromSetting = last,
+    toSetting = last,
+  }
 end
 
 function MosieNavigator:_ClampSpeed(requiredIasKt, warnings, context)
@@ -522,9 +733,10 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     -- All FIXED: __T wins, uniform derived speed
     local totalDist = 0
     for _, leg in ipairs(segLegs) do totalDist = totalDist + leg.distNm end
+    local sources = {}
     if totalTimeSec <= 0 or totalDist <= 0 then
-      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt end
-      return result
+      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt; sources[i] = "computed" end
+      return result, sources
     end
     local derivedGs = totalDist / (totalTimeSec / 3600)
     local avgAlt    = 0
@@ -541,17 +753,19 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
         ))
       end
       result[i] = clampedGs
+      sources[i] = "computed"
     end
-    return result
+    return result, sources
   end
 
   if #fixedIndices == 0 then
     -- All FREE: uniform derived speed
+    local sources = {}
     local totalDist = 0
     for _, leg in ipairs(segLegs) do totalDist = totalDist + leg.distNm end
     if totalTimeSec <= 0 or totalDist <= 0 then
-      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt end
-      return result
+      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt; sources[i] = "computed" end
+      return result, sources
     end
     local derivedGs = totalDist / (totalTimeSec / 3600)
     local avgAlt    = 0
@@ -560,11 +774,12 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
     derivedIas, _ = self:_ClampSpeed(derivedIas, warnings, segLabel .. " FREE uniform")
     local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
-    for i = 1, n do result[i] = clampedGs end
-    return result
+    for i = 1, n do result[i] = clampedGs; sources[i] = "computed" end
+    return result, sources
   end
 
   -- Mixed: FIXED honored, FREE get averaged remainder
+  local sources = {}
   local fixedTime = 0
   for _, i in ipairs(fixedIndices) do
     local leg = segLegs[i]
@@ -572,6 +787,7 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     local t   = leg.distNm / gs * 3600
     fixedTime = fixedTime + t
     result[i] = gs
+    sources[i] = "explicit"
   end
 
   local freeTime = totalTimeSec - fixedTime
@@ -584,8 +800,8 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
       segLabel
     ))
     local minGs = self:_ConvertIasToTas(self.Aircraft.envelope.minIasKt, 0) or self.Aircraft.envelope.minIasKt
-    for _, i in ipairs(freeIndices) do result[i] = minGs end
-    return result
+    for _, i in ipairs(freeIndices) do result[i] = minGs; sources[i] = "computed" end
+    return result, sources
   end
 
   local freeGs   = freeDist / (freeTime / 3600)
@@ -595,9 +811,9 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
   local freeIas = self:_ConvertTasToIas(freeGs, avgAltFree) or freeGs
   freeIas, _    = self:_ClampSpeed(freeIas, warnings, segLabel .. " FREE averaged")
   local clampedFreeGs = self:_ConvertIasToTas(freeIas, avgAltFree) or freeIas
-  for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs end
+  for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs; sources[i] = "computed" end
 
-  return result
+  return result, sources
 end
 
 -- Computes full flight plan: ETA, speeds, IAS, profiles, fuel, warnings.
@@ -618,42 +834,18 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
     return { valid = false, error = "first waypoint must be TAKE_OFF", warnings = warnings }
   end
 
+  if wps[#wps].type ~= "LANDING" then
+    return { valid = false, error = "last waypoint must be LANDING", warnings = warnings }
+  end
+
   if not takeoff.timeOnTargetSeconds then
     return { valid = false, error = "TAKE_OFF must have __T (brake release time)", warnings = warnings }
   end
 
-  -- Determine default plan speed (GS kt)
-  local defaultGs = nil
-  if takeoff.speedKt then
-    defaultGs = self:_ConvertIasToTas(takeoff.speedKt, takeoff.altitudeFt or 0) or takeoff.speedKt
-  end
-
-  if not defaultGs then
-    -- Try to derive from first downstream __T pair
-    local firstTotSec = takeoff.timeOnTargetSeconds
-    for i = 2, #wps do
-      if wps[i].timeOnTargetSeconds then
-        local totalDist = 0
-        for j = 2, i do
-          totalDist = totalDist + UTILS.MetersToNM(wps[j-1].coordinate:Get2DDistance(wps[j].coordinate))
-        end
-        local dt = wps[i].timeOnTargetSeconds - firstTotSec
-        if dt < 0 then dt = dt + 86400 end
-        if dt > 0 and totalDist > 0 then
-          defaultGs = totalDist / (dt / 3600)
-        end
-        break
-      end
-    end
-  end
-
-  if not defaultGs then
-    return {
-      valid = false,
-      error = "TAKE_OFF has no __S and no downstream __T constraints — cannot compute speeds",
-      warnings = warnings,
-    }
-  end
+  -- Determine default plan speed. TAKE_OFF __S overrides the Mosquito default
+  -- cruise speed of 240 mph, expressed internally in knots.
+  local defaultIasKt = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
+  local defaultGs = self:_ConvertIasToTas(defaultIasKt, takeoff.altitudeFt or 0) or defaultIasKt
 
   -- ── Altitude cascade ─────────────────────────────────────────────────────
   local resolvedAlt = {}
@@ -700,13 +892,18 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
   -- ── Resolve GS per leg ───────────────────────────────────────────────────
   local legGs = {}  -- legGs[i] = GS kt for leg arriving at WPi
+  local legSpeedSource = {}
 
   local function legSpeedFromDecl(k)
     local ld = legDescs[k]
     if ld and ld.speedKt then
-      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt
+      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt, "explicit"
     end
-    return defaultGs
+    return defaultGs, "default"
+  end
+
+  local function setLegSpeedFromDecl(k)
+    legGs[k], legSpeedSource[k] = legSpeedFromDecl(k)
   end
 
   -- Collect sorted anchor indices
@@ -723,7 +920,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
     if not segEnd then
       -- After last anchor: use __S / default
       for k = segStart + 1, #wps do
-        legGs[k] = legSpeedFromDecl(k)
+        setLegSpeedFromDecl(k)
       end
     else
       -- Check for HOLD anywhere in this segment, including boundaries.
@@ -735,7 +932,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       if hasHold then
         for k = segStart + 1, segEnd do
-          legGs[k] = legSpeedFromDecl(k)
+          setLegSpeedFromDecl(k)
         end
       else
         local totI = wps[segStart].timeOnTargetSeconds
@@ -755,13 +952,14 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
           })
         end
 
-        local segSpeeds = self:_ResolveSegmentSpeeds(
+        local segSpeeds, segSources = self:_ResolveSegmentSpeeds(
           segLegs, dt, warnings,
           string.format("segment [WP%02d..WP%02d]", wps[segStart].order, wps[segEnd].order)
         )
 
         for idx = 1, #segRange do
           legGs[segRange[idx]] = segSpeeds[idx]
+          legSpeedSource[segRange[idx]] = segSources[idx]
         end
       end
     end
@@ -771,7 +969,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   if #anchorList > 0 then
     for k = 2, anchorList[1] do
       if not legGs[k] and wps[k].type ~= "HOLD" then
-        legGs[k] = legSpeedFromDecl(k)
+        setLegSpeedFromDecl(k)
       end
     end
   end
@@ -779,7 +977,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   -- Fill any remaining unset legs
   for k = 2, #wps do
     if not legGs[k] then
-      legGs[k] = legSpeedFromDecl(k)
+      setLegSpeedFromDecl(k)
     end
   end
 
@@ -895,6 +1093,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       altInherited       = (wp.altitudeFt == nil) and (resolvedAlt[k] ~= nil),
       etaSec             = etaSec[k] % 86400,
       rawSpeedKt         = wp.speedKt,
+      legSpeedInherited = legSpeedSource[k] == "default",
       rawTimeOnTarget    = wp.timeOnTarget,
       rawTimeOnTargetSec = wp.timeOnTargetSeconds,
     }
@@ -904,9 +1103,13 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.legDistNm       = nil
       ow.legGsKt         = nil
       ow.legIasKt        = nil
+      ow.legTasKt        = nil
+      ow.legTimeSec      = nil
       ow.legProfile      = nil
       ow.legFuelImpGal   = aircraft.fuel.taxiAllowance
       ow.trueCourse      = nil
+      ow.headingTrue     = nil
+      ow.magneticVar     = nil
       ow.holdDurationSec = nil
     elseif wp.type == "HOLD" then
       local ld      = legDescs[k]
@@ -915,8 +1118,8 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       local legDist = ld and ld.distNm or 0
       local legTime = inGs > 0 and (legDist / inGs) or 0
 
-      local prof    = self:_MatchProfile(inIas, resolvedAlt[k])
-      local legBurn = (prof and prof.burnImpGph or 100) * legTime
+      local prof    = self:_EstimateFuelProfile(inIas, resolvedAlt[k])
+      local legBurn = prof.burnImpGph * legTime
 
       local holdDur  = holdDurations[k] or 0
       local holdBurn = aircraft.holdBurnImpGph * (holdDur / 3600)
@@ -925,12 +1128,18 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       ow.legDistNm       = legDist
       ow.legGsKt         = inGs
+      ow.legTimeSec      = legTime * 3600
       ow.legIasKt        = inIas
+      ow.legTasKt        = inGs
       ow.legProfile      = prof and prof.name or nil
       ow.legFuelImpGal   = legBurn
       ow.holdDurationSec = holdDur
       ow.holdFuelImpGal  = holdBurn
       ow.trueCourse      = legTrueCourse(wps[k-1], wp)
+      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
+      )
+      ow.magneticVar     = self:_GetMagneticVariation(wp.coordinate)
 
       fuelCum = fuelCum + holdBurn
     else
@@ -940,43 +1149,45 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       local legDist = ld and ld.distNm or 0
       local legTime = gs > 0 and (legDist / gs) or 0
 
-      local prof    = self:_MatchProfile(ias, resolvedAlt[k])
-      if not prof then
-        table.insert(warnings, string.format(
-          "WP%02d %s: no profile match for IAS %.0f kt at %d ft — using 100 gph fallback",
-          wp.order, wp.name, ias, resolvedAlt[k]
-        ))
-      end
-      local legBurn = (prof and prof.burnImpGph or 100) * legTime
+      local prof    = self:_EstimateFuelProfile(ias, resolvedAlt[k])
+      local legBurn = prof.burnImpGph * legTime
 
       fuelCum = fuelCum + legBurn
 
       ow.legDistNm     = legDist
       ow.legGsKt       = gs
+      ow.legTimeSec    = legTime * 3600
       ow.legIasKt      = ias
+      ow.legTasKt      = gs
       ow.legProfile    = prof and prof.name or nil
       ow.legFuelImpGal = legBurn
       ow.trueCourse    = legTrueCourse(wps[k-1], wp)
+      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
+      )
+      ow.magneticVar   = self:_GetMagneticVariation(wp.coordinate)
     end
 
     ow.fuelCumImpGal = fuelCum
     table.insert(outWps, ow)
   end
 
-  -- Reserve: 30 min at lowest burn profile
-  local lowestBurn = aircraft.profiles[1].burnImpGph
-  for _, p in ipairs(aircraft.profiles) do
-    if p.burnImpGph < lowestBurn then lowestBurn = p.burnImpGph end
+  -- Reserve: 30 min at lowest documented engine-setting burn in the fuel curve.
+  local fuelCurve = self:_GetFuelCurveSettings()
+  local lowestBurn = fuelCurve[1] and fuelCurve[1].fuelImpGph or 0
+  for _, p in ipairs(fuelCurve) do
+    if p.fuelImpGph < lowestBurn then lowestBurn = p.fuelImpGph end
   end
   local reserveFuel = aircraft.fuel.reserveMinutes / 60 * lowestBurn
   local routeFuel   = fuelCum - aircraft.fuel.taxiAllowance
   local totalFuel   = fuelCum + reserveFuel + aircraft.fuel.landingAllowance
-  local margin      = aircraft.fuel.tankCapacity - totalFuel
+  local dcsFuel     = self:_BuildDcsFuelRecommendation(totalFuel)
+  local margin      = dcsFuel.capacityGal - totalFuel
 
-  if totalFuel > aircraft.fuel.tankCapacity then
+  if dcsFuel.exceedsCapacity then
     table.insert(warnings, string.format(
-      "FUEL: required %.1f IMP GAL exceeds tank %.1f IMP GAL (%.1f over)",
-      totalFuel, aircraft.fuel.tankCapacity, -margin
+      "FUEL: required %.1f IMP GAL exceeds DCS max fuel %.1f IMP GAL (%.1f over)",
+      totalFuel, dcsFuel.capacityGal, -margin
     ))
   end
 
@@ -990,9 +1201,10 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       reserveImpGal   = reserveFuel,
       landingImpGal   = aircraft.fuel.landingAllowance,
       totalImpGal     = totalFuel,
-      tankImpGal      = aircraft.fuel.tankCapacity,
+      tankImpGal      = dcsFuel.capacityGal,
       marginImpGal    = margin,
-      marginPercent   = margin / aircraft.fuel.tankCapacity * 100,
+      marginPercent   = dcsFuel.marginPercent,
+      dcs             = dcsFuel,
     },
     warnings = warnings,
   }
@@ -1055,37 +1267,21 @@ function MosieNavigator:_FormatTotForCsv(waypoint)
     return ""
   end
 
-  local hours = math.floor(seconds / 3600)
-  local minutes = math.floor((seconds % 3600) / 60)
-  local clockSeconds = seconds % 60
-
-  if clockSeconds == 0 then
-    return string.format("%02d:%02d", hours, minutes)
-  end
-
-  return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
+  return self:_FormatDisplayEta(seconds)
 end
 
 function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
   local lines = {}
-  rolexSeconds = rolexSeconds or 0
 
   table.insert(lines, "# PLAN," .. self:_FormatCsvField(plan.name))
-  if groupName then
-    table.insert(lines, "# GROUP," .. self:_FormatCsvField(groupName))
-  end
-  if rolexSeconds ~= 0 then
-    table.insert(lines, "# ROLEX_SEC," .. tostring(rolexSeconds))
-  end
-
   table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
 
-  for _, waypoint in ipairs(plan.waypoints) do
+  for _, waypoint in ipairs(plan.waypoints or {}) do
     local lat, lon = self:_FormatCoordinateForCsvDD(waypoint.coordinate)
     local nameField  = waypoint.nameExplicit and waypoint.name or ""
     local altField   = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
     local totField   = self:_FormatTotForCsv(waypoint)
-    local speedField = waypoint.speedKt ~= nil and tostring(waypoint.speedKt) or ""
+    local speedField = waypoint.speedKt ~= nil and string.format("%.0f", waypoint.speedKt) or ""
 
     table.insert(lines, self:_FormatCsvRow({
       waypoint.order,
@@ -1638,6 +1834,116 @@ end
 
 -- ==== 11_messages.lua ====
 
+function MosieNavigator:_AppendFuelSummary(lines, fuel)
+  table.insert(lines, "FUEL:")
+  table.insert(lines, string.format("  TAXI:    %6.1f IMP GAL", fuel.taxiImpGal))
+  table.insert(lines, string.format("  ROUTE:   %6.1f IMP GAL", fuel.routeImpGal))
+  table.insert(lines, string.format("  RESERVE: %6.1f IMP GAL  (%d min)",
+    fuel.reserveImpGal, self.Aircraft.fuel.reserveMinutes))
+  table.insert(lines, string.format("  LANDING: %6.1f IMP GAL", fuel.landingImpGal))
+  table.insert(lines, string.format("  TOTAL:   %6.1f IMP GAL", fuel.totalImpGal))
+
+  local dcs = fuel.dcs
+  if dcs then
+    table.insert(lines, "")
+    table.insert(lines, "DCS FUEL:")
+    table.insert(lines, string.format("  REQUIRED: %6.1f GAL / %5.0f LBS", dcs.requiredGal, dcs.requiredLb))
+    table.insert(lines, string.format("  INTERNAL: %3d%%  (%4.0f LBS max)", dcs.internalPercent, dcs.internalFuelLb))
+    table.insert(lines, string.format("  DROP:     %s", dcs.dropTankLabel))
+  end
+end
+
+function MosieNavigator:_FormatVariation(value)
+  if value == nil then
+    return "---"
+  end
+
+  return string.format("%+.1f", value)
+end
+
+function MosieNavigator:_FormatDisplayLegTime(seconds)
+  if not seconds then
+    return "---"
+  end
+
+  return string.format("%d", math.floor(seconds / 60 + 0.5))
+end
+
+function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
+  if compact then
+    table.insert(lines, "ID TY ALT   IASMPH TASKN COG HDGT  VAR  HDGM SOG DIST TIME ETA")
+    table.insert(lines, "----------------------------------------------------------------")
+  else
+    table.insert(lines, string.format(
+      "%-2s %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
+      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "HDG(TRUE)", "VAR", "HDG(MAG)", "SOG", "DIST", "TIME", "ETA"
+    ))
+    table.insert(lines, string.rep("-", 91))
+  end
+
+  for _, ow in ipairs(waypoints) do
+    local altStr = ow.resolvedAltFt ~= nil
+      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
+    local speedMark = ow.legSpeedInherited and "*" or ""
+    local iasMph = ow.legIasKt and (string.format("%.0f", self:_KnotsToMph(ow.legIasKt)) .. speedMark) or "---"
+    local tasStr = ow.legTasKt and string.format("%.0f", ow.legTasKt) or "---"
+    local cogStr = self:_FormatHeading(ow.trueCourse)
+    local hdgTrueStr = self:_FormatHeading(ow.headingTrue)
+    local varStr = self:_FormatVariation(ow.magneticVar)
+    local hdgMagStr = self:_FormatMagneticHeading(ow.headingTrue, ow.coordinate)
+    local sogStr = ow.legGsKt and string.format("%.0f", ow.legGsKt) or "---"
+    local distStr = ow.legDistNm and string.format("%.1f", ow.legDistNm) or "---"
+    local timeStr = self:_FormatDisplayLegTime(ow.legTimeSec)
+    local etaStr = self:_FormatDisplayEta(ow.etaSec)
+
+    if compact then
+      table.insert(lines, string.format(
+        "%02d %-2s %-5s %6s %5s %3s %4s %5s %4s %3s %4s %4s %5s",
+        ow.order,
+        self:_FormatWaypointTypeShort(ow.type),
+        altStr,
+        iasMph,
+        tasStr,
+        cogStr,
+        hdgTrueStr,
+        varStr,
+        hdgMagStr,
+        sogStr,
+        distStr,
+        timeStr,
+        etaStr
+      ))
+    else
+      table.insert(lines, string.format(
+        "%02d %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
+        ow.order,
+        self:_FitText(ow.type, 10),
+        altStr,
+        iasMph,
+        tasStr,
+        cogStr,
+        hdgTrueStr,
+        varStr,
+        hdgMagStr,
+        sogStr,
+        distStr,
+        timeStr,
+        etaStr
+      ))
+    end
+
+    if ow.holdDurationSec and ow.holdDurationSec > 0 then
+      local holdMin = math.floor(ow.holdDurationSec / 60 + 0.5)
+      local exitSec = (ow.etaSec + ow.holdDurationSec) % 86400
+      table.insert(lines, string.format(
+        "   orbit %d min @ %d IAS: %.1f gal  (exit %s)",
+        holdMin, self.Aircraft.holdIasKt,
+        ow.holdFuelImpGal or 0, self:_FormatDisplayEta(exitSec)
+      ))
+    end
+  end
+end
+
 function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
   rolexSeconds = rolexSeconds or 0
   local computed = self:_ComputePlan(plan, rolexSeconds)
@@ -1656,38 +1962,11 @@ function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolex
     return table.concat(lines, "\n")
   end
 
-  for _, ow in ipairs(computed.waypoints) do
-    local altStr  = ow.resolvedAltFt ~= nil
-      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
-    local gsStr   = ow.legGsKt  and string.format("%.0f", ow.legGsKt)  or "---"
-    local iasStr  = ow.legIasKt and string.format("%.0f", ow.legIasKt) or "---"
-    local profStr = ow.legProfile or "---"
-    local fuelStr = ow.legFuelImpGal and string.format("%.1f", ow.legFuelImpGal) or "---"
-
-    table.insert(lines, string.format(
-      "[%02d] %-10s %-12s  ALT %s  ETA %s  GS %s IAS %s  PROF %s  LEG %s gal",
-      ow.order,
-      self:_FitText(ow.type, 10),
-      self:_FitText(ow.name, 12),
-      altStr, self:_FormatClock(ow.etaSec), gsStr, iasStr, profStr, fuelStr
-    ))
-
-    if ow.holdDurationSec and ow.holdDurationSec > 0 then
-      local holdMin  = math.floor(ow.holdDurationSec / 60)
-      local holdSec2 = ow.holdDurationSec % 60
-      local exitSec  = (ow.etaSec + ow.holdDurationSec) % 86400
-      table.insert(lines, string.format(
-        "     orbit %d:%02d @ %d IAS: %.1f gal  (exit %s)",
-        holdMin, holdSec2, self.Aircraft.holdIasKt,
-        ow.holdFuelImpGal or 0, self:_FormatClock(exitSec)
-      ))
-    end
-  end
+  self:_AppendFlightPlanRows(lines, computed.waypoints, false)
 
   local f = computed.fuel
   table.insert(lines, "")
-  table.insert(lines, string.format("FUEL: %.1f / %.1f IMP GAL  (%.1f%% margin)",
-    f.totalImpGal, f.tankImpGal, f.marginPercent))
+  self:_AppendFuelSummary(lines, f)
 
   if #computed.warnings > 0 then
     table.insert(lines, "WARNINGS:")
@@ -1803,64 +2082,18 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
     return table.concat(lines, "\n") .. "\n"
   end
 
-  local hdr = string.format(
-    "%-2s %-10s %-12s %10s %11s %6s %5s %5s %5s %6s %5s %5s %-9s %6s %7s",
-    "NO","TYPE","NAME","LAT","LON","ALT","ETA","CRS_T","CRS_M","LEG","GS","IAS","PROF","FUEL","CUM"
-  )
-  table.insert(lines, hdr)
-  table.insert(lines, string.rep("-", string.len(hdr)))
-
   local totalDist = 0
   for _, ow in ipairs(computed.waypoints) do
-    local lat, lon = self:_FormatCoordinate(ow.coordinate)
-    local altStr  = ow.resolvedAltFt ~= nil
-      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
-    local etaStr  = self:_FormatClock(ow.etaSec)
-    local crsT    = self:_FormatHeading(ow.trueCourse)
-    local crsM    = self:_FormatMagneticHeading(ow.trueCourse, ow.coordinate)
-    local legStr  = ow.legDistNm    and string.format("%6.1f", ow.legDistNm)    or "   ---"
-    local gsStr   = ow.legGsKt      and string.format("%5.0f", ow.legGsKt)      or "  ---"
-    local iasStr  = ow.legIasKt     and string.format("%5.0f", ow.legIasKt)     or "  ---"
-    local profStr = self:_FitText(ow.legProfile or "---", 9)
-    local fuelStr = ow.legFuelImpGal and string.format("%6.1f", ow.legFuelImpGal) or "   ---"
-    local cumStr  = string.format("%7.1f", ow.fuelCumImpGal or 0)
-
     if ow.legDistNm then totalDist = totalDist + ow.legDistNm end
-
-    table.insert(lines, string.format(
-      "%02d %-10s %-12s %10s %11s %6s %5s %5s %5s %s %s %s %-9s %s %s",
-      ow.order,
-      self:_FitText(ow.type, 10),
-      self:_FitText(ow.name, 12),
-      lat, lon, altStr, etaStr, crsT, crsM, legStr, gsStr, iasStr, profStr, fuelStr, cumStr
-    ))
-
-    if ow.holdDurationSec and ow.holdDurationSec > 0 then
-      local holdMin  = math.floor(ow.holdDurationSec / 60)
-      local holdSec2 = ow.holdDurationSec % 60
-      local exitSec  = (ow.etaSec + ow.holdDurationSec) % 86400
-      table.insert(lines, string.format(
-        "   orbit %d:%02d @ %d IAS: %.1f gal  (exit %s)",
-        holdMin, holdSec2, self.Aircraft.holdIasKt,
-        ow.holdFuelImpGal or 0, self:_FormatClock(exitSec)
-      ))
-    end
   end
+
+  self:_AppendFlightPlanRows(lines, computed.waypoints, false)
 
   local f = computed.fuel
   table.insert(lines, "")
   table.insert(lines, string.format("TOTAL_DIST: %.1f NM", totalDist))
   table.insert(lines, "")
-  table.insert(lines, "FUEL:")
-  table.insert(lines, string.format("  TAXI:    %6.1f IMP GAL", f.taxiImpGal))
-  table.insert(lines, string.format("  ROUTE:   %6.1f IMP GAL", f.routeImpGal))
-  table.insert(lines, string.format("  RESERVE: %6.1f IMP GAL  (%d min)",
-    f.reserveImpGal, self.Aircraft.fuel.reserveMinutes))
-  table.insert(lines, string.format("  LANDING: %6.1f IMP GAL", f.landingImpGal))
-  table.insert(lines, string.format("  TOTAL:   %6.1f IMP GAL", f.totalImpGal))
-  table.insert(lines, string.format("  TANK:    %6.1f IMP GAL", f.tankImpGal))
-  table.insert(lines, string.format("  MARGIN:  %6.1f IMP GAL  (%.1f%%)",
-    f.marginImpGal, f.marginPercent))
+  self:_AppendFuelSummary(lines, f)
 
   if #computed.warnings > 0 then
     table.insert(lines, "")
@@ -1904,20 +2137,14 @@ function MosieNavigator:_WriteFlightPlanFile(plan, groupName, rolexSeconds)
   self:_Log("wrote flight plan file: " .. path)
 end
 
-function MosieNavigator:_WriteFlightPlanCsvFile(plan, groupName, rolexSeconds)
+function MosieNavigator:_WriteFlightPlanCsvFile(plan)
   if not io then
     self:_Log("cannot write flight plan CSV file: io is not available")
     return
   end
 
   local outputDirectory = self:_GetOutputDirectory()
-  local filename = nil
-
-  if groupName then
-    filename = string.format("MosieNavigator_%s_%s.csv", self:_SanitizeFilename(groupName), self:_SanitizeFilename(plan.name))
-  else
-    filename = string.format("MosieNavigator_%s.csv", self:_SanitizeFilename(plan.name))
-  end
+  local filename = string.format("MosieNavigator_%s.csv", self:_SanitizeFilename(plan.name))
 
   local path = outputDirectory .. filename
   local file = io.open(path, "w")
@@ -1927,7 +2154,7 @@ function MosieNavigator:_WriteFlightPlanCsvFile(plan, groupName, rolexSeconds)
     return
   end
 
-  file:write(self:_BuildFlightPlanCsv(plan, groupName, rolexSeconds))
+  file:write(self:_BuildFlightPlanCsv(plan))
   file:close()
 
   self:_Log("wrote flight plan CSV file: " .. path)
@@ -1969,21 +2196,19 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
       if self.Config.generateFlightPlanFiles then
         self:_WriteFlightPlanFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
       end
-      if self.Config.generateCsvFiles then
-        self:_WriteFlightPlanCsvFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
-      end
     end
-    return
   end
 
-  self:_Log("no group assignments found; writing one debug navlog per plan")
+  if #assignments == 0 then
+    self:_Log("no group assignments found; writing one debug navlog per plan")
+  end
 
   for _, plan in pairs(plans) do
-    if self.Config.generateFlightPlanFiles then
+    if #assignments == 0 and self.Config.generateFlightPlanFiles then
       self:_WriteFlightPlanFile(plan, nil)
     end
     if self.Config.generateCsvFiles then
-      self:_WriteFlightPlanCsvFile(plan, nil)
+      self:_WriteFlightPlanCsvFile(plan)
     end
   end
 end

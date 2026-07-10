@@ -20,9 +20,10 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     -- All FIXED: __T wins, uniform derived speed
     local totalDist = 0
     for _, leg in ipairs(segLegs) do totalDist = totalDist + leg.distNm end
+    local sources = {}
     if totalTimeSec <= 0 or totalDist <= 0 then
-      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt end
-      return result
+      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt; sources[i] = "computed" end
+      return result, sources
     end
     local derivedGs = totalDist / (totalTimeSec / 3600)
     local avgAlt    = 0
@@ -39,17 +40,19 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
         ))
       end
       result[i] = clampedGs
+      sources[i] = "computed"
     end
-    return result
+    return result, sources
   end
 
   if #fixedIndices == 0 then
     -- All FREE: uniform derived speed
+    local sources = {}
     local totalDist = 0
     for _, leg in ipairs(segLegs) do totalDist = totalDist + leg.distNm end
     if totalTimeSec <= 0 or totalDist <= 0 then
-      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt end
-      return result
+      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt; sources[i] = "computed" end
+      return result, sources
     end
     local derivedGs = totalDist / (totalTimeSec / 3600)
     local avgAlt    = 0
@@ -58,11 +61,12 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
     derivedIas, _ = self:_ClampSpeed(derivedIas, warnings, segLabel .. " FREE uniform")
     local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
-    for i = 1, n do result[i] = clampedGs end
-    return result
+    for i = 1, n do result[i] = clampedGs; sources[i] = "computed" end
+    return result, sources
   end
 
   -- Mixed: FIXED honored, FREE get averaged remainder
+  local sources = {}
   local fixedTime = 0
   for _, i in ipairs(fixedIndices) do
     local leg = segLegs[i]
@@ -70,6 +74,7 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     local t   = leg.distNm / gs * 3600
     fixedTime = fixedTime + t
     result[i] = gs
+    sources[i] = "explicit"
   end
 
   local freeTime = totalTimeSec - fixedTime
@@ -82,8 +87,8 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
       segLabel
     ))
     local minGs = self:_ConvertIasToTas(self.Aircraft.envelope.minIasKt, 0) or self.Aircraft.envelope.minIasKt
-    for _, i in ipairs(freeIndices) do result[i] = minGs end
-    return result
+    for _, i in ipairs(freeIndices) do result[i] = minGs; sources[i] = "computed" end
+    return result, sources
   end
 
   local freeGs   = freeDist / (freeTime / 3600)
@@ -93,9 +98,9 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
   local freeIas = self:_ConvertTasToIas(freeGs, avgAltFree) or freeGs
   freeIas, _    = self:_ClampSpeed(freeIas, warnings, segLabel .. " FREE averaged")
   local clampedFreeGs = self:_ConvertIasToTas(freeIas, avgAltFree) or freeIas
-  for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs end
+  for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs; sources[i] = "computed" end
 
-  return result
+  return result, sources
 end
 
 -- Computes full flight plan: ETA, speeds, IAS, profiles, fuel, warnings.
@@ -116,42 +121,18 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
     return { valid = false, error = "first waypoint must be TAKE_OFF", warnings = warnings }
   end
 
+  if wps[#wps].type ~= "LANDING" then
+    return { valid = false, error = "last waypoint must be LANDING", warnings = warnings }
+  end
+
   if not takeoff.timeOnTargetSeconds then
     return { valid = false, error = "TAKE_OFF must have __T (brake release time)", warnings = warnings }
   end
 
-  -- Determine default plan speed (GS kt)
-  local defaultGs = nil
-  if takeoff.speedKt then
-    defaultGs = self:_ConvertIasToTas(takeoff.speedKt, takeoff.altitudeFt or 0) or takeoff.speedKt
-  end
-
-  if not defaultGs then
-    -- Try to derive from first downstream __T pair
-    local firstTotSec = takeoff.timeOnTargetSeconds
-    for i = 2, #wps do
-      if wps[i].timeOnTargetSeconds then
-        local totalDist = 0
-        for j = 2, i do
-          totalDist = totalDist + UTILS.MetersToNM(wps[j-1].coordinate:Get2DDistance(wps[j].coordinate))
-        end
-        local dt = wps[i].timeOnTargetSeconds - firstTotSec
-        if dt < 0 then dt = dt + 86400 end
-        if dt > 0 and totalDist > 0 then
-          defaultGs = totalDist / (dt / 3600)
-        end
-        break
-      end
-    end
-  end
-
-  if not defaultGs then
-    return {
-      valid = false,
-      error = "TAKE_OFF has no __S and no downstream __T constraints — cannot compute speeds",
-      warnings = warnings,
-    }
-  end
+  -- Determine default plan speed. TAKE_OFF __S overrides the Mosquito default
+  -- cruise speed of 240 mph, expressed internally in knots.
+  local defaultIasKt = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
+  local defaultGs = self:_ConvertIasToTas(defaultIasKt, takeoff.altitudeFt or 0) or defaultIasKt
 
   -- ── Altitude cascade ─────────────────────────────────────────────────────
   local resolvedAlt = {}
@@ -198,13 +179,18 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
   -- ── Resolve GS per leg ───────────────────────────────────────────────────
   local legGs = {}  -- legGs[i] = GS kt for leg arriving at WPi
+  local legSpeedSource = {}
 
   local function legSpeedFromDecl(k)
     local ld = legDescs[k]
     if ld and ld.speedKt then
-      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt
+      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt, "explicit"
     end
-    return defaultGs
+    return defaultGs, "default"
+  end
+
+  local function setLegSpeedFromDecl(k)
+    legGs[k], legSpeedSource[k] = legSpeedFromDecl(k)
   end
 
   -- Collect sorted anchor indices
@@ -221,7 +207,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
     if not segEnd then
       -- After last anchor: use __S / default
       for k = segStart + 1, #wps do
-        legGs[k] = legSpeedFromDecl(k)
+        setLegSpeedFromDecl(k)
       end
     else
       -- Check for HOLD anywhere in this segment, including boundaries.
@@ -233,7 +219,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       if hasHold then
         for k = segStart + 1, segEnd do
-          legGs[k] = legSpeedFromDecl(k)
+          setLegSpeedFromDecl(k)
         end
       else
         local totI = wps[segStart].timeOnTargetSeconds
@@ -253,13 +239,14 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
           })
         end
 
-        local segSpeeds = self:_ResolveSegmentSpeeds(
+        local segSpeeds, segSources = self:_ResolveSegmentSpeeds(
           segLegs, dt, warnings,
           string.format("segment [WP%02d..WP%02d]", wps[segStart].order, wps[segEnd].order)
         )
 
         for idx = 1, #segRange do
           legGs[segRange[idx]] = segSpeeds[idx]
+          legSpeedSource[segRange[idx]] = segSources[idx]
         end
       end
     end
@@ -269,7 +256,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   if #anchorList > 0 then
     for k = 2, anchorList[1] do
       if not legGs[k] and wps[k].type ~= "HOLD" then
-        legGs[k] = legSpeedFromDecl(k)
+        setLegSpeedFromDecl(k)
       end
     end
   end
@@ -277,7 +264,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   -- Fill any remaining unset legs
   for k = 2, #wps do
     if not legGs[k] then
-      legGs[k] = legSpeedFromDecl(k)
+      setLegSpeedFromDecl(k)
     end
   end
 
@@ -393,6 +380,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       altInherited       = (wp.altitudeFt == nil) and (resolvedAlt[k] ~= nil),
       etaSec             = etaSec[k] % 86400,
       rawSpeedKt         = wp.speedKt,
+      legSpeedInherited = legSpeedSource[k] == "default",
       rawTimeOnTarget    = wp.timeOnTarget,
       rawTimeOnTargetSec = wp.timeOnTargetSeconds,
     }
@@ -402,9 +390,13 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.legDistNm       = nil
       ow.legGsKt         = nil
       ow.legIasKt        = nil
+      ow.legTasKt        = nil
+      ow.legTimeSec      = nil
       ow.legProfile      = nil
       ow.legFuelImpGal   = aircraft.fuel.taxiAllowance
       ow.trueCourse      = nil
+      ow.headingTrue     = nil
+      ow.magneticVar     = nil
       ow.holdDurationSec = nil
     elseif wp.type == "HOLD" then
       local ld      = legDescs[k]
@@ -413,8 +405,8 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       local legDist = ld and ld.distNm or 0
       local legTime = inGs > 0 and (legDist / inGs) or 0
 
-      local prof    = self:_MatchProfile(inIas, resolvedAlt[k])
-      local legBurn = (prof and prof.burnImpGph or 100) * legTime
+      local prof    = self:_EstimateFuelProfile(inIas, resolvedAlt[k])
+      local legBurn = prof.burnImpGph * legTime
 
       local holdDur  = holdDurations[k] or 0
       local holdBurn = aircraft.holdBurnImpGph * (holdDur / 3600)
@@ -423,12 +415,18 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       ow.legDistNm       = legDist
       ow.legGsKt         = inGs
+      ow.legTimeSec      = legTime * 3600
       ow.legIasKt        = inIas
+      ow.legTasKt        = inGs
       ow.legProfile      = prof and prof.name or nil
       ow.legFuelImpGal   = legBurn
       ow.holdDurationSec = holdDur
       ow.holdFuelImpGal  = holdBurn
       ow.trueCourse      = legTrueCourse(wps[k-1], wp)
+      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
+      )
+      ow.magneticVar     = self:_GetMagneticVariation(wp.coordinate)
 
       fuelCum = fuelCum + holdBurn
     else
@@ -438,43 +436,45 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       local legDist = ld and ld.distNm or 0
       local legTime = gs > 0 and (legDist / gs) or 0
 
-      local prof    = self:_MatchProfile(ias, resolvedAlt[k])
-      if not prof then
-        table.insert(warnings, string.format(
-          "WP%02d %s: no profile match for IAS %.0f kt at %d ft — using 100 gph fallback",
-          wp.order, wp.name, ias, resolvedAlt[k]
-        ))
-      end
-      local legBurn = (prof and prof.burnImpGph or 100) * legTime
+      local prof    = self:_EstimateFuelProfile(ias, resolvedAlt[k])
+      local legBurn = prof.burnImpGph * legTime
 
       fuelCum = fuelCum + legBurn
 
       ow.legDistNm     = legDist
       ow.legGsKt       = gs
+      ow.legTimeSec    = legTime * 3600
       ow.legIasKt      = ias
+      ow.legTasKt      = gs
       ow.legProfile    = prof and prof.name or nil
       ow.legFuelImpGal = legBurn
       ow.trueCourse    = legTrueCourse(wps[k-1], wp)
+      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
+      )
+      ow.magneticVar   = self:_GetMagneticVariation(wp.coordinate)
     end
 
     ow.fuelCumImpGal = fuelCum
     table.insert(outWps, ow)
   end
 
-  -- Reserve: 30 min at lowest burn profile
-  local lowestBurn = aircraft.profiles[1].burnImpGph
-  for _, p in ipairs(aircraft.profiles) do
-    if p.burnImpGph < lowestBurn then lowestBurn = p.burnImpGph end
+  -- Reserve: 30 min at lowest documented engine-setting burn in the fuel curve.
+  local fuelCurve = self:_GetFuelCurveSettings()
+  local lowestBurn = fuelCurve[1] and fuelCurve[1].fuelImpGph or 0
+  for _, p in ipairs(fuelCurve) do
+    if p.fuelImpGph < lowestBurn then lowestBurn = p.fuelImpGph end
   end
   local reserveFuel = aircraft.fuel.reserveMinutes / 60 * lowestBurn
   local routeFuel   = fuelCum - aircraft.fuel.taxiAllowance
   local totalFuel   = fuelCum + reserveFuel + aircraft.fuel.landingAllowance
-  local margin      = aircraft.fuel.tankCapacity - totalFuel
+  local dcsFuel     = self:_BuildDcsFuelRecommendation(totalFuel)
+  local margin      = dcsFuel.capacityGal - totalFuel
 
-  if totalFuel > aircraft.fuel.tankCapacity then
+  if dcsFuel.exceedsCapacity then
     table.insert(warnings, string.format(
-      "FUEL: required %.1f IMP GAL exceeds tank %.1f IMP GAL (%.1f over)",
-      totalFuel, aircraft.fuel.tankCapacity, -margin
+      "FUEL: required %.1f IMP GAL exceeds DCS max fuel %.1f IMP GAL (%.1f over)",
+      totalFuel, dcsFuel.capacityGal, -margin
     ))
   end
 
@@ -488,9 +488,10 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       reserveImpGal   = reserveFuel,
       landingImpGal   = aircraft.fuel.landingAllowance,
       totalImpGal     = totalFuel,
-      tankImpGal      = aircraft.fuel.tankCapacity,
+      tankImpGal      = dcsFuel.capacityGal,
       marginImpGal    = margin,
-      marginPercent   = margin / aircraft.fuel.tankCapacity * 100,
+      marginPercent   = dcsFuel.marginPercent,
+      dcs             = dcsFuel,
     },
     warnings = warnings,
   }

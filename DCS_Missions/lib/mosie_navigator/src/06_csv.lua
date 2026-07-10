@@ -53,37 +53,21 @@ function MosieNavigator:_FormatTotForCsv(waypoint)
     return ""
   end
 
-  local hours = math.floor(seconds / 3600)
-  local minutes = math.floor((seconds % 3600) / 60)
-  local clockSeconds = seconds % 60
-
-  if clockSeconds == 0 then
-    return string.format("%02d:%02d", hours, minutes)
-  end
-
-  return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
+  return self:_FormatDisplayEta(seconds)
 end
 
 function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
   local lines = {}
-  rolexSeconds = rolexSeconds or 0
 
   table.insert(lines, "# PLAN," .. self:_FormatCsvField(plan.name))
-  if groupName then
-    table.insert(lines, "# GROUP," .. self:_FormatCsvField(groupName))
-  end
-  if rolexSeconds ~= 0 then
-    table.insert(lines, "# ROLEX_SEC," .. tostring(rolexSeconds))
-  end
-
   table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
 
-  for _, waypoint in ipairs(plan.waypoints) do
+  for _, waypoint in ipairs(plan.waypoints or {}) do
     local lat, lon = self:_FormatCoordinateForCsvDD(waypoint.coordinate)
     local nameField  = waypoint.nameExplicit and waypoint.name or ""
     local altField   = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
     local totField   = self:_FormatTotForCsv(waypoint)
-    local speedField = waypoint.speedKt ~= nil and tostring(waypoint.speedKt) or ""
+    local speedField = waypoint.speedKt ~= nil and string.format("%.0f", waypoint.speedKt) or ""
 
     table.insert(lines, self:_FormatCsvRow({
       waypoint.order,

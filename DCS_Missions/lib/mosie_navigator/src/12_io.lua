@@ -27,20 +27,14 @@ function MosieNavigator:_WriteFlightPlanFile(plan, groupName, rolexSeconds)
   self:_Log("wrote flight plan file: " .. path)
 end
 
-function MosieNavigator:_WriteFlightPlanCsvFile(plan, groupName, rolexSeconds)
+function MosieNavigator:_WriteFlightPlanCsvFile(plan)
   if not io then
     self:_Log("cannot write flight plan CSV file: io is not available")
     return
   end
 
   local outputDirectory = self:_GetOutputDirectory()
-  local filename = nil
-
-  if groupName then
-    filename = string.format("MosieNavigator_%s_%s.csv", self:_SanitizeFilename(groupName), self:_SanitizeFilename(plan.name))
-  else
-    filename = string.format("MosieNavigator_%s.csv", self:_SanitizeFilename(plan.name))
-  end
+  local filename = string.format("MosieNavigator_%s.csv", self:_SanitizeFilename(plan.name))
 
   local path = outputDirectory .. filename
   local file = io.open(path, "w")
@@ -50,7 +44,7 @@ function MosieNavigator:_WriteFlightPlanCsvFile(plan, groupName, rolexSeconds)
     return
   end
 
-  file:write(self:_BuildFlightPlanCsv(plan, groupName, rolexSeconds))
+  file:write(self:_BuildFlightPlanCsv(plan))
   file:close()
 
   self:_Log("wrote flight plan CSV file: " .. path)
@@ -92,21 +86,19 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
       if self.Config.generateFlightPlanFiles then
         self:_WriteFlightPlanFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
       end
-      if self.Config.generateCsvFiles then
-        self:_WriteFlightPlanCsvFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
-      end
     end
-    return
   end
 
-  self:_Log("no group assignments found; writing one debug navlog per plan")
+  if #assignments == 0 then
+    self:_Log("no group assignments found; writing one debug navlog per plan")
+  end
 
   for _, plan in pairs(plans) do
-    if self.Config.generateFlightPlanFiles then
+    if #assignments == 0 and self.Config.generateFlightPlanFiles then
       self:_WriteFlightPlanFile(plan, nil)
     end
     if self.Config.generateCsvFiles then
-      self:_WriteFlightPlanCsvFile(plan, nil)
+      self:_WriteFlightPlanCsvFile(plan)
     end
   end
 end

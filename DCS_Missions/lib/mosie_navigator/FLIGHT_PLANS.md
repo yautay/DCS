@@ -27,7 +27,7 @@ For the machine-readable contract (token grammar, CSV layout, forbidden encoding
    - 5.5 [ETA = TOT](#55-eta--tot)
    - 5.6 [ROLEX offset](#56-rolex-offset)
    - 5.7 [Speed envelope and clamping](#57-speed-envelope-and-clamping)
-6. [Mosquito FB Mk VI Profiles and Fuel](#6-mosquito-fb-mk-vi-profiles-and-fuel)
+6. [Mosquito FB Mk VI Engine Settings and Fuel](#6-mosquito-fb-mk-vi-engine-settings-and-fuel)
 7. [Reading the Navlog](#7-reading-the-navlog)
 8. [CSV Export](#8-csv-export)
 9. [Common Patterns](#9-common-patterns)
@@ -47,9 +47,9 @@ assign groups, and the Lua script does the rest.
 What you get per group:
 
 - **F10 menu** — "Show FP", "Navigator On/Off", "Status Now", "Next/Prev WP"
-- **In-game message** — full navlog (ETA, GS, IAS, profile, fuel) when you click "Show FP"
+- **In-game message** — navlog (ALT, IAS, TAS, COG, HDG, VAR, SOG, distance, time, ETA) when you click "Show FP"
 - **Text navlog file** — written to the DCS `Logs/` folder at mission start
-- **CSV export** — one file per assigned group, one mission-wide beacons file
+- **CSV export** — one route declaration file per plan, one mission-wide beacons file
 
 ---
 
@@ -73,8 +73,8 @@ MOSQUITO 1-1 [MN:ALPHA]
 That is all. The script will:
 - Propagate 180 kt GS and 500 ft altitude to all waypoints that lack their own `__S`/`__A`.
 - Compute ETAs from the 12:00 brake release.
-- Match each leg to a Mosquito performance profile and estimate fuel.
-- Write a navlog and a CSV to `Logs/`.
+- Interpolate each leg's fuel burn from Mosquito Merlin 25 engine settings.
+- Write a navlog and a route declaration CSV to `Logs/`.
 
 ---
 
@@ -114,7 +114,7 @@ Metadata tokens after the first `__` may appear in any order.
 
 **`__S<kt>`** — planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint.
 - `__S180`, `__S180KT` are both valid.
-- On `TAKE_OFF`: sets the **default cruise GS for the whole plan** (propagates forward).
+- On `TAKE_OFF`: overrides the **default cruise GS for the whole plan** (propagates forward).
 - On later waypoints: overrides the default for that specific leg only, then reverts.
 - See §5.3 for interaction with `__T` constraints.
 
@@ -156,12 +156,13 @@ MOSQUITO 1-2 [MN:JERICHO]__R0:05
 |---|---|
 | `TAKE_OFF` | Departure point. **Must be ORDER 1. Must have `__T`.**  |
 | `NAV` | Generic navigation waypoint. |
-| `RENDEZVOUS` | Formation join-up point. |
 | `INGRESS` | Initial Point (IP) — entry to the target area. |
 | `TARGET` | Strike/attack point. |
 | `EGRESS` | Exit from the target area. |
 | `HOLD` | Orbit point — absorbs timing slack (see §5.4). |
 | `LANDING` | Destination. Usually last in order. |
+
+`LAND` is accepted as a Mission Editor alias and is normalized to `LANDING`.
 
 ---
 
@@ -171,8 +172,8 @@ MOSQUITO 1-2 [MN:JERICHO]__R0:05
 
 1. The first waypoint **must** be `TAKE_OFF`.
 2. `TAKE_OFF` **must** have `__T` (brake release time). Without it, no navlog is generated.
-3. `TAKE_OFF` **must** have `__S` **or** the plan must have at least one downstream `__T`
-   pair from which a speed can be derived. Without any speed information the plan fails.
+3. The last waypoint **must** be `LANDING`.
+4. If `TAKE_OFF` has no `__S`, the plan default cruise speed is 240 mph converted to 208.6 kt. Individual waypoint `__S` tokens still override the arriving leg.
 
 ### 5.2 Altitude cascade
 
@@ -190,6 +191,8 @@ MOSQUITO 1-2 [MN:JERICHO]__R0:05
 
 If no `__A` is anywhere in the plan, all waypoints default to 0 ft MSL (IAS ≈ TAS) and a
 warning is emitted.
+
+Inherited speeds in the text navlog are marked with `*`, matching inherited altitude notation.
 
 ### 5.3 Speed resolution
 
@@ -211,8 +214,7 @@ between consecutive anchors:
 
 Each leg uses its own `__S` or the plan default GS. The HOLD absorbs timing slack (see §5.4).
 
-**Default GS.** Comes from `__S` on `TAKE_OFF`. Propagates forward until overridden by a
-later `__S` (which applies to that one leg only).
+**Default GS.** Comes from `__S` on `TAKE_OFF`, or from the Mosquito default cruise speed of 240 mph (208.6 kt) when `TAKE_OFF __S` is absent. It propagates forward until overridden by a later `__S` (which applies to that one leg only).
 
 ### 5.4 HOLD duration
 
@@ -248,19 +250,26 @@ constraint may not be met when clamping occurs.
 
 ---
 
-## 6. Mosquito FB Mk VI Profiles and Fuel
+## 6. Mosquito FB Mk VI Engine Settings and Fuel
 
-The fuel estimate uses a four-profile table defined in `MosieNavigator.Aircraft`:
+The fuel estimate uses Merlin 25 engine settings defined in `MosieNavigator.Aircraft`.
+Manual fuel values are per engine; Mosie Navigator stores total aircraft burn for both engines.
 
-| Profile | Altitude | IAS range (kt) | Burn (IMP gal/h) |
-|---|---|---|---|
-| `econ_low` | < 10 000 ft | 185–215 | 78 |
-| `econ_high` | ≥ 10 000 ft | 165–185 | 75 |
-| `fast_low` | < 10 000 ft | 215–240 | 90 |
-| `combat` | any | 240–260 | 115 |
+| PROF | Setting | RPM | Mixture | Boost | Burn / engine | Aircraft burn | Route IAS ref |
+|---|---|---:|---|---:|---:|---:|---:|
+| — | `takeoff_emergency_18` | 3000 | Rich | +18 | — | — | — |
+| — | `takeoff_12` | 3000 | Rich | +12 | 115 | 230 | — |
+| `CLB` | `max_climb` | 2850 | Rich | +9 | 95 | 190 | 260 |
+| `MCR` | `max_cont_rich` | 2650 | Rich | +7 | 80 | 160 | 240 |
+| `MCW` | `max_cont_weak` | 2650 | Weak | +7 | 63 | 126 | 215 |
+| `CRZ` | `cruise_weak` | 2300 | Weak | +2 | 42 | 84 | 180 |
 
-Each leg is matched to the profile whose IAS and altitude ranges cover the leg's computed
-IAS and resolved altitude. If no profile matches, a 100 gph fallback is used with a warning.
+Route fuel burn is linearly interpolated by computed IAS between the route IAS reference
+points. Values below the lowest point use `cruise_weak`; values above the highest point use
+`max_climb`. The IAS reference points are provisional calibration values and should be refined
+after DCS flight tests.
+
+Interpolated `PROF` values use two enum codes, for example `CRZ-MCW`, `MCW-MCR`, or `MCR-CLB`.
 
 Fuel components in the summary:
 
@@ -268,12 +277,12 @@ Fuel components in the summary:
 |---|---|
 | TAXI | 15 IMP GAL (start, warm-up, taxi) |
 | ROUTE | sum of all leg burns |
-| HOLD orbit | `holdBurnImpGph × duration` (65 gph) |
-| RESERVE | 30 min at lowest-burn profile (75 gph → 37.5 gal) |
+| HOLD orbit | `holdBurnImpGph × duration` (84 gph) |
+| RESERVE | 30 min at lowest route burn (84 gph → 42.0 gal) |
 | LANDING | 5 IMP GAL |
-| TANK | 546 IMP GAL (Mosquito Mk VI internal) |
+| DCS FUEL | recommended DCS internal fuel slider and drop tank fit |
 
-A warning is emitted if TOTAL > TANK.
+The DCS fuel recommendation uses 3269 lb internal fuel and 7.215 lb/gal (200 gal = 1443 lb). Internal-only recommendations are rounded up to the next full percent with an added 1% buffer, capped at 100%. If the plan exceeds internal fuel, Mosie Navigator recommends `2x50 GAL` or `2x100 GAL` drop tanks. The displayed `DCS FUEL` section intentionally shows only `REQUIRED`, `INTERNAL`, and `DROP`; capacity and margin are kept internal for warnings. A warning is emitted if TOTAL exceeds internal fuel plus `2x100 GAL`.
 
 ---
 
@@ -283,29 +292,28 @@ Column meanings in the text navlog:
 
 | Column | Meaning |
 |---|---|
-| NO | Waypoint order number |
+| ID | Waypoint order number |
 | TYPE | Waypoint type |
-| NAME | Waypoint name |
-| LAT / LON | Coordinates (DDM) |
 | ALT | Resolved altitude in feet. `*` = inherited from previous WP. |
-| ETA | Computed arrival time (includes ROLEX) |
-| CRS_T | True course of the **incoming** leg (from previous WP to this WP) |
-| CRS_M | Magnetic course of the incoming leg |
-| LEG | Distance of the incoming leg (NM) |
-| GS | Ground speed of the incoming leg (kt) |
-| IAS | Indicated airspeed of the incoming leg (kt, converted from GS at leg altitude) |
-| PROF | Matched Mosquito performance profile |
-| FUEL | Fuel burned on the incoming leg (IMP GAL) |
-| CUM | Cumulative fuel to this point (IMP GAL) |
+| IAS(MPH) | Wind-corrected indicated airspeed of the incoming leg in mph. `*` = inherited/default speed. |
+| TAS(KN) | Wind-corrected true airspeed of the incoming leg in knots. |
+| COG | Course over ground of the incoming leg, true degrees. |
+| HDG(TRUE) | Wind-corrected true heading. |
+| VAR | Magnetic variation, signed so `HDG(TRUE) + VAR = HDG(MAG)`. |
+| HDG(MAG) | Wind-corrected magnetic heading. |
+| SOG | Speed over ground of the incoming leg in knots. |
+| DIST | Distance of the incoming leg in NM. |
+| TIME | Leg time in whole minutes. |
+| ETA | Computed arrival time (includes ROLEX), rounded to whole minutes. |
 
-**TAKE_OFF row:** CRS, LEG, GS, IAS, PROF, FUEL are all `---` (no incoming leg).
+**TAKE_OFF row:** Incoming-leg fields are `---` (no incoming leg).
 
 **HOLD row:** Shows the incoming leg data. Below the row an **orbit sub-line** shows orbit
 duration, IAS, orbit fuel, and exit time.
 
 Example orbit sub-line:
 ```
-   orbit 9:00 @ 140 IAS: 9.8 gal  (exit 12:24)
+   orbit 9 min @ 140 IAS: 9.8 gal  (exit 12:24)
 ```
 
 At the end of the navlog:
@@ -320,8 +328,7 @@ At the end of the navlog:
 Filenames written to `Logs/` (or `Config.flightPlanOutputDirectory`):
 
 ```
-MosieNavigator_<GROUP>_<PLAN>.csv      (one per assigned group)
-MosieNavigator_<PLAN>.csv             (fallback when no group assigned)
+MosieNavigator_<PLAN>.csv             (one per plan)
 MosieNavigator_Beacons.csv            (mission-wide beacons)
 ```
 
@@ -331,13 +338,11 @@ Flight plan CSV header row:
 ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT
 ```
 
-- `ALT_FT` — raw `__A` value; empty when zone had no `__A` (propagated defaults not stored).
-- `TOT` — raw `__T` value; empty when zone had no `__T`. ROLEX not applied.
-- `SPEED_KT` — raw `__S` value; empty when zone had no `__S`.
-- Computed ETA, IAS, profile, and fuel are **not** written to CSV (output-only in navlog).
+- `ALT_FT` — declared `__A` value; empty when the waypoint has no `__A` token.
+- `TOT` — declared `__T` value in `HH:MM`; empty when the waypoint has no `__T` token.
+- `SPEED_KT` — declared `__S` value; empty when the waypoint has no `__S` token.
 
-The CSV is designed to be round-trip-lossless: a future importer can reconstruct the
-exact `MN_...` zone name from the CSV fields.
+The flight plan CSV is a Mission Editor declaration export. It does not include inherited/default/computed values and does not apply group ROLEX offsets. Future waypoint tokens should follow the same rule: CSV columns are populated only from explicitly declared trigger-zone data.
 
 Toggle CSV output independently: `MosieNavigator.Config.generateCsvFiles = false`.
 
@@ -370,13 +375,13 @@ MN_ALPHA_04_TARGET__A50__T14:30
 MN_ALPHA_05_LANDING
 ```
 
-### "Rendezvous, then strike with TOT"
+### "Navigation checkpoint, then strike with TOT"
 
 Use a HOLD at the RV point to absorb timing slack:
 
 ```text
 MN_ALPHA_01_TAKE_OFF__T12:00__S180__A5000
-MN_ALPHA_02_RENDEZVOUS_RV
+MN_ALPHA_02_NAV_RV
 MN_ALPHA_03_HOLD_Wait           ← no __T; absorbs slack to hit TARGET TOT
 MN_ALPHA_04_INGRESS__A50
 MN_ALPHA_05_TARGET__A50__T14:30
@@ -432,14 +437,15 @@ All use 500 ft altitude at MSL unless noted. At 500 ft, IAS ≈ GS.
 
 **Result:**
 ```
-NO TYPE     NAME   ALT  ETA    CRS_T CRS_M  LEG    GS  IAS PROF       FUEL   CUM
-01 TAKE_OFF        500  12:00  ---   ---    ---   ---  --- ---        15.0   15.0
-02 NAV             500* 12:06  090   ---    20.0  200  199 econ_low    7.8   22.8
-03 NAV             500* 12:15  090   ---    30.0  200  199 econ_low   11.7   34.5
-04 TARGET          500* 12:22  090   ---    25.0  200  199 econ_low    9.8   44.3
-05 LANDING         500* 12:36  270   ---    45.0  200  199 econ_low   17.5   61.8
+ID TYPE        ALT IAS(MPH) TAS(KN) COG HDG(TRUE) VAR  HDG(MAG) SOG DIST TIME ETA
+01 TAKE_OFF    500      ---     --- ---       --- ---       --- ---  ---  --- 12:00
+02 NAV        500*      229     200 090       090 -0.0      090 200 20.0    6 12:06
+03 NAV        500*      229     200 090       090 -0.0      090 200 30.0    9 12:15
+04 TARGET     500*      229     200 090       090 -0.0      090 200 25.0    8 12:22
+05 LANDING    500*      229     200 270       270 -0.0      270 200 45.0   14 12:36
 
-FUEL:  TAXI 15.0  ROUTE 46.8  RESERVE 37.5  LANDING 5.0  TOTAL 104.3 / 546.0
+FUEL:  TAXI 15.0  ROUTE ...  RESERVE 42.0  LANDING 5.0  TOTAL ...
+DCS FUEL: recommended internal slider percent and drop tanks
 ```
 
 ---
@@ -479,7 +485,7 @@ HOLD duration = 30 - 15 - 6 = 9 min.
 
 **Orbit sub-line:**
 ```
-   orbit 9:00 @ 140 IAS: 9.8 gal  (exit 12:24)
+   orbit 9 min @ 140 IAS: 9.8 gal  (exit 12:24)
 ```
 
 ---
@@ -586,7 +592,6 @@ ETA ~12:05:46).
 | Symptom | Cause | Fix |
 |---|---|---|
 | "Plan doesn't generate" / `ERROR: TAKE_OFF must have __T` | No `__T` on zone 01 | Add `__T12:00` (or actual time) to the TAKE_OFF zone name |
-| "Plan doesn't generate" / `ERROR: cannot compute speeds` | No `__S` and no downstream `__T` pair | Add `__S180` (or actual cruise) to TAKE_OFF |
 | GS / IAS shows `---` | TAKE_OFF row (no incoming leg) — this is correct | Expected behaviour |
 | `HOLD duration 0` + warning | HOLD has no `__T` and is not the last HOLD before a downstream `__T` | Add `__T` on HOLD (arrival time) or add `__T` on a later WP |
 | TARGET `__T` not met + clamp warning | Required speed outside Mosquito envelope | Increase time between anchor waypoints, or shorten route |
@@ -617,15 +622,13 @@ ETA ~12:05:46).
 
 | Token | Navlog column |
 |---|---|
-| `ORDER` | NO |
+| `ORDER` | ID |
 | `TYPE` | TYPE |
-| `NAME` | NAME |
-| Zone position | LAT, LON |
 | `__A` (resolved) | ALT |
 | Algorithm | ETA |
-| Algorithm (leg direction) | CRS_T, CRS_M |
-| Algorithm (leg distance) | LEG |
-| Algorithm | GS, IAS, PROF, FUEL, CUM |
+| Algorithm (leg direction) | COG, HDG(TRUE), VAR, HDG(MAG) |
+| Algorithm (leg distance/time) | DIST, TIME |
+| Algorithm (leg speed) | IAS(MPH), TAS(KN), SOG |
 
 ---
 
@@ -634,13 +637,11 @@ ETA ~12:05:46).
 | Warning text (partial) | Meaning |
 |---|---|
 | `TAKE_OFF must have __T` | Hard error — no T0 defined |
-| `cannot compute speeds` | Hard error — no GS info anywhere |
 | `no __A defined anywhere` | All altitudes default to 0 ft MSL; IAS ≈ TAS |
-| `no profile match for IAS … at … ft` | Computed IAS+altitude outside all Mosquito profiles; 100 gph fallback used |
 | `all-FIXED segment … __S ignored` | All legs in a `__T`–`__T` segment have `__S`; `__T` overrides all |
 | `required … IAS above/below … IAS — clamped` | Speed constraint outside envelope; plan continues with clamped value |
 | `FIXED __S legs consume entire time budget` | `__S` on FIXED legs leaves no time for FREE legs |
 | `HOLD … duration 0 … not last HOLD` | HOLD without `__T` that is not last before downstream `__T` |
 | `HOLD … no downstream __T` | HOLD with neither own `__T` nor downstream `__T`; orbit = 0 |
 | `HOLD … duration negative` | HOLD arrival ETA is later than downstream `__T` minus flight time |
-| `FUEL: required … exceeds tank` | Route + reserve + allowances exceed 546 IMP GAL |
+| `FUEL: required … exceeds DCS max fuel` | Route + reserve + allowances exceed internal fuel plus `2x100 GAL` drop tanks |
