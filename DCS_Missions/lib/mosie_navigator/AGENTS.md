@@ -269,4 +269,11 @@ Run from this directory:
 lua MosieNavigator.spec.lua
 ```
 
+On Windows, when Lua was installed with `winget install rjpcomputing.luaforwindows`
+and `lua` is not on `PATH`, run the bundled Lua 5.1 interpreter directly:
+
+```powershell
+& "C:\Program Files (x86)\Lua\5.1\lua.exe" MosieNavigator.spec.lua
+```
+
 Requires Lua 5.1 (or LuaJIT) — matches the DCS runtime. Exit code is 0 on success, 1 on any failure. Tests must remain compatible with Lua 5.1 semantics (no `goto`, no integer-only `//`, no bitwise operators).
