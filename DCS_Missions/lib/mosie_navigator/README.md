@@ -97,12 +97,12 @@ The navlog is a single compact plain ASCII table with:
 - waypoint type
 - resolved altitude, inherited from previous waypoints when needed
 - IAS in mph, TAS in knots, and SOG in knots for the incoming leg
-- COG, wind-corrected true heading, magnetic variation, and magnetic heading
+- COG, WND correction, wind-corrected true heading, magnetic variation, and magnetic heading
 - leg distance and leg time
 - computed ETA, rounded to full minutes for display
 - DCS fuel recommendation for the Mosquito fuel slider and drop tanks
 
-Static FP/navlog headings use wind from the waypoint coordinate when available. Magnetic variation is displayed so `HDG(TRUE) + VAR = HDG(MAG)`.
+Static FP/navlog headings use wind from the waypoint coordinate when available. `WND` shows `±HDG/±TAS`: heading correction in degrees and TAS correction in knots. Magnetic variation is displayed so `HDG(T) + VAR = HDG(M)`.
 
 For assigned groups with `__R...`, `Show FP` and the generated group navlog show ROLEX-adjusted TOT values.
 

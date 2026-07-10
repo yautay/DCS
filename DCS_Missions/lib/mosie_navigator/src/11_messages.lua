@@ -35,14 +35,14 @@ end
 
 function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
   if compact then
-    table.insert(lines, "ID TY ALT   IASMPH TASKN COG HDGT  VAR  HDGM SOG DIST TIME ETA")
-    table.insert(lines, "----------------------------------------------------------------")
+    table.insert(lines, "ID TY ALT   IASMPH TASKN COG WND     HDG(T) VAR  HDG(M) SOG DIST TIME ETA")
+    table.insert(lines, "------------------------------------------------------------------------")
   else
     table.insert(lines, string.format(
-      "%-2s %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
-      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "HDG(TRUE)", "VAR", "HDG(MAG)", "SOG", "DIST", "TIME", "ETA"
+      "%-2s %-10s %6s %8s %7s %3s %7s %6s %6s %6s %5s %6s %4s %5s",
+      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "WND", "HDG(T)", "VAR", "HDG(M)", "SOG", "DIST", "TIME", "ETA"
     ))
-    table.insert(lines, string.rep("-", 91))
+    table.insert(lines, string.rep("-", 101))
   end
 
   for _, ow in ipairs(waypoints) do
@@ -52,6 +52,7 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
     local iasMph = ow.legIasKt and (string.format("%.0f", self:_KnotsToMph(ow.legIasKt)) .. speedMark) or "---"
     local tasStr = ow.legTasKt and string.format("%.0f", ow.legTasKt) or "---"
     local cogStr = self:_FormatHeading(ow.trueCourse)
+    local wndStr = self:_FormatWindCorrection(ow.windCorrectionDeg, ow.tasCorrectionKt)
     local hdgTrueStr = self:_FormatHeading(ow.headingTrue)
     local varStr = self:_FormatVariation(ow.magneticVar)
     local hdgMagStr = self:_FormatMagneticHeading(ow.headingTrue, ow.coordinate)
@@ -62,13 +63,14 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
 
     if compact then
       table.insert(lines, string.format(
-        "%02d %-2s %-5s %6s %5s %3s %4s %5s %4s %3s %4s %4s %5s",
+        "%02d %-2s %-5s %6s %5s %3s %7s %6s %5s %6s %3s %4s %4s %5s",
         ow.order,
         self:_FormatWaypointTypeShort(ow.type),
         altStr,
         iasMph,
         tasStr,
         cogStr,
+        wndStr,
         hdgTrueStr,
         varStr,
         hdgMagStr,
@@ -79,13 +81,14 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
       ))
     else
       table.insert(lines, string.format(
-        "%02d %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
+        "%02d %-10s %6s %8s %7s %3s %7s %6s %6s %6s %5s %6s %4s %5s",
         ow.order,
         self:_FitText(ow.type, 10),
         altStr,
         iasMph,
         tasStr,
         cogStr,
+        wndStr,
         hdgTrueStr,
         varStr,
         hdgMagStr,

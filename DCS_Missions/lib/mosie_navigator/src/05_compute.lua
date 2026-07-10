@@ -396,14 +396,22 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.legFuelImpGal   = aircraft.fuel.taxiAllowance
       ow.trueCourse      = nil
       ow.headingTrue     = nil
+      ow.windCorrectionDeg = nil
+      ow.tasCorrectionKt = nil
       ow.magneticVar     = nil
       ow.holdDurationSec = nil
     elseif wp.type == "HOLD" then
       local ld      = legDescs[k]
       local inGs    = legGs[k] or defaultGs
-      local inIas   = self:_ConvertTasToIas(inGs, resolvedAlt[k]) or inGs
       local legDist = ld and ld.distNm or 0
       local legTime = inGs > 0 and (legDist / inGs) or 0
+      local legTimeSec = legTime * 3600
+      local trueCourse = legTrueCourse(wps[k-1], wp)
+      local headingTrue, windTas, windIas = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, legTimeSec, resolvedAlt[k]
+      )
+      local inTas = windTas or inGs
+      local inIas = windIas or (self:_ConvertTasToIas(inTas, resolvedAlt[k]) or inTas)
 
       local prof    = self:_EstimateFuelProfile(inIas, resolvedAlt[k])
       local legBurn = prof.burnImpGph * legTime
@@ -415,26 +423,32 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       ow.legDistNm       = legDist
       ow.legGsKt         = inGs
-      ow.legTimeSec      = legTime * 3600
+      ow.legTimeSec      = legTimeSec
       ow.legIasKt        = inIas
-      ow.legTasKt        = inGs
+      ow.legTasKt        = inTas
       ow.legProfile      = prof and prof.name or nil
       ow.legFuelImpGal   = legBurn
       ow.holdDurationSec = holdDur
       ow.holdFuelImpGal  = holdBurn
-      ow.trueCourse      = legTrueCourse(wps[k-1], wp)
-      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
-        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
-      )
+      ow.trueCourse      = trueCourse
+      ow.headingTrue     = headingTrue
+      ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
+      ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
       ow.magneticVar     = self:_GetMagneticVariation(wp.coordinate)
 
       fuelCum = fuelCum + holdBurn
     else
       local ld      = legDescs[k]
       local gs      = legGs[k] or defaultGs
-      local ias     = self:_ConvertTasToIas(gs, resolvedAlt[k]) or gs
       local legDist = ld and ld.distNm or 0
       local legTime = gs > 0 and (legDist / gs) or 0
+      local legTimeSec = legTime * 3600
+      local trueCourse = legTrueCourse(wps[k-1], wp)
+      local headingTrue, windTas, windIas = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, legTimeSec, resolvedAlt[k]
+      )
+      local tas = windTas or gs
+      local ias = windIas or (self:_ConvertTasToIas(tas, resolvedAlt[k]) or tas)
 
       local prof    = self:_EstimateFuelProfile(ias, resolvedAlt[k])
       local legBurn = prof.burnImpGph * legTime
@@ -443,15 +457,15 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       ow.legDistNm     = legDist
       ow.legGsKt       = gs
-      ow.legTimeSec    = legTime * 3600
+      ow.legTimeSec    = legTimeSec
       ow.legIasKt      = ias
-      ow.legTasKt      = gs
+      ow.legTasKt      = tas
       ow.legProfile    = prof and prof.name or nil
       ow.legFuelImpGal = legBurn
-      ow.trueCourse    = legTrueCourse(wps[k-1], wp)
-      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
-        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
-      )
+      ow.trueCourse    = trueCourse
+      ow.headingTrue   = headingTrue
+      ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
+      ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
       ow.magneticVar   = self:_GetMagneticVariation(wp.coordinate)
     end
 

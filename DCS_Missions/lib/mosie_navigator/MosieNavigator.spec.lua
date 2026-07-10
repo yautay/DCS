@@ -1042,14 +1042,14 @@ end)
 local NM = 1852  -- metres per NM
 
 -- Builds a plan with coords laid out in a line along the z-axis.
--- Each entry: { zoneName, zMetres, [lat], [lon] }
+-- Each entry: { zoneName, zMetres, [lat], [lon], [windVec3] }
 -- Distances between consecutive WPs in NM = delta_z / 1852.
 local function makePlan(entries)
   local wps = {}
   for _, e in ipairs(entries) do
     local wp = M:_ParseWaypointZoneName(e[1])
     assert(wp, "parse failed: " .. e[1])
-    wp.coordinate = makeCoord({ x = 0, z = e[2] or 0, lat = e[3] or 50, lon = e[4] or 0 })
+    wp.coordinate = makeCoord({ x = 0, z = e[2] or 0, lat = e[3] or 50, lon = e[4] or 0, wind = e[5] })
     wp.zone = { GetRadius = function() return 100 end }
     table.insert(wps, wp)
   end
@@ -1859,10 +1859,28 @@ suite("Build flight plan messages", function()
       { "MN_TEST_03_LANDING", NM * 40 },
     })
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
-    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+HDG%(TRUE%)%s+VAR%s+HDG%(MAG%)%s+SOG%s+DIST%s+TIME%s+ETA")
+    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+WND%s+HDG%(T%)%s+VAR%s+HDG%(M%)%s+SOG%s+DIST%s+TIME%s+ETA")
     assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:00")
-    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05")
-    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:11")
+    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+%+00/%+00%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05")
+    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+%+00/%+00%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:11")
+  end)
+
+  it("wind correction shifts HDG(T) from COG and updates TAS/IAS", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0, nil, nil, {x = 10, y = 0, z = 0} },
+      { "MN_TEST_02_NAV", NM * 20 },
+      { "MN_TEST_03_LANDING", NM * 40 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, true)
+    assertNear(r.waypoints[2].trueCourse, 0, 0.01)
+    assertNear(r.waypoints[2].headingTrue, 355.06, 0.1)
+    assertNear(r.waypoints[2].windCorrectionDeg, -4.94, 0.1)
+    assertNear(r.waypoints[2].tasCorrectionKt, 0.83, 0.1)
+    assertTrue(r.waypoints[2].legTasKt > r.waypoints[2].legGsKt, "crosswind should increase required TAS")
+
+    local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
+    assertMatch(msg, "02 NAV%s+1500%*%s+254%*%s+226%s+000%s+%-05/%+01%s+355")
   end)
 
   it("F10 flight plan includes multi-line fuel summary", function()
@@ -1906,13 +1924,13 @@ suite("Build flight plan messages", function()
     local lines = splitLines(M:_BuildFlightPlanTable(plan, nil, 0))
     local header, row
     for _, line in ipairs(lines) do
-      if string.find(line, "HDG(TRUE)", 1, true) then header = line end
+      if string.find(line, "HDG(T)", 1, true) then header = line end
       if string.find(line, "02 NAV", 1, true) then row = line end
     end
     assertNotNil(header)
     assertNotNil(row)
-    assertNotNil(string.find(header, "COG%s+HDG%(TRUE%)%s+VAR%s+HDG%(MAG%)"))
-    assertNotNil(string.find(row, "000%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05"))
+    assertNotNil(string.find(header, "COG%s+WND%s+HDG%(T%)%s+VAR%s+HDG%(M%)"))
+    assertNotNil(string.find(row, "000%s+%+00/%+00%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05"))
   end)
 
   it("TXT navlog marks inherited ALT and IAS with star", function()

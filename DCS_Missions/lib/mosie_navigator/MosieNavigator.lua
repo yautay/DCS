@@ -346,6 +346,31 @@ function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
   return self:_FormatHeading(trueHeading + self:_GetMagneticVariation(coordinate))
 end
 
+function MosieNavigator:_GetHeadingDelta(fromHeading, toHeading)
+  if fromHeading == nil or toHeading == nil then
+    return nil
+  end
+
+  return ((toHeading - fromHeading + 540) % 360) - 180
+end
+
+function MosieNavigator:_FormatSignedDegrees(value)
+  if value == nil then
+    return "---"
+  end
+
+  local rounded = value >= 0 and math.floor(value + 0.5) or math.ceil(value - 0.5)
+  return string.format("%+03d", rounded)
+end
+
+function MosieNavigator:_FormatWindCorrection(headingDeltaDeg, tasDeltaKt)
+  if headingDeltaDeg == nil or tasDeltaKt == nil then
+    return "---"
+  end
+
+  return self:_FormatSignedDegrees(headingDeltaDeg) .. "/" .. self:_FormatSignedDegrees(tasDeltaKt)
+end
+
 function MosieNavigator:_GetMagneticVariation(coordinate)
   if not coordinate or not coordinate.GetMagneticDeclination then
     return 0
@@ -1109,14 +1134,22 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.legFuelImpGal   = aircraft.fuel.taxiAllowance
       ow.trueCourse      = nil
       ow.headingTrue     = nil
+      ow.windCorrectionDeg = nil
+      ow.tasCorrectionKt = nil
       ow.magneticVar     = nil
       ow.holdDurationSec = nil
     elseif wp.type == "HOLD" then
       local ld      = legDescs[k]
       local inGs    = legGs[k] or defaultGs
-      local inIas   = self:_ConvertTasToIas(inGs, resolvedAlt[k]) or inGs
       local legDist = ld and ld.distNm or 0
       local legTime = inGs > 0 and (legDist / inGs) or 0
+      local legTimeSec = legTime * 3600
+      local trueCourse = legTrueCourse(wps[k-1], wp)
+      local headingTrue, windTas, windIas = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, legTimeSec, resolvedAlt[k]
+      )
+      local inTas = windTas or inGs
+      local inIas = windIas or (self:_ConvertTasToIas(inTas, resolvedAlt[k]) or inTas)
 
       local prof    = self:_EstimateFuelProfile(inIas, resolvedAlt[k])
       local legBurn = prof.burnImpGph * legTime
@@ -1128,26 +1161,32 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       ow.legDistNm       = legDist
       ow.legGsKt         = inGs
-      ow.legTimeSec      = legTime * 3600
+      ow.legTimeSec      = legTimeSec
       ow.legIasKt        = inIas
-      ow.legTasKt        = inGs
+      ow.legTasKt        = inTas
       ow.legProfile      = prof and prof.name or nil
       ow.legFuelImpGal   = legBurn
       ow.holdDurationSec = holdDur
       ow.holdFuelImpGal  = holdBurn
-      ow.trueCourse      = legTrueCourse(wps[k-1], wp)
-      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
-        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
-      )
+      ow.trueCourse      = trueCourse
+      ow.headingTrue     = headingTrue
+      ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
+      ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
       ow.magneticVar     = self:_GetMagneticVariation(wp.coordinate)
 
       fuelCum = fuelCum + holdBurn
     else
       local ld      = legDescs[k]
       local gs      = legGs[k] or defaultGs
-      local ias     = self:_ConvertTasToIas(gs, resolvedAlt[k]) or gs
       local legDist = ld and ld.distNm or 0
       local legTime = gs > 0 and (legDist / gs) or 0
+      local legTimeSec = legTime * 3600
+      local trueCourse = legTrueCourse(wps[k-1], wp)
+      local headingTrue, windTas, windIas = self:_CalculateWindCorrectedGuidance(
+        wps[k-1].coordinate, wp, legTimeSec, resolvedAlt[k]
+      )
+      local tas = windTas or gs
+      local ias = windIas or (self:_ConvertTasToIas(tas, resolvedAlt[k]) or tas)
 
       local prof    = self:_EstimateFuelProfile(ias, resolvedAlt[k])
       local legBurn = prof.burnImpGph * legTime
@@ -1156,15 +1195,15 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
       ow.legDistNm     = legDist
       ow.legGsKt       = gs
-      ow.legTimeSec    = legTime * 3600
+      ow.legTimeSec    = legTimeSec
       ow.legIasKt      = ias
-      ow.legTasKt      = gs
+      ow.legTasKt      = tas
       ow.legProfile    = prof and prof.name or nil
       ow.legFuelImpGal = legBurn
-      ow.trueCourse    = legTrueCourse(wps[k-1], wp)
-      ow.headingTrue, ow.legTasKt, ow.legIasKt = self:_CalculateWindCorrectedGuidance(
-        wps[k-1].coordinate, wp, ow.legTimeSec, resolvedAlt[k]
-      )
+      ow.trueCourse    = trueCourse
+      ow.headingTrue   = headingTrue
+      ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
+      ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
       ow.magneticVar   = self:_GetMagneticVariation(wp.coordinate)
     end
 
@@ -1871,14 +1910,14 @@ end
 
 function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
   if compact then
-    table.insert(lines, "ID TY ALT   IASMPH TASKN COG HDGT  VAR  HDGM SOG DIST TIME ETA")
-    table.insert(lines, "----------------------------------------------------------------")
+    table.insert(lines, "ID TY ALT   IASMPH TASKN COG WND     HDG(T) VAR  HDG(M) SOG DIST TIME ETA")
+    table.insert(lines, "------------------------------------------------------------------------")
   else
     table.insert(lines, string.format(
-      "%-2s %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
-      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "HDG(TRUE)", "VAR", "HDG(MAG)", "SOG", "DIST", "TIME", "ETA"
+      "%-2s %-10s %6s %8s %7s %3s %7s %6s %6s %6s %5s %6s %4s %5s",
+      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "WND", "HDG(T)", "VAR", "HDG(M)", "SOG", "DIST", "TIME", "ETA"
     ))
-    table.insert(lines, string.rep("-", 91))
+    table.insert(lines, string.rep("-", 101))
   end
 
   for _, ow in ipairs(waypoints) do
@@ -1888,6 +1927,7 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
     local iasMph = ow.legIasKt and (string.format("%.0f", self:_KnotsToMph(ow.legIasKt)) .. speedMark) or "---"
     local tasStr = ow.legTasKt and string.format("%.0f", ow.legTasKt) or "---"
     local cogStr = self:_FormatHeading(ow.trueCourse)
+    local wndStr = self:_FormatWindCorrection(ow.windCorrectionDeg, ow.tasCorrectionKt)
     local hdgTrueStr = self:_FormatHeading(ow.headingTrue)
     local varStr = self:_FormatVariation(ow.magneticVar)
     local hdgMagStr = self:_FormatMagneticHeading(ow.headingTrue, ow.coordinate)
@@ -1898,13 +1938,14 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
 
     if compact then
       table.insert(lines, string.format(
-        "%02d %-2s %-5s %6s %5s %3s %4s %5s %4s %3s %4s %4s %5s",
+        "%02d %-2s %-5s %6s %5s %3s %7s %6s %5s %6s %3s %4s %4s %5s",
         ow.order,
         self:_FormatWaypointTypeShort(ow.type),
         altStr,
         iasMph,
         tasStr,
         cogStr,
+        wndStr,
         hdgTrueStr,
         varStr,
         hdgMagStr,
@@ -1915,13 +1956,14 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
       ))
     else
       table.insert(lines, string.format(
-        "%02d %-10s %6s %8s %7s %3s %9s %6s %8s %5s %6s %4s %5s",
+        "%02d %-10s %6s %8s %7s %3s %7s %6s %6s %6s %5s %6s %4s %5s",
         ow.order,
         self:_FitText(ow.type, 10),
         altStr,
         iasMph,
         tasStr,
         cogStr,
+        wndStr,
         hdgTrueStr,
         varStr,
         hdgMagStr,
