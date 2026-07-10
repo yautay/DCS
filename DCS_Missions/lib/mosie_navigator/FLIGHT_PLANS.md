@@ -298,7 +298,8 @@ Column meanings in the text navlog:
 | IAS(MPH) | Wind-corrected indicated airspeed of the incoming leg in mph. `*` = inherited/default speed. |
 | TAS(KN) | Wind-corrected true airspeed of the incoming leg in knots. |
 | COG | Course over ground of the incoming leg, true degrees. |
-| WND | Wind correction as `±HDG/±TAS`: heading correction in degrees, then TAS correction in knots. |
+| WHDG | Wind heading correction in degrees, signed so `COG + WHDG = HDG(T)`. |
+| WTAS | Wind TAS correction in knots, signed so `SOG + WTAS = TAS(KN)`. |
 | HDG(T) | Wind-corrected true heading. |
 | VAR | Magnetic variation, signed so `HDG(T) + VAR = HDG(M)`. |
 | HDG(M) | Wind-corrected magnetic heading. |
@@ -438,12 +439,12 @@ All use 500 ft altitude at MSL unless noted. At 500 ft, IAS ≈ GS.
 
 **Result:**
 ```
-ID TYPE        ALT IAS(MPH) TAS(KN) COG WND     HDG(T) VAR  HDG(M) SOG DIST TIME ETA
-01 TAKE_OFF    500      ---     --- --- ---        --- ---     --- ---  ---  --- 12:00
-02 NAV        500*      229     200 090 +00/+00    090 -0.0    090 200 20.0    6 12:06
-03 NAV        500*      229     200 090 +00/+00    090 -0.0    090 200 30.0    9 12:15
-04 TARGET     500*      229     200 090 +00/+00    090 -0.0    090 200 25.0    8 12:22
-05 LANDING    500*      229     200 270 +00/+00    270 -0.0    270 200 45.0   14 12:36
+ID TYPE        ALT IAS(MPH) TAS(KN) COG WHDG WTAS HDG(T) VAR  HDG(M) SOG DIST TIME ETA
+01 TAKE_OFF    500      ---     --- ---  ---  ---    --- ---     --- ---  ---  --- 12:00
+02 NAV        500*      229     200 090  +00  +00    090 -0.0    090 200 20.0    6 12:06
+03 NAV        500*      229     200 090  +00  +00    090 -0.0    090 200 30.0    9 12:15
+04 TARGET     500*      229     200 090  +00  +00    090 -0.0    090 200 25.0    8 12:22
+05 LANDING    500*      229     200 270  +00  +00    270 -0.0    270 200 45.0   14 12:36
 
 FUEL:  TAXI 15.0  ROUTE ...  RESERVE 42.0  LANDING 5.0  TOTAL ...
 DCS FUEL: recommended internal slider percent and drop tanks
@@ -627,7 +628,7 @@ ETA ~12:05:46).
 | `TYPE` | TYPE |
 | `__A` (resolved) | ALT |
 | Algorithm | ETA |
-| Algorithm (leg direction) | COG, WND, HDG(T), VAR, HDG(M) |
+| Algorithm (leg direction) | COG, WHDG, WTAS, HDG(T), VAR, HDG(M) |
 | Algorithm (leg distance/time) | DIST, TIME |
 | Algorithm (leg speed) | IAS(MPH), TAS(KN), SOG |
 

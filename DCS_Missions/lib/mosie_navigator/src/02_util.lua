@@ -176,6 +176,14 @@ function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
   return self:_FormatHeading(trueHeading + self:_GetMagneticVariation(coordinate))
 end
 
+function MosieNavigator:_FormatMagneticHeadingWithVariation(trueHeading, magneticVariation)
+  if trueHeading == nil or magneticVariation == nil then
+    return "---"
+  end
+
+  return self:_FormatHeading(trueHeading + magneticVariation)
+end
+
 function MosieNavigator:_GetHeadingDelta(fromHeading, toHeading)
   if fromHeading == nil or toHeading == nil then
     return nil
@@ -191,14 +199,6 @@ function MosieNavigator:_FormatSignedDegrees(value)
 
   local rounded = value >= 0 and math.floor(value + 0.5) or math.ceil(value - 0.5)
   return string.format("%+03d", rounded)
-end
-
-function MosieNavigator:_FormatWindCorrection(headingDeltaDeg, tasDeltaKt)
-  if headingDeltaDeg == nil or tasDeltaKt == nil then
-    return "---"
-  end
-
-  return self:_FormatSignedDegrees(headingDeltaDeg) .. "/" .. self:_FormatSignedDegrees(tasDeltaKt)
 end
 
 function MosieNavigator:_GetMagneticVariation(coordinate)

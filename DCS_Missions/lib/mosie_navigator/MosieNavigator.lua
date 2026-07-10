@@ -346,6 +346,14 @@ function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
   return self:_FormatHeading(trueHeading + self:_GetMagneticVariation(coordinate))
 end
 
+function MosieNavigator:_FormatMagneticHeadingWithVariation(trueHeading, magneticVariation)
+  if trueHeading == nil or magneticVariation == nil then
+    return "---"
+  end
+
+  return self:_FormatHeading(trueHeading + magneticVariation)
+end
+
 function MosieNavigator:_GetHeadingDelta(fromHeading, toHeading)
   if fromHeading == nil or toHeading == nil then
     return nil
@@ -361,14 +369,6 @@ function MosieNavigator:_FormatSignedDegrees(value)
 
   local rounded = value >= 0 and math.floor(value + 0.5) or math.ceil(value - 0.5)
   return string.format("%+03d", rounded)
-end
-
-function MosieNavigator:_FormatWindCorrection(headingDeltaDeg, tasDeltaKt)
-  if headingDeltaDeg == nil or tasDeltaKt == nil then
-    return "---"
-  end
-
-  return self:_FormatSignedDegrees(headingDeltaDeg) .. "/" .. self:_FormatSignedDegrees(tasDeltaKt)
 end
 
 function MosieNavigator:_GetMagneticVariation(coordinate)
@@ -1099,7 +1099,6 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   local outWps = {}
   local fuelCum = aircraft.fuel.taxiAllowance  -- start with taxi allowance
 
-  -- Heading helpers need the magnetic declination at the WP coordinate
   local function legTrueCourse(wpFrom, wpTo)
     if not wpFrom or not wpTo then return nil end
     return wpFrom.coordinate:HeadingTo(wpTo.coordinate)
@@ -1172,7 +1171,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.headingTrue     = headingTrue
       ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
       ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
-      ow.magneticVar     = self:_GetMagneticVariation(wp.coordinate)
+      ow.magneticVar     = self:_GetAverageLegMagneticVariation(wps[k-1].coordinate, wp.coordinate, legDist)
 
       fuelCum = fuelCum + holdBurn
     else
@@ -1204,7 +1203,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.headingTrue   = headingTrue
       ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
       ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
-      ow.magneticVar   = self:_GetMagneticVariation(wp.coordinate)
+      ow.magneticVar   = self:_GetAverageLegMagneticVariation(wps[k-1].coordinate, wp.coordinate, legDist)
     end
 
     ow.fuelCumImpGal = fuelCum
@@ -1566,6 +1565,63 @@ end
 
 -- ==== 09_guidance.lua ====
 
+function MosieNavigator:_GetLegSampleCoordinates(fromCoordinate, toCoordinate, distanceNm)
+  local sampleCount = math.max(2, math.floor((distanceNm or 0) / 10) + 1)
+  local samples = {}
+
+  for i = 0, sampleCount - 1 do
+    local fraction = sampleCount == 1 and 0 or (i / (sampleCount - 1))
+    if i == 0 then
+      table.insert(samples, fromCoordinate)
+    elseif i == sampleCount - 1 then
+      table.insert(samples, toCoordinate)
+    elseif fromCoordinate and fromCoordinate.GetIntermediateCoordinate then
+      table.insert(samples, fromCoordinate:GetIntermediateCoordinate(toCoordinate, fraction))
+    end
+  end
+
+  return samples
+end
+
+function MosieNavigator:_GetAverageLegWindVec3(fromCoordinate, toCoordinate, altitudeFt, distanceNm)
+  local samples = self:_GetLegSampleCoordinates(fromCoordinate, toCoordinate, distanceNm)
+  local heightMeters = UTILS.FeetToMeters(altitudeFt or 0)
+  local sumX, sumZ, count = 0, 0, 0
+
+  for _, coordinate in ipairs(samples) do
+    if coordinate and coordinate.GetWindVec3 then
+      local wind = coordinate:GetWindVec3(heightMeters) or {x = 0, z = 0}
+      sumX = sumX + (wind.x or 0)
+      sumZ = sumZ + (wind.z or 0)
+      count = count + 1
+    end
+  end
+
+  if count == 0 then
+    return {x = 0, z = 0}
+  end
+
+  return {x = sumX / count, z = sumZ / count}
+end
+
+function MosieNavigator:_GetAverageLegMagneticVariation(fromCoordinate, toCoordinate, distanceNm)
+  local samples = self:_GetLegSampleCoordinates(fromCoordinate, toCoordinate, distanceNm)
+  local sum, count = 0, 0
+
+  for _, coordinate in ipairs(samples) do
+    if coordinate then
+      sum = sum + self:_GetMagneticVariation(coordinate)
+      count = count + 1
+    end
+  end
+
+  if count == 0 then
+    return nil
+  end
+
+  return sum / count
+end
+
 function MosieNavigator:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, altitudeFt)
   local distanceNm = UTILS.MetersToNM(groupCoordinate:Get2DDistance(waypoint.coordinate))
   local trackTrue = groupCoordinate:HeadingTo(waypoint.coordinate)
@@ -1579,7 +1635,7 @@ function MosieNavigator:_CalculateWindCorrectedGuidance(groupCoordinate, waypoin
   local trackRadians = math.rad(trackTrue)
   local groundVectorX = math.sin(trackRadians) * requiredGroundSpeedMps
   local groundVectorZ = math.cos(trackRadians) * requiredGroundSpeedMps
-  local windVector = groupCoordinate:GetWindVec3(UTILS.FeetToMeters(altitudeFt or 0)) or {x = 0, z = 0}
+  local windVector = self:_GetAverageLegWindVec3(groupCoordinate, waypoint.coordinate, altitudeFt, distanceNm)
   local airVectorX = groundVectorX - (windVector.x or 0)
   local airVectorZ = groundVectorZ - (windVector.z or 0)
   local requiredTas = UTILS.MpsToKnots(math.sqrt(airVectorX * airVectorX + airVectorZ * airVectorZ))
@@ -1910,14 +1966,14 @@ end
 
 function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
   if compact then
-    table.insert(lines, "ID TY ALT   IASMPH TASKN COG WND     HDG(T) VAR  HDG(M) SOG DIST TIME ETA")
-    table.insert(lines, "------------------------------------------------------------------------")
+    table.insert(lines, "ID TY ALT   IASMPH TASKN COG WHDG WTAS HDG(T) VAR  HDG(M) SOG DIST TIME ETA")
+    table.insert(lines, "-------------------------------------------------------------------------")
   else
     table.insert(lines, string.format(
-      "%-2s %-10s %6s %8s %7s %3s %7s %6s %6s %6s %5s %6s %4s %5s",
-      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "WND", "HDG(T)", "VAR", "HDG(M)", "SOG", "DIST", "TIME", "ETA"
+      "%-2s %-10s %6s %8s %7s %3s %4s %4s %6s %6s %6s %5s %6s %4s %5s",
+      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "WHDG", "WTAS", "HDG(T)", "VAR", "HDG(M)", "SOG", "DIST", "TIME", "ETA"
     ))
-    table.insert(lines, string.rep("-", 101))
+    table.insert(lines, string.rep("-", 103))
   end
 
   for _, ow in ipairs(waypoints) do
@@ -1927,10 +1983,11 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
     local iasMph = ow.legIasKt and (string.format("%.0f", self:_KnotsToMph(ow.legIasKt)) .. speedMark) or "---"
     local tasStr = ow.legTasKt and string.format("%.0f", ow.legTasKt) or "---"
     local cogStr = self:_FormatHeading(ow.trueCourse)
-    local wndStr = self:_FormatWindCorrection(ow.windCorrectionDeg, ow.tasCorrectionKt)
+    local whdgStr = self:_FormatSignedDegrees(ow.windCorrectionDeg)
+    local wtasStr = self:_FormatSignedDegrees(ow.tasCorrectionKt)
     local hdgTrueStr = self:_FormatHeading(ow.headingTrue)
     local varStr = self:_FormatVariation(ow.magneticVar)
-    local hdgMagStr = self:_FormatMagneticHeading(ow.headingTrue, ow.coordinate)
+    local hdgMagStr = self:_FormatMagneticHeadingWithVariation(ow.headingTrue, ow.magneticVar)
     local sogStr = ow.legGsKt and string.format("%.0f", ow.legGsKt) or "---"
     local distStr = ow.legDistNm and string.format("%.1f", ow.legDistNm) or "---"
     local timeStr = self:_FormatDisplayLegTime(ow.legTimeSec)
@@ -1938,14 +1995,15 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
 
     if compact then
       table.insert(lines, string.format(
-        "%02d %-2s %-5s %6s %5s %3s %7s %6s %5s %6s %3s %4s %4s %5s",
+        "%02d %-2s %-5s %6s %5s %3s %4s %4s %6s %5s %6s %3s %4s %4s %5s",
         ow.order,
         self:_FormatWaypointTypeShort(ow.type),
         altStr,
         iasMph,
         tasStr,
         cogStr,
-        wndStr,
+        whdgStr,
+        wtasStr,
         hdgTrueStr,
         varStr,
         hdgMagStr,
@@ -1956,14 +2014,15 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
       ))
     else
       table.insert(lines, string.format(
-        "%02d %-10s %6s %8s %7s %3s %7s %6s %6s %6s %5s %6s %4s %5s",
+        "%02d %-10s %6s %8s %7s %3s %4s %4s %6s %6s %6s %5s %6s %4s %5s",
         ow.order,
         self:_FitText(ow.type, 10),
         altStr,
         iasMph,
         tasStr,
         cogStr,
-        wndStr,
+        whdgStr,
+        wtasStr,
         hdgTrueStr,
         varStr,
         hdgMagStr,
@@ -1986,9 +2045,25 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
   end
 end
 
+function MosieNavigator:_GetComputedPlan(plan, rolexSeconds)
+  rolexSeconds = rolexSeconds or 0
+  self.ComputedPlanCache = self.ComputedPlanCache or {}
+  local planCache = self.ComputedPlanCache[plan]
+  if not planCache then
+    planCache = {}
+    self.ComputedPlanCache[plan] = planCache
+  end
+
+  if not planCache[rolexSeconds] then
+    planCache[rolexSeconds] = self:_ComputePlan(plan, rolexSeconds)
+  end
+
+  return planCache[rolexSeconds]
+end
+
 function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
   rolexSeconds = rolexSeconds or 0
-  local computed = self:_ComputePlan(plan, rolexSeconds)
+  local computed = self:_GetComputedPlan(plan, rolexSeconds)
   local lines = {}
 
   table.insert(lines, "MOSIE NAVIGATOR")
@@ -2105,7 +2180,7 @@ end
 
 function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
   rolexSeconds = rolexSeconds or 0
-  local computed = self:_ComputePlan(plan, rolexSeconds)
+  local computed = self:_GetComputedPlan(plan, rolexSeconds)
   local lines = {}
 
   table.insert(lines, "MOSIE NAVIGATOR FLIGHT PLAN")

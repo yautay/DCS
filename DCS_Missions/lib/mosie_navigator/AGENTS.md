@@ -102,7 +102,11 @@ Use `INGRESS` for IP / initial point semantics. Do not add a separate `IP` or `I
 
 For prose, examples, and a worked tutorial see **[FLIGHT_PLANS.md](FLIGHT_PLANS.md)**.
 
-The flight plan algorithm (`_ComputePlan`) runs on every navlog / F10 generation. Flight plan CSV is a declaration export and does not run `_ComputePlan`.
+The flight plan algorithm (`_ComputePlan`) runs when a static FP/navlog result is first needed. Flight plan CSV is a declaration export and does not run `_ComputePlan`.
+
+**Computed flight plan immutability.** Once a flight plan has been computed for static FP/navlog output, that computed result is authoritative and must not be silently recalculated for later F10 `Show FP` displays. A computed plan is sacred: planned ETAs, headings, wind corrections, TAS/IAS, fuel, warnings, and magnetic variation represent the mission-maker's pre-flight forecast at plan generation time. F10 `Show FP` must render cached computed plan data rather than recalculating forecast wind, heading, speed, fuel, or warning values. Any explicit recomputation must be a deliberate API/menu action and should be clearly named as such. Active runtime navigation may compute live guidance values such as current range, XTE, bearing, and waypoint status, but it must not mutate or reinterpret the static computed flight plan. Planned wind corrections are forecast values, not live in-flight measurements.
+
+**Static weather sampling.** Static FP/navlog wind correction and magnetic variation are sampled along each leg, not at a single waypoint. Use `max(2, floor(distanceNm / 10) + 1)` evenly spaced samples, including leg start and leg end. Average wind as Vec3 components (`x`/`z`), then derive `HDG(T)`, `TAS(KN)`, `IAS(MPH)`, `WHDG`, and `WTAS` from that average forecast wind. Average magnetic variation over the same sample coordinates.
 
 **Altitude cascade.** `__A` on `TAKE_OFF` is the default cruise altitude. Each waypoint without its own `__A` inherits the previous waypoint's resolved altitude. Inherited values are marked with `*` in the navlog.
 
@@ -185,6 +189,7 @@ Flight plan zones must not define beacons. Beacon zones must not assign beacons 
 - `MosieNavigator.lua` may write one declaration CSV flight plan file per discovered plan and one mission-wide CSV beacons file.
 - `MosieNavigator.lua` may periodically refresh group menus for client aircraft that become active after mission start.
 - `MosieNavigator.lua` may provide an active text navigator per assigned group, with configurable report intervals, manual waypoint changes, wind-corrected magnetic heading, XTE guidance, and mandatory 60/30 second waypoint callouts.
+- It must treat computed static flight plans as immutable once generated; F10 `Show FP` renders cached plan data rather than recalculating forecast wind, heading, speed, fuel, or warning values.
 - It may depend on MOOSE being loaded before it.
 - It must not require YAML files.
 - It must not implement player navigation state until explicitly requested.

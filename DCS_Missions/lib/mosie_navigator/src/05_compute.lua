@@ -361,7 +361,6 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   local outWps = {}
   local fuelCum = aircraft.fuel.taxiAllowance  -- start with taxi allowance
 
-  -- Heading helpers need the magnetic declination at the WP coordinate
   local function legTrueCourse(wpFrom, wpTo)
     if not wpFrom or not wpTo then return nil end
     return wpFrom.coordinate:HeadingTo(wpTo.coordinate)
@@ -434,7 +433,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.headingTrue     = headingTrue
       ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
       ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
-      ow.magneticVar     = self:_GetMagneticVariation(wp.coordinate)
+      ow.magneticVar     = self:_GetAverageLegMagneticVariation(wps[k-1].coordinate, wp.coordinate, legDist)
 
       fuelCum = fuelCum + holdBurn
     else
@@ -466,7 +465,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.headingTrue   = headingTrue
       ow.windCorrectionDeg = self:_GetHeadingDelta(ow.trueCourse, ow.headingTrue)
       ow.tasCorrectionKt = ow.legTasKt and ow.legGsKt and (ow.legTasKt - ow.legGsKt) or nil
-      ow.magneticVar   = self:_GetMagneticVariation(wp.coordinate)
+      ow.magneticVar   = self:_GetAverageLegMagneticVariation(wps[k-1].coordinate, wp.coordinate, legDist)
     end
 
     ow.fuelCumImpGal = fuelCum

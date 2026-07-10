@@ -229,10 +229,16 @@ local function setAbsTime(v) fakeAbsTime = v end
 -- Euclidean over (x,z); heading is atan2(dx,dz) in degrees, north = +z.
 local function makeCoord(opts)
   opts = opts or {}
+  local windField = opts.windField
+  local declinationField = opts.declinationField
   local self = {
     x = opts.x or 0,
     y = opts.y or 0,
     z = opts.z or 0,
+    windField = windField,
+    declinationField = declinationField,
+    wind = opts.wind,
+    declination = opts.declination,
   }
   self.Get2DDistance = function(_, other)
     local dx = (other.x or 0) - self.x
@@ -247,8 +253,23 @@ local function makeCoord(opts)
   end
   self.GetVec3 = function() return { x = self.x, y = self.y, z = self.z } end
   self.GetLLDDM = function() return opts.lat or 0, opts.lon or 0 end
-  self.GetMagneticDeclination = function() return opts.declination or 0 end
-  self.GetWindVec3 = function() return opts.wind or { x = 0, y = 0, z = 0 } end
+  self.GetMagneticDeclination = function()
+    if self.declinationField then return self.declinationField(self.x, self.z) end
+    return self.declination or 0
+  end
+  self.GetWindVec3 = function(_, height)
+    if self.windField then return self.windField(self.x, self.z, height) end
+    return self.wind or { x = 0, y = 0, z = 0 }
+  end
+  self.GetIntermediateCoordinate = function(_, other, fraction)
+    return makeCoord({
+      x = self.x + ((other.x or 0) - self.x) * fraction,
+      y = self.y + ((other.y or 0) - self.y) * fraction,
+      z = self.z + ((other.z or 0) - self.z) * fraction,
+      windField = windField or other.windField,
+      declinationField = declinationField or other.declinationField,
+    })
+  end
   return self
 end
 
@@ -849,13 +870,43 @@ suite("CalculateWindCorrectedGuidance", function()
     assertNear(tas, 1, 0.01)
   end)
   it("headwind increases required TAS", function()
-    local start = makeCoord({x=0, z=0, wind = {x=0, y=0, z=-1}})
-    local wp = { coordinate = makeCoord({x=0, z=1852}) }
+    local windField = function() return {x=0, y=0, z=-1} end
+    local start = makeCoord({x=0, z=0, windField = windField})
+    local wp = { coordinate = makeCoord({x=0, z=1852, windField = windField}) }
     local hdg, tas = M:_CalculateWindCorrectedGuidance(start, wp, 3600, 0)
     -- ground speed 1 kt = 0.514 m/s, headwind -1 m/s in z → air z = 1.514
     -- TAS = 1.514 / 0.514444 ≈ 2.94 kt
     assertNear(tas, 1.514 / 0.514444, 0.05)
     assertNear(hdg, 0, 0.5)
+  end)
+  it("samples leg coordinates every 10 NM rounded down, minimum 2", function()
+    local nm = 1852
+    local start = makeCoord({x=0, z=0})
+    assertEq(#M:_GetLegSampleCoordinates(start, makeCoord({x=0, z=5 * nm}), 5), 2)
+    assertEq(#M:_GetLegSampleCoordinates(start, makeCoord({x=0, z=19 * nm}), 19), 2)
+    assertEq(#M:_GetLegSampleCoordinates(start, makeCoord({x=0, z=20 * nm}), 20), 3)
+    assertEq(#M:_GetLegSampleCoordinates(start, makeCoord({x=0, z=35 * nm}), 35), 4)
+  end)
+  it("averages wind vectors over sampled start/mid/end coordinates", function()
+    local nm = 1852
+    local windField = function(_, z)
+      return {x = z / (10 * nm), y = 0, z = 0}
+    end
+    local start = makeCoord({x=0, z=0, windField = windField})
+    local finish = makeCoord({x=0, z=20 * nm, windField = windField})
+    local avg = M:_GetAverageLegWindVec3(start, finish, 0, 20)
+    assertNear(avg.x, 1, 0.001)
+    assertNear(avg.z, 0, 0.001)
+  end)
+  it("averages magnetic variation over the same leg samples", function()
+    local nm = 1852
+    local declinationField = function(_, z)
+      return z / (10 * nm)
+    end
+    local start = makeCoord({x=0, z=0, declinationField = declinationField})
+    local finish = makeCoord({x=0, z=20 * nm, declinationField = declinationField})
+    -- _GetMagneticVariation stores variation as negative DCS declination.
+    assertNear(M:_GetAverageLegMagneticVariation(start, finish, 20), -1, 0.001)
   end)
 end)
 
@@ -1042,14 +1093,23 @@ end)
 local NM = 1852  -- metres per NM
 
 -- Builds a plan with coords laid out in a line along the z-axis.
--- Each entry: { zoneName, zMetres, [lat], [lon], [windVec3] }
+-- Each entry: { zoneName, zMetres, [lat], [lon], [windVec3], [windField], [declination], [declinationField] }
 -- Distances between consecutive WPs in NM = delta_z / 1852.
 local function makePlan(entries)
   local wps = {}
   for _, e in ipairs(entries) do
     local wp = M:_ParseWaypointZoneName(e[1])
     assert(wp, "parse failed: " .. e[1])
-    wp.coordinate = makeCoord({ x = 0, z = e[2] or 0, lat = e[3] or 50, lon = e[4] or 0, wind = e[5] })
+    wp.coordinate = makeCoord({
+      x = 0,
+      z = e[2] or 0,
+      lat = e[3] or 50,
+      lon = e[4] or 0,
+      wind = e[5],
+      windField = e[6],
+      declination = e[7],
+      declinationField = e[8],
+    })
     wp.zone = { GetRadius = function() return 100 end }
     table.insert(wps, wp)
   end
@@ -1859,17 +1919,18 @@ suite("Build flight plan messages", function()
       { "MN_TEST_03_LANDING", NM * 40 },
     })
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
-    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+WND%s+HDG%(T%)%s+VAR%s+HDG%(M%)%s+SOG%s+DIST%s+TIME%s+ETA")
+    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)%s+SOG%s+DIST%s+TIME%s+ETA")
     assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:00")
-    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+%+00/%+00%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05")
-    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+%+00/%+00%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:11")
+    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05")
+    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:11")
   end)
 
   it("wind correction shifts HDG(T) from COG and updates TAS/IAS", function()
+    local windField = function() return {x = 10, y = 0, z = 0} end
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0, nil, nil, {x = 10, y = 0, z = 0} },
-      { "MN_TEST_02_NAV", NM * 20 },
-      { "MN_TEST_03_LANDING", NM * 40 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0, nil, nil, nil, windField },
+      { "MN_TEST_02_NAV", NM * 20, nil, nil, nil, windField },
+      { "MN_TEST_03_LANDING", NM * 40, nil, nil, nil, windField },
     })
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.valid, true)
@@ -1880,7 +1941,7 @@ suite("Build flight plan messages", function()
     assertTrue(r.waypoints[2].legTasKt > r.waypoints[2].legGsKt, "crosswind should increase required TAS")
 
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
-    assertMatch(msg, "02 NAV%s+1500%*%s+254%*%s+226%s+000%s+%-05/%+01%s+355")
+    assertMatch(msg, "02 NAV%s+1500%*%s+254%*%s+226%s+000%s+%-05%s+%+01%s+355")
   end)
 
   it("F10 flight plan includes multi-line fuel summary", function()
@@ -1929,8 +1990,8 @@ suite("Build flight plan messages", function()
     end
     assertNotNil(header)
     assertNotNil(row)
-    assertNotNil(string.find(header, "COG%s+WND%s+HDG%(T%)%s+VAR%s+HDG%(M%)"))
-    assertNotNil(string.find(row, "000%s+%+00/%+00%s+000%s+%-0%.0%s+000%s+225%s+20%.0%s+5%s+07:05"))
+    assertNotNil(string.find(header, "COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)"))
+    assertNotNil(string.find(row, "000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05"))
   end)
 
   it("TXT navlog marks inherited ALT and IAS with star", function()
@@ -1942,6 +2003,31 @@ suite("Build flight plan messages", function()
     local text = M:_BuildFlightPlanTable(plan, nil, 0)
     assertMatch(text, "02 NAV%s+1500%*%s+253%*")
     assertMatch(text, "03 LANDING%s+1500%*%s+230%s")
+  end)
+
+  it("static FP render uses cached computed plan per plan and ROLEX", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local original = M._ComputePlan
+    local calls = 0
+    M.ComputedPlanCache = nil
+    M._ComputePlan = function(self, p, rolexSeconds)
+      calls = calls + 1
+      return original(self, p, rolexSeconds)
+    end
+
+    local ok, err = pcall(function()
+      M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
+      M:_BuildFlightPlanTable(plan, "GRP", 0)
+      M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 300)
+    end)
+
+    M._ComputePlan = original
+    M.ComputedPlanCache = nil
+    if not ok then error(err) end
+    assertEq(calls, 2)
   end)
 end)
 
