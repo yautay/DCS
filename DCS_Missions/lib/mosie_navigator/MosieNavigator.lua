@@ -1,5 +1,12 @@
-local SECONDS_PER_DAY = 86400
-local SECONDS_PER_HALF_DAY = 43200
+-- ============================================================
+-- MosieNavigator.lua — GENERATED FILE. DO NOT EDIT DIRECTLY.
+-- Edit source modules under src/ and run: python3 build.py
+-- ============================================================
+
+-- ==== 01_config.lua ====
+
+SECONDS_PER_DAY = 86400
+SECONDS_PER_HALF_DAY = 43200
 
 MosieNavigator = MosieNavigator or {}
 
@@ -77,6 +84,8 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
   holdBurnImpGph = 65,
 }
 
+-- ==== 02_util.lua ====
+
 function MosieNavigator:_Log(message)
   env.info("MOSIE_NAVIGATOR: " .. tostring(message))
 end
@@ -120,55 +129,6 @@ function MosieNavigator:_Join(tokens, startIndex, separator)
   return table.concat(result, separator)
 end
 
-function MosieNavigator:_ParseTimeOnTarget(value)
-  local hours, minutes, seconds = string.match(value or "", "^(%d%d?):(%d%d):(%d%d)$")
-
-  if not hours then
-    hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
-    seconds = "0"
-  end
-
-  if not hours or not minutes then
-    return nil
-  end
-
-  hours = tonumber(hours)
-  minutes = tonumber(minutes)
-  seconds = tonumber(seconds ~= "" and seconds or "0")
-
-  if hours > 23 or minutes > 59 or seconds > 59 then
-    return nil
-  end
-
-  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60 + seconds
-end
-
-function MosieNavigator:_ParseRolexDuration(value)
-  local parts = self:_Split(value or "", ":")
-  local hours = 0
-  local minutes = 0
-  local seconds = 0
-
-  if #parts == 1 then
-    minutes = tonumber(parts[1])
-  elseif #parts == 2 then
-    hours = tonumber(parts[1])
-    minutes = tonumber(parts[2])
-  elseif #parts == 3 then
-    hours = tonumber(parts[1])
-    minutes = tonumber(parts[2])
-    seconds = tonumber(parts[3])
-  else
-    return nil
-  end
-
-  if not hours or not minutes or not seconds or minutes > 59 or seconds > 59 then
-    return nil
-  end
-
-  return hours * 3600 + minutes * 60 + seconds
-end
-
 function MosieNavigator:_FormatClock(seconds)
   seconds = seconds % SECONDS_PER_DAY
 
@@ -197,6 +157,149 @@ function MosieNavigator:_FormatRolex(seconds)
   end
 
   return string.format("+%02d:%02d:%02d", hours, minutes, clockSeconds)
+end
+
+function MosieNavigator:_GetPlanColor(planIndex)
+  return self.PlanColors[((planIndex - 1) % #self.PlanColors) + 1]
+end
+
+function MosieNavigator:_CopyColor(color)
+  return {color[1], color[2], color[3]}
+end
+
+function MosieNavigator:_SanitizeFilename(value)
+  return string.gsub(tostring(value), "[^%w%-_]+", "_")
+end
+
+function MosieNavigator:_GetOutputDirectory()
+  if self.Config.flightPlanOutputDirectory then
+    return self.Config.flightPlanOutputDirectory
+  end
+
+  if lfs and lfs.writedir then
+    return lfs.writedir() .. "Logs/"
+  end
+
+  return "./"
+end
+
+function MosieNavigator:_FormatHeading(heading)
+  if not heading then
+    return "---"
+  end
+
+  return string.format("%03d", math.floor(heading + 0.5) % 360)
+end
+
+function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
+  if not trueHeading or not coordinate then
+    return "---"
+  end
+
+  local declination = coordinate:GetMagneticDeclination() or 0
+  return self:_FormatHeading(trueHeading - declination)
+end
+
+function MosieNavigator:_FormatOptional(value)
+  if value == nil then
+    return "---"
+  end
+
+  return tostring(value)
+end
+
+function MosieNavigator:_FormatWaypointTot(waypoint, rolexSeconds)
+  if not waypoint.timeOnTargetSeconds then
+    return "---"
+  end
+
+  return self:_FormatClock(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
+end
+
+function MosieNavigator:_FormatSpeed(speedKt)
+  if not speedKt then
+    return "---"
+  end
+
+  return string.format("%.0f", speedKt)
+end
+
+function MosieNavigator:_NormalizeHeading(heading)
+  return (heading % 360 + 360) % 360
+end
+
+function MosieNavigator:_Atan2(y, x)
+  if math.atan2 then
+    return math.atan2(y, x)
+  end
+
+  return math.atan(y, x)
+end
+
+function MosieNavigator:_FitText(value, width)
+  value = tostring(value or "")
+
+  if string.len(value) > width then
+    return string.sub(value, 1, width)
+  end
+
+  return value
+end
+
+
+
+-- ==== 03_parser.lua ====
+
+function MosieNavigator:_ParseTimeOnTarget(value)
+  local hours, minutes, seconds = string.match(value or "", "^(%d%d?):(%d%d):(%d%d)$")
+
+  if not hours then
+    hours, minutes = string.match(value or "", "^(%d%d?):(%d%d)$")
+    seconds = "0"
+  end
+
+  if not hours or not minutes then
+    return nil
+  end
+
+  hours = tonumber(hours)
+  minutes = tonumber(minutes)
+  seconds = tonumber(seconds ~= "" and seconds or "0")
+
+  if hours > 23 or minutes > 59 or seconds > 59 then
+    return nil
+  end
+
+  return string.format("%02d:%02d", hours, minutes), hours * 3600 + minutes * 60 + seconds
+end
+
+function MosieNavigator:_ParseRolexDuration(value)
+  local parts = self:_Split(value or "", ":")
+
+  if #parts == 1 then
+    local minutes = tonumber(parts[1])
+    if not minutes or minutes < 0 then return nil end
+    return minutes * 60
+  elseif #parts == 2 then
+    local hours = tonumber(parts[1])
+    local minutes = tonumber(parts[2])
+    if not hours or not minutes or hours < 0 or minutes < 0 or minutes > 59 then
+      return nil
+    end
+    return hours * 3600 + minutes * 60
+  elseif #parts == 3 then
+    local hours = tonumber(parts[1])
+    local minutes = tonumber(parts[2])
+    local seconds = tonumber(parts[3])
+    if not hours or not minutes or not seconds
+       or hours < 0 or minutes < 0 or seconds < 0
+       or minutes > 59 or seconds > 59 then
+      return nil
+    end
+    return hours * 3600 + minutes * 60 + seconds
+  end
+
+  return nil
 end
 
 function MosieNavigator:_ParseWaypointMetadata(metadataTokens)
@@ -315,62 +418,7 @@ function MosieNavigator:_ParseNumberWithSuffix(value, suffix)
   return tonumber(numberText)
 end
 
-function MosieNavigator:_GetPlanColor(planIndex)
-  return self.PlanColors[((planIndex - 1) % #self.PlanColors) + 1]
-end
-
-function MosieNavigator:_CopyColor(color)
-  return {color[1], color[2], color[3]}
-end
-
-function MosieNavigator:_SanitizeFilename(value)
-  return string.gsub(tostring(value), "[^%w%-_]+", "_")
-end
-
-function MosieNavigator:_GetOutputDirectory()
-  if self.Config.flightPlanOutputDirectory then
-    return self.Config.flightPlanOutputDirectory
-  end
-
-  if lfs and lfs.writedir then
-    return lfs.writedir() .. "Logs/"
-  end
-
-  return "./"
-end
-
-function MosieNavigator:_FormatHeading(heading)
-  if not heading then
-    return "---"
-  end
-
-  return string.format("%03d", math.floor(heading + 0.5) % 360)
-end
-
-function MosieNavigator:_FormatMagneticHeading(trueHeading, coordinate)
-  if not trueHeading or not coordinate then
-    return "---"
-  end
-
-  local declination = coordinate:GetMagneticDeclination() or 0
-  return self:_FormatHeading(trueHeading - declination)
-end
-
-function MosieNavigator:_FormatOptional(value)
-  if value == nil then
-    return "---"
-  end
-
-  return tostring(value)
-end
-
-function MosieNavigator:_FormatWaypointTot(waypoint, rolexSeconds)
-  if not waypoint.timeOnTargetSeconds then
-    return "---"
-  end
-
-  return self:_FormatClock(waypoint.timeOnTargetSeconds + (rolexSeconds or 0))
-end
+-- ==== 04_physics.lua ====
 
 function MosieNavigator:_ConvertTasToIas(tasKt, altitudeFt)
   if not tasKt or not altitudeFt then
@@ -450,6 +498,8 @@ function MosieNavigator:_ClampSpeed(requiredIasKt, warnings, context)
   return requiredIasKt, false
 end
 
+-- ==== 05_compute.lua ====
+
 -- Resolves GS (kt) for each leg in a segment between two __T anchors (no HOLD).
 -- Returns table of gsKt per leg index (1-based within segment legs).
 function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, segLabel)
@@ -516,13 +566,11 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
 
   -- Mixed: FIXED honored, FREE get averaged remainder
   local fixedTime = 0
-  local fixedDist = 0
   for _, i in ipairs(fixedIndices) do
     local leg = segLegs[i]
     local gs  = self:_ConvertIasToTas(leg.speedKt, leg.altFt or 0) or leg.speedKt
     local t   = leg.distNm / gs * 3600
     fixedTime = fixedTime + t
-    fixedDist = fixedDist + leg.distNm
     result[i] = gs
   end
 
@@ -678,9 +726,10 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
         legGs[k] = legSpeedFromDecl(k)
       end
     else
-      -- Check for HOLD inside this segment
+      -- Check for HOLD anywhere in this segment, including boundaries.
+      -- A HOLD absorbs slack, so nogi używają declared __S / plan default.
       local hasHold = false
-      for k = segStart + 1, segEnd do
+      for k = segStart, segEnd do
         if wps[k].type == "HOLD" then hasHold = true; break end
       end
 
@@ -734,29 +783,10 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
     end
   end
 
-  -- ── ETA pass (first pass: ignoring HOLD durations) ────────────────────────
-  -- Used as "noHoldEta" for HOLD duration computation.
-  local etaSec = {}
-  etaSec[1] = (takeoff.timeOnTargetSeconds + rolexSeconds) % 86400
-
-  for k = 2, #wps do
-    local gs = legGs[k] or defaultGs
-    local legTimeSec = (legDescs[k] and legDescs[k].distNm or 0) / gs * 3600
-    etaSec[k] = etaSec[k-1] + legTimeSec
-  end
-
-  -- ── HOLD duration resolution ──────────────────────────────────────────────
-  local holdDurations = {}  -- holdDurations[k] seconds for HOLD at WPk
-
-  -- Find HOLD waypoints in order
-  local holdIndices = {}
-  for k = 2, #wps do
-    if wps[k].type == "HOLD" then
-      table.insert(holdIndices, k)
-    end
-  end
-
-  -- For each HOLD: find downstream anchor
+  -- ── HOLD anchor mapping ───────────────────────────────────────────────────
+  -- For each HOLD, find nearest downstream __T anchor. Every HOLD is a candidate
+  -- for absorbing slack — __T on a HOLD only pins its arrival ETA, it does not
+  -- exempt the HOLD from the "last one absorbs" rule.
   local function findDownstreamAnchor(startIdx)
     for k = startIdx + 1, #wps do
       if anchors[k] then return k end
@@ -764,117 +794,83 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
     return nil
   end
 
-  -- Identify last HOLD before each downstream anchor (for slack absorption)
   local lastHoldBeforeAnchor = {}  -- [anchorIdx] = holdIdx
-  for _, hi in ipairs(holdIndices) do
-    if not wps[hi].timeOnTargetSeconds then
-      local a = findDownstreamAnchor(hi)
+  for k = 2, #wps do
+    if wps[k].type == "HOLD" then
+      local a = findDownstreamAnchor(k)
       if a then
-        lastHoldBeforeAnchor[a] = hi  -- will overwrite with later HOLD, which is correct
+        lastHoldBeforeAnchor[a] = k  -- iteration in plan order → last write wins
       end
     end
   end
 
-  for _, hi in ipairs(holdIndices) do
-    local holdTot = wps[hi].timeOnTargetSeconds
-    if holdTot then
-      -- __T on HOLD = arrival time; duration from downstream anchor
-      local arrivalSec = (holdTot + rolexSeconds) % 86400
-      local downstream = findDownstreamAnchor(hi)
-      if downstream then
+  -- ── Sequential ETA + HOLD duration pass ──────────────────────────────────
+  -- Single forward walk. For each WP, compute arrival taking upstream HOLD
+  -- durations into account, then (if HOLD) compute this HOLD's duration
+  -- against its true arrival — not a stale first-pass value.
+  local etaSec = {}
+  local holdDurations = {}
+
+  etaSec[1] = (takeoff.timeOnTargetSeconds + rolexSeconds) % 86400
+
+  for k = 2, #wps do
+    local gs      = legGs[k] or defaultGs
+    local legTime = gs > 0 and ((legDescs[k] and legDescs[k].distNm or 0) / gs * 3600) or 0
+
+    -- Propagated arrival = previous departure + leg time.
+    local prevDep = etaSec[k-1]
+    if wps[k-1].type == "HOLD" then
+      prevDep = prevDep + (holdDurations[k-1] or 0)
+    end
+    local propagatedArrival = prevDep + legTime
+
+    if wps[k].type == "HOLD" then
+      local holdTot    = wps[k].timeOnTargetSeconds
+      local downstream = findDownstreamAnchor(k)
+
+      local arrivalSec
+      if holdTot then
+        arrivalSec = (holdTot + rolexSeconds) % 86400  -- __T pins arrival
+      else
+        arrivalSec = propagatedArrival
+      end
+      etaSec[k] = arrivalSec
+
+      if not downstream then
+        holdDurations[k] = 0
+        table.insert(warnings, string.format(
+          "WP%02d HOLD (%s): no downstream __T — duration 0",
+          wps[k].order, wps[k].name
+        ))
+      elseif lastHoldBeforeAnchor[downstream] ~= k then
+        holdDurations[k] = 0
+        table.insert(warnings, string.format(
+          "WP%02d HOLD (%s): not last HOLD before WP%02d — duration 0",
+          wps[k].order, wps[k].name, wps[downstream].order
+        ))
+      else
         local downTot = (wps[downstream].timeOnTargetSeconds + rolexSeconds) % 86400
-        -- Compute flight time from HOLD to downstream at default/declared speeds
         local flightSec = 0
-        for k = hi + 1, downstream do
-          if wps[k].type ~= "HOLD" then
-            local gs = legGs[k] or defaultGs
-            flightSec = flightSec + (legDescs[k] and legDescs[k].distNm or 0) / gs * 3600
-          end
+        for j = k + 1, downstream do
+          local jgs = legGs[j] or defaultGs
+          flightSec = flightSec + (legDescs[j] and legDescs[j].distNm or 0) / jgs * 3600
         end
         local dt = downTot - arrivalSec
         if dt < 0 then dt = dt + 86400 end
         local dur = dt - flightSec
         if dur < 0 then
           table.insert(warnings, string.format(
-            "WP%02d HOLD (%s): computed duration negative (%.0f s) — set to 0",
-            wps[hi].order, wps[hi].name, dur
+            "WP%02d HOLD (%s): negative slack (%.0f s) — duration 0",
+            wps[k].order, wps[k].name, dur
           ))
           dur = 0
         end
-        holdDurations[hi] = dur
-        -- Fix ETA for HOLD: arrival is from __T, not propagated
-        etaSec[hi] = arrivalSec
-      else
-        holdDurations[hi] = 0
-        etaSec[hi] = arrivalSec
-        table.insert(warnings, string.format(
-          "WP%02d HOLD (%s): has __T but no downstream __T — duration 0",
-          wps[hi].order, wps[hi].name
-        ))
+        holdDurations[k] = dur
       end
     else
-      -- No __T on HOLD
-      local downstream = findDownstreamAnchor(hi)
-      if downstream and lastHoldBeforeAnchor[downstream] == hi then
-        -- This is the last HOLD before the downstream anchor: absorb slack
-        local downTot = (wps[downstream].timeOnTargetSeconds + rolexSeconds) % 86400
-        local flightSec = 0
-        for k = hi + 1, downstream do
-          if wps[k].type ~= "HOLD" then
-            local gs = legGs[k] or defaultGs
-            flightSec = flightSec + (legDescs[k] and legDescs[k].distNm or 0) / gs * 3600
-          end
-        end
-        local eta_without_hold = etaSec[hi]  -- ETA at HOLD from first pass
-        local dt = downTot - eta_without_hold
-        if dt < 0 then dt = dt + 86400 end
-        local dur = dt - flightSec
-        if dur < 0 then
-          table.insert(warnings, string.format(
-            "WP%02d HOLD (%s): slack is negative (%.0f s) — set to 0",
-            wps[hi].order, wps[hi].name, dur
-          ))
-          dur = 0
-        end
-        holdDurations[hi] = dur
-      else
-        holdDurations[hi] = 0
-        if downstream then
-          table.insert(warnings, string.format(
-            "WP%02d HOLD (%s): no __T and not last HOLD before WP%02d constraint — duration 0",
-            wps[hi].order, wps[hi].name, wps[downstream].order
-          ))
-        else
-          table.insert(warnings, string.format(
-            "WP%02d HOLD (%s): no __T and no downstream __T constraint — duration 0",
-            wps[hi].order, wps[hi].name
-          ))
-        end
-      end
+      etaSec[k] = propagatedArrival
     end
   end
-
-  -- ── Second ETA pass: apply HOLD durations ─────────────────────────────────
-  -- Forward propagation: after each HOLD, shift subsequent WPs by hold duration.
-  -- HOLDs with explicit __T keep their arrival ETA; propagation resumes from exit.
-  local finalEta = {}
-  finalEta[1] = etaSec[1]
-  for k = 2, #wps do
-    local gs      = legGs[k] or defaultGs
-    local legTime = gs > 0 and ((legDescs[k] and legDescs[k].distNm or 0) / gs * 3600) or 0
-    if wps[k].type == "HOLD" and wps[k].timeOnTargetSeconds then
-      -- Explicit arrival from __T overrides propagation
-      finalEta[k] = (wps[k].timeOnTargetSeconds + rolexSeconds) % 86400
-    else
-      -- Propagate from previous WP departure (previous WP exit = arrival + holdDuration)
-      local prevDep = finalEta[k-1]
-      if wps[k-1].type == "HOLD" then
-        prevDep = prevDep + (holdDurations[k-1] or 0)
-      end
-      finalEta[k] = prevDep + legTime
-    end
-  end
-  for k = 1, #wps do etaSec[k] = finalEta[k] end
 
   -- ── Build per-leg output ──────────────────────────────────────────────────
   local outWps = {}
@@ -1002,73 +998,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   }
 end
 
-function MosieNavigator:_FormatSpeed(speedKt)
-  if not speedKt then
-    return "---"
-  end
-
-  return string.format("%.0f", speedKt)
-end
-
-function MosieNavigator:_NormalizeHeading(heading)
-  return (heading % 360 + 360) % 360
-end
-
-function MosieNavigator:_Atan2(y, x)
-  if math.atan2 then
-    return math.atan2(y, x)
-  end
-
-  return math.atan(y, x)
-end
-
-function MosieNavigator:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, altitudeFt)
-  local distanceNm = UTILS.MetersToNM(groupCoordinate:Get2DDistance(waypoint.coordinate))
-  local trackTrue = groupCoordinate:HeadingTo(waypoint.coordinate)
-
-  if not secondsToTot or secondsToTot <= 0 then
-    return trackTrue, nil, nil
-  end
-
-  local requiredGroundSpeedKt = distanceNm / (secondsToTot / 3600)
-  local requiredGroundSpeedMps = UTILS.KnotsToMps(requiredGroundSpeedKt)
-  local trackRadians = math.rad(trackTrue)
-  local groundVectorX = math.sin(trackRadians) * requiredGroundSpeedMps
-  local groundVectorZ = math.cos(trackRadians) * requiredGroundSpeedMps
-  local windVector = groupCoordinate:GetWindVec3(UTILS.FeetToMeters(altitudeFt or 0)) or {x = 0, z = 0}
-  local airVectorX = groundVectorX - (windVector.x or 0)
-  local airVectorZ = groundVectorZ - (windVector.z or 0)
-  local requiredTas = UTILS.MpsToKnots(math.sqrt(airVectorX * airVectorX + airVectorZ * airVectorZ))
-  local headingTrue = self:_NormalizeHeading(math.deg(self:_Atan2(airVectorX, airVectorZ)))
-  local requiredIas = self:_ConvertTasToIas(requiredTas, altitudeFt)
-
-  return headingTrue, requiredTas, requiredIas
-end
-
-function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinate)
-  if not previousWaypoint or not waypoint then
-    return nil, nil
-  end
-
-  local startVec = previousWaypoint.coordinate:GetVec3()
-  local endVec = waypoint.coordinate:GetVec3()
-  local currentVec = groupCoordinate:GetVec3()
-  local legX = endVec.x - startVec.x
-  local legZ = endVec.z - startVec.z
-  local legLength = math.sqrt(legX * legX + legZ * legZ)
-
-  if legLength <= 0 then
-    return nil, nil
-  end
-
-  local currentX = currentVec.x - startVec.x
-  local currentZ = currentVec.z - startVec.z
-  local cross = legX * currentZ - legZ * currentX
-  local xteNm = UTILS.MetersToNM(math.abs(cross / legLength))
-  local side = cross > 0 and "port" or "stbd"
-
-  return xteNm, side
-end
+-- ==== 06_csv.lua ====
 
 function MosieNavigator:_FormatDecimalMinutes(value, positiveHemisphere, negativeHemisphere, degreeWidth)
   local hemisphere = positiveHemisphere
@@ -1136,17 +1066,65 @@ function MosieNavigator:_FormatTotForCsv(waypoint)
   return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
 end
 
-function MosieNavigator:_FitText(value, width)
-  value = tostring(value or "")
+function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
+  local lines = {}
+  rolexSeconds = rolexSeconds or 0
 
-  if string.len(value) > width then
-    return string.sub(value, 1, width)
+  table.insert(lines, "# PLAN," .. self:_FormatCsvField(plan.name))
+  if groupName then
+    table.insert(lines, "# GROUP," .. self:_FormatCsvField(groupName))
+  end
+  if rolexSeconds ~= 0 then
+    table.insert(lines, "# ROLEX_SEC," .. tostring(rolexSeconds))
   end
 
-  return value
+  table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
+
+  for _, waypoint in ipairs(plan.waypoints) do
+    local lat, lon = self:_FormatCoordinateForCsvDD(waypoint.coordinate)
+    local nameField  = waypoint.nameExplicit and waypoint.name or ""
+    local altField   = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
+    local totField   = self:_FormatTotForCsv(waypoint)
+    local speedField = waypoint.speedKt ~= nil and tostring(waypoint.speedKt) or ""
+
+    table.insert(lines, self:_FormatCsvRow({
+      waypoint.order,
+      waypoint.type,
+      nameField,
+      lat,
+      lon,
+      altField,
+      totField,
+      speedField,
+    }))
+  end
+
+  return table.concat(lines, "\n") .. "\n"
 end
 
+function MosieNavigator:_BuildBeaconsCsv(beacons)
+  local lines = {}
 
+  table.insert(lines, "ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON")
+
+  for _, beacon in ipairs(beacons) do
+    local lat, lon = self:_FormatCoordinateForCsvDD(beacon.coordinate)
+    local frequencyField = beacon.frequency or ""
+
+    table.insert(lines, self:_FormatCsvRow({
+      beacon.id,
+      frequencyField,
+      beacon.powerNm,
+      beacon.altitudeFt,
+      lat,
+      lon,
+    }))
+  end
+
+  return table.concat(lines, "\n") .. "\n"
+end
+
+-- ==== 07_discover.lua ====
 
 function MosieNavigator:_ExtractPlanFromGroupName(groupName)
   return string.match(groupName, self.Config.groupPlanTagPattern)
@@ -1260,6 +1238,8 @@ function MosieNavigator:_DiscoverZones()
   return plans, beacons
 end
 
+-- ==== 08_draw.lua ====
+
 function MosieNavigator:_DrawWaypoint(plan, waypoint, color)
   local label = string.format("MN %s %02d %s\n%s", waypoint.plan, waypoint.order, waypoint.type, waypoint.name)
   local radius = self.Config.defaultWaypointRadiusM
@@ -1348,6 +1328,58 @@ function MosieNavigator:_DrawBeacon(beacon)
     self.Config.readOnly
   ))
 end
+
+-- ==== 09_guidance.lua ====
+
+function MosieNavigator:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, altitudeFt)
+  local distanceNm = UTILS.MetersToNM(groupCoordinate:Get2DDistance(waypoint.coordinate))
+  local trackTrue = groupCoordinate:HeadingTo(waypoint.coordinate)
+
+  if not secondsToTot or secondsToTot <= 0 then
+    return trackTrue, nil, nil
+  end
+
+  local requiredGroundSpeedKt = distanceNm / (secondsToTot / 3600)
+  local requiredGroundSpeedMps = UTILS.KnotsToMps(requiredGroundSpeedKt)
+  local trackRadians = math.rad(trackTrue)
+  local groundVectorX = math.sin(trackRadians) * requiredGroundSpeedMps
+  local groundVectorZ = math.cos(trackRadians) * requiredGroundSpeedMps
+  local windVector = groupCoordinate:GetWindVec3(UTILS.FeetToMeters(altitudeFt or 0)) or {x = 0, z = 0}
+  local airVectorX = groundVectorX - (windVector.x or 0)
+  local airVectorZ = groundVectorZ - (windVector.z or 0)
+  local requiredTas = UTILS.MpsToKnots(math.sqrt(airVectorX * airVectorX + airVectorZ * airVectorZ))
+  local headingTrue = self:_NormalizeHeading(math.deg(self:_Atan2(airVectorX, airVectorZ)))
+  local requiredIas = self:_ConvertTasToIas(requiredTas, altitudeFt)
+
+  return headingTrue, requiredTas, requiredIas
+end
+
+function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinate)
+  if not previousWaypoint or not waypoint then
+    return nil, nil
+  end
+
+  local startVec = previousWaypoint.coordinate:GetVec3()
+  local endVec = waypoint.coordinate:GetVec3()
+  local currentVec = groupCoordinate:GetVec3()
+  local legX = endVec.x - startVec.x
+  local legZ = endVec.z - startVec.z
+  local legLength = math.sqrt(legX * legX + legZ * legZ)
+
+  if legLength <= 0 then
+    return nil, nil
+  end
+
+  local currentX = currentVec.x - startVec.x
+  local currentZ = currentVec.z - startVec.z
+  local cross = legX * currentZ - legZ * currentX
+  local xteNm = UTILS.MetersToNM(math.abs(cross / legLength))
+  local side = cross > 0 and "port" or "stbd"
+
+  return xteNm, side
+end
+
+-- ==== 10_navigator.lua ====
 
 function MosieNavigator:_SendNavigatorMessage(group, text, duration)
   MESSAGE:New(text, duration or self.Config.navigatorMessageDuration, "Mosie Navigator"):ToGroup(group)
@@ -1604,7 +1636,7 @@ function MosieNavigator:TickNavigators()
   end
 end
 
-
+-- ==== 11_messages.lua ====
 
 function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
   rolexSeconds = rolexSeconds or 0
@@ -1841,63 +1873,7 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
   return table.concat(lines, "\n") .. "\n"
 end
 
-function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
-  local lines = {}
-  rolexSeconds = rolexSeconds or 0
-
-  table.insert(lines, "# PLAN," .. self:_FormatCsvField(plan.name))
-  if groupName then
-    table.insert(lines, "# GROUP," .. self:_FormatCsvField(groupName))
-  end
-  if rolexSeconds ~= 0 then
-    table.insert(lines, "# ROLEX_SEC," .. tostring(rolexSeconds))
-  end
-
-  table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
-
-  for _, waypoint in ipairs(plan.waypoints) do
-    local lat, lon = self:_FormatCoordinateForCsvDD(waypoint.coordinate)
-    local nameField  = waypoint.nameExplicit and waypoint.name or ""
-    local altField   = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
-    local totField   = self:_FormatTotForCsv(waypoint)
-    local speedField = waypoint.speedKt ~= nil and tostring(waypoint.speedKt) or ""
-
-    table.insert(lines, self:_FormatCsvRow({
-      waypoint.order,
-      waypoint.type,
-      nameField,
-      lat,
-      lon,
-      altField,
-      totField,
-      speedField,
-    }))
-  end
-
-  return table.concat(lines, "\n") .. "\n"
-end
-
-function MosieNavigator:_BuildBeaconsCsv(beacons)
-  local lines = {}
-
-  table.insert(lines, "ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON")
-
-  for _, beacon in ipairs(beacons) do
-    local lat, lon = self:_FormatCoordinateForCsvDD(beacon.coordinate)
-    local frequencyField = beacon.frequency or ""
-
-    table.insert(lines, self:_FormatCsvRow({
-      beacon.id,
-      frequencyField,
-      beacon.powerNm,
-      beacon.altitudeFt,
-      lat,
-      lon,
-    }))
-  end
-
-  return table.concat(lines, "\n") .. "\n"
-end
+-- ==== 12_io.lua ====
 
 function MosieNavigator:_WriteFlightPlanFile(plan, groupName, rolexSeconds)
   if not io then
@@ -2011,6 +1987,8 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
     end
   end
 end
+
+-- ==== 13_main.lua ====
 
 function MosieNavigator:DrawDebug()
   self.MarkIds = self.MarkIds or {}

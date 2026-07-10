@@ -210,7 +210,14 @@ assert(math.abs(UTILS.MpsToKnots(0.514444) - 1) < 1e-3, "UTILS.MpsToKnots broken
 ------------------------------------------------------------
 
 MOSIE_NAVIGATOR_AUTO_START = false
-dofile("MosieNavigator.lua")
+local _src_modules = {
+  "src/01_config.lua", "src/02_util.lua", "src/03_parser.lua",
+  "src/04_physics.lua", "src/05_compute.lua", "src/06_csv.lua",
+  "src/07_discover.lua", "src/08_draw.lua", "src/09_guidance.lua",
+  "src/10_navigator.lua", "src/11_messages.lua", "src/12_io.lua",
+  "src/13_main.lua",
+}
+for _, name in ipairs(_src_modules) do dofile(name) end
 
 ------------------------------------------------------------
 -- Section 5: Test helpers
@@ -360,9 +367,22 @@ suite("ParseRolexDuration", function()
   it("parses minute-only", function()
     assertEq(M:_ParseRolexDuration("5"), 5 * 60)
   end)
+  it("parses minute-only >= 60 (unbounded)", function()
+    assertEq(M:_ParseRolexDuration("120"), 120 * 60)
+    assertEq(M:_ParseRolexDuration("90"), 90 * 60)
+  end)
+  it("parses minute-only zero", function()
+    assertEq(M:_ParseRolexDuration("0"), 0)
+  end)
+  it("rejects negative minute-only", function()
+    assertNil(M:_ParseRolexDuration("-5"))
+  end)
   it("parses H:MM", function()
     assertEq(M:_ParseRolexDuration("0:05"), 5 * 60)
     assertEq(M:_ParseRolexDuration("1:30"), 3600 + 30 * 60)
+  end)
+  it("rejects H:MM with minutes > 59", function()
+    assertNil(M:_ParseRolexDuration("1:60"))
   end)
   it("parses H:MM:SS", function()
     assertEq(M:_ParseRolexDuration("0:00:30"), 30)
@@ -1090,8 +1110,9 @@ suite("ComputePlan — Plan 1 BASIC (no __T in middle)", function()
 
   it("ETA[2] = 12:06 (20 NM at 200 kt)", function()
     local r = M:_ComputePlan(plan, 0)
-    -- 20/200 h = 0.1 h = 6 min
-    assertNear(r.waypoints[2].etaSec, (12*3600 + 6*60), 2)
+    -- 20/200 h = 0.1 h = 6 min. IAS→TAS conversion at 500 ft ISA gives
+    -- TAS ≈ 201.5, so leg time is ~357.4 s (2.6 s under 360).
+    assertNear(r.waypoints[2].etaSec, (12*3600 + 6*60), 5)
   end)
 
   it("all non-TAKEOFF legs have GS near 200 kt TAS", function()
@@ -1353,10 +1374,11 @@ suite("ComputePlan — __S override on individual WP", function()
 end)
 
 suite("ComputePlan — ROLEX shift", function()
+  -- 60 NM in 20 min = 180 kt required, feasible in envelope [165..260].
   local plan = makePlan({
     { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
-    { "MN_TEST_02_TARGET__T12:20",               NM*50 },
-    { "MN_TEST_03_LANDING",                      NM*90 },
+    { "MN_TEST_02_TARGET__T12:20",               NM*60 },
+    { "MN_TEST_03_LANDING",                      NM*100 },
   })
 
   it("ROLEX shifts ETA[1] by 5 min", function()
@@ -1489,6 +1511,243 @@ suite("ComputePlan — fuel calculation", function()
   it("tank capacity matches Aircraft config", function()
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.fuel.tankImpGal, M.Aircraft.fuel.tankCapacity)
+  end)
+end)
+
+-- ─── HOLD semantics: __T on HOLD is arrival-only; last HOLD absorbs ───────
+
+suite("ComputePlan — HOLD then HOLD(__T) then TARGET(__T)", function()
+  -- Both HOLDs are "last" before their own downstream __T anchor
+  -- (HOLD1 → HOLD2's __T anchor; HOLD2 → TARGET's __T anchor), so both absorb.
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD",                          NM*20 },
+    { "MN_TEST_03_HOLD__T12:20",                  NM*40 },
+    { "MN_TEST_04_TARGET__T12:30",                NM*60 },
+    { "MN_TEST_05_LANDING",                       NM*120 },
+  })
+
+  it("HOLD1 (no __T) absorbs slack to HOLD2(__T)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertTrue((r.waypoints[2].holdDurationSec or 0) > 0,
+      "expected HOLD1 duration > 0, got " .. tostring(r.waypoints[2].holdDurationSec))
+  end)
+
+  it("HOLD2 arrival = 12:20 (snap __T)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[3].etaSec, 12*3600 + 20*60, 5)
+  end)
+
+  it("HOLD2 (__T) also absorbs slack to TARGET(__T)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue((r.waypoints[3].holdDurationSec or 0) > 0,
+      "expected HOLD2 duration > 0, got " .. tostring(r.waypoints[3].holdDurationSec))
+  end)
+
+  it("TARGET ETA = 12:30", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 30*60, 5)
+  end)
+
+  it("no warnings for feasible plan", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(#r.warnings, 0,
+      "expected no warnings, got: " .. table.concat(r.warnings, "; "))
+  end)
+end)
+
+suite("ComputePlan — HOLD(__T) then HOLD (no __T) then TARGET(__T)", function()
+  -- HOLD1 has __T but a LATER HOLD sits before the same TARGET anchor.
+  -- lastHoldBeforeAnchor[TARGET] = HOLD2 → HOLD1 gets 0, HOLD2 absorbs.
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD__T12:15",                  NM*30 },
+    { "MN_TEST_03_NAV",                           NM*40 },
+    { "MN_TEST_04_HOLD",                          NM*55 },
+    { "MN_TEST_05_TARGET__T12:40",                NM*75 },
+    { "MN_TEST_06_LANDING",                       NM*130 },
+  })
+
+  it("HOLD1 (__T) duration = 0 + 'not last' warning", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertEq(r.waypoints[2].holdDurationSec, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "not last") then found = true; break end
+    end
+    assertTrue(found, "expected 'not last' warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+
+  it("HOLD1 arrival = 12:15 (snap __T)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[2].etaSec, 12*3600 + 15*60, 2)
+  end)
+
+  it("HOLD2 (no __T) absorbs slack to TARGET", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue((r.waypoints[4].holdDurationSec or 0) > 0,
+      "expected HOLD2 duration > 0, got " .. tostring(r.waypoints[4].holdDurationSec))
+  end)
+
+  it("TARGET ETA ≈ 12:40", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[5].etaSec, 12*3600 + 40*60, 10)
+  end)
+end)
+
+suite("ComputePlan — HOLD(__T) then HOLD(__T) then TARGET(__T)", function()
+  -- Each HOLD's downstream anchor is the next __T (which is the other HOLD or TARGET).
+  -- Both are "last before their own downstream" and both absorb.
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD__T12:10",                  NM*20 },
+    { "MN_TEST_03_HOLD__T12:20",                  NM*40 },
+    { "MN_TEST_04_TARGET__T12:30",                NM*60 },
+    { "MN_TEST_05_LANDING",                       NM*120 },
+  })
+
+  it("HOLD1 arrival = 12:10 and duration > 0", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertNear(r.waypoints[2].etaSec, 12*3600 + 10*60, 2)
+    assertTrue((r.waypoints[2].holdDurationSec or 0) > 0,
+      "expected HOLD1 duration > 0")
+  end)
+
+  it("HOLD2 arrival = 12:20 and duration > 0", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[3].etaSec, 12*3600 + 20*60, 2)
+    assertTrue((r.waypoints[3].holdDurationSec or 0) > 0,
+      "expected HOLD2 duration > 0")
+  end)
+
+  it("TARGET ETA = 12:30", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 30*60, 5)
+  end)
+
+  it("no warnings", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(#r.warnings, 0,
+      "expected no warnings, got: " .. table.concat(r.warnings, "; "))
+  end)
+end)
+
+suite("ComputePlan — HOLD(__T) with no downstream __T", function()
+  -- HOLD has __T (arrival pinned) but there is no downstream __T at all.
+  -- Under new contract: duration 0 + 'no downstream __T' warning.
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD__T12:15",                  NM*30 },
+    { "MN_TEST_03_LANDING",                       NM*80 },
+  })
+
+  it("HOLD duration = 0 with warning", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertEq(r.waypoints[2].holdDurationSec, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "no downstream") then found = true; break end
+    end
+    assertTrue(found, "expected 'no downstream' warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+
+  it("HOLD arrival = 12:15 (snap __T)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[2].etaSec, 12*3600 + 15*60, 2)
+  end)
+end)
+
+suite("ComputePlan — multi-HOLD with local __S (feasible)", function()
+  -- Feasible variant: HOLD1 uses local __S400 for arrival, HOLD2 has own __T,
+  -- TARGET has local __S300 and __T15:00, LANDING has __T15:20.
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD__S400",                    NM*100 },
+    { "MN_TEST_03_HOLD__T14:00",                  NM*200 },
+    { "MN_TEST_04_TARGET__S300__T15:00",          NM*400 },
+    { "MN_TEST_05_LANDING__T15:20",               NM*460 },
+  })
+
+  it("HOLD1 absorbs slack to HOLD2 (__T14:00)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertTrue((r.waypoints[2].holdDurationSec or 0) > 0,
+      "expected HOLD1 duration > 0")
+  end)
+
+  it("HOLD2 arrival = 14:00 and absorbs slack to TARGET (__T15:00)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[3].etaSec, 14*3600, 5)
+    assertTrue((r.waypoints[3].holdDurationSec or 0) > 0,
+      "expected HOLD2 duration > 0")
+  end)
+
+  it("Leg to HOLD1 uses declared __S400 (not clamped in HOLD segment)", function()
+    local r = M:_ComputePlan(plan, 0)
+    local expectedGs = M:_ConvertIasToTas(400, 500)
+    assertNear(r.waypoints[2].legGsKt, expectedGs, 2)
+  end)
+
+  it("Leg to TARGET uses declared __S300", function()
+    local r = M:_ComputePlan(plan, 0)
+    local expectedGs = M:_ConvertIasToTas(300, 500)
+    assertNear(r.waypoints[4].legGsKt, expectedGs, 2)
+  end)
+
+  it("TARGET ETA = 15:00, LANDING ETA = 15:20", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[4].etaSec, 15*3600, 5)
+    assertNear(r.waypoints[5].etaSec, 15*3600 + 20*60, 10)
+  end)
+end)
+
+suite("ComputePlan — multi-HOLD with local __S (infeasible slack)", function()
+  -- Exact scenario from user: TARGET __T14:30 too tight for 200 NM at declared 300 kt
+  -- from HOLD2 arriving at 14:00 (needs 40 min, only 30 min available).
+  -- HOLD2 duration = 0 + negative-slack warning; TARGET and LANDING drift past their __T.
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD__S400",                    NM*100 },
+    { "MN_TEST_03_HOLD__T14:00",                  NM*200 },
+    { "MN_TEST_04_TARGET__S300__T14:30",          NM*400 },
+    { "MN_TEST_05_LANDING__T14:45",               NM*500 },
+  })
+
+  it("valid despite infeasible constraints", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+  end)
+
+  it("HOLD1 still absorbs slack to HOLD2", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue((r.waypoints[2].holdDurationSec or 0) > 0,
+      "expected HOLD1 duration > 0")
+  end)
+
+  it("HOLD2 duration = 0 with negative-slack warning", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.waypoints[3].holdDurationSec, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "negative slack") then found = true; break end
+    end
+    assertTrue(found, "expected 'negative slack' warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+
+  it("TARGET ETA drifts past __T14:30", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.waypoints[4].etaSec > 14*3600 + 30*60,
+      "expected TARGET drift past 14:30, got " .. tostring(r.waypoints[4].etaSec))
+  end)
+
+  it("LANDING ETA drifts past __T14:45", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.waypoints[5].etaSec > 14*3600 + 45*60,
+      "expected LANDING drift past 14:45, got " .. tostring(r.waypoints[5].etaSec))
   end)
 end)
 
@@ -1743,6 +2002,16 @@ suite("WriteFlightPlanFiles flag interaction", function()
       assertEq(#csvCalls, 1)
     end)
   end)
+end)
+
+------------------------------------------------------------
+-- Bundle smoke test
+------------------------------------------------------------
+
+print("== Bundle smoke test")
+it("MosieNavigator.lua loads without errors", function()
+  local ok, err = pcall(dofile, "MosieNavigator.lua")
+  assert(ok, "bundle failed to load: " .. tostring(err))
 end)
 
 ------------------------------------------------------------

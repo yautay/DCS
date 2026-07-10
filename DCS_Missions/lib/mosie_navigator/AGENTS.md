@@ -36,7 +36,13 @@ SPITFIRE 2-1 [MN:ESCORT]
 
 `PLAN` must match a plan identifier discovered from `MN_` trigger zones.
 
-`__R...` is an optional group ROLEX delay that shifts all displayed/exported TOT values for that group only. Accepted examples: `__R5`, `__R0:05`, `__R0:00:30`. It must not change calculated TAS because the whole plan is shifted by the same amount.
+`__R...` is an optional group ROLEX delay that shifts all displayed/exported TOT values for that group only. Accepted formats:
+
+- `__R<M>` — plain minutes, any non-negative integer (e.g. `__R5`, `__R120`).
+- `__R<H:MM>` — hours and minutes, `MM` must be `00..59` (e.g. `__R0:05`, `__R2:30`).
+- `__R<H:MM:SS>` — hours, minutes, seconds; `MM` and `SS` must be `00..59` (e.g. `__R0:00:30`).
+
+It must not change calculated TAS because the whole plan is shifted by the same amount.
 
 ## Flight Plan Trigger Zone Contract
 
@@ -99,16 +105,20 @@ The flight plan algorithm (`_ComputePlan`) runs on every navlog / F10 / CSV gene
 
 **Speed resolution (per leg).** Each leg is classified relative to `__T` anchors:
 
-1. Segment between two `__T` anchors with **no HOLD** inside:
+1. Segment with a HOLD anywhere in it (HOLD at `segStart`, in the interior, or at `segEnd`): each leg uses its `__S` override or the plan default GS. The HOLD absorbs any slack — legs are **not** re-derived from the time budget.
+2. Segment between two `__T` anchors with **no HOLD** at any position:
    - If all legs are FIXED (`__S` declared): `__T` wins — uniform derived GS used for all legs; any `__S` values are ignored (warning emitted).
    - If some legs are FIXED, others FREE: FIXED legs use their `__S`; FREE legs share the remaining time budget proportionally (averaged GS, clamped to envelope).
    - If all legs are FREE: uniform derived GS from `(dist / Δtime)`.
-2. Segment with HOLD inside, or after the last `__T` anchor: each leg uses its `__S` override or the plan default GS.
+3. After the last `__T` anchor: each leg uses its `__S` override or the plan default GS.
 
 **HOLD duration.**
-- HOLD with `__T`: `__T` = arrival time; duration computed from the next downstream `__T`.
-- HOLD without `__T`: the *last* HOLD before a downstream `__T` absorbs the remaining slack; earlier HOLDs get duration 0 + warning.
-- HOLD with no downstream `__T` at all: duration 0 + warning.
+- `__T` on a HOLD only pins the arrival ETA at the holding — it has **no** effect on hold duration.
+- For duration, all HOLDs are treated uniformly:
+  - The **last HOLD before its next downstream `__T`** absorbs the slack. Flight time between that HOLD and its downstream anchor is computed using declared speeds (`__S` or plan default); the leftover becomes the hold duration.
+  - Earlier HOLDs sharing the same downstream anchor get duration 0 + warning.
+  - A HOLD with no downstream `__T` at all gets duration 0 + warning.
+- If the slack works out negative (constraint physically infeasible at declared speeds): duration 0 + warning; downstream ETAs will drift past their `__T` values.
 
 **ETA = TOT.** There is no distinction. `__T` is an ETA constraint, not a separate concept.
 
@@ -230,6 +240,19 @@ Do not encode these in flight plan trigger zone names:
 - generated Lua fragments
 
 These belong in the future navigator script or builder integration, not in the plan data.
+
+## Source Layout & Build
+
+`MosieNavigator.lua` is a **generated bundle**. Do not edit it directly.
+
+- Edit source modules under `src/*.lua`. Load order follows the numeric prefix
+  (`01_config.lua` → `13_main.lua`); `13_main.lua` must remain last because it
+  calls `MosieNavigator:Start()`.
+- Regenerate the bundle before committing: `python3 build.py`
+- CI / pre-commit sanity: `python3 build.py --check` (exits 1 if bundle drifts
+  from source).
+- Tests load `src/*.lua` directly via `dofile` and include one smoke test that
+  also `dofile`s the bundle to catch syntax errors.
 
 ## Testing
 

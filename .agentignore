@@ -1,0 +1,4 @@
+# Directories and files that AI agents should completely skip.
+# These are historical/archived missions not relevant to current development.
+
+DCS_Missions/DCS_Maps/Archived/
