@@ -1,3 +1,6 @@
+local SECONDS_PER_DAY = 86400
+local SECONDS_PER_HALF_DAY = 43200
+
 MosieNavigator = MosieNavigator or {}
 
 MosieNavigator.Config = MosieNavigator.Config or {
@@ -11,6 +14,7 @@ MosieNavigator.Config = MosieNavigator.Config or {
   beaconFillAlpha = 0.22,
   defaultBeaconPowerNm = 60,
   defaultBeaconAltitudeFt = 0,
+  defaultWaypointRadiusM = 250,
   generateFlightPlanFiles = true,
   flightPlanOutputDirectory = nil,
   groupPlanTagPattern = "%[MN:([%w%-]+)%]",
@@ -142,7 +146,7 @@ function MosieNavigator:_ParseRolexDuration(value)
 end
 
 function MosieNavigator:_FormatClock(seconds)
-  seconds = seconds % 86400
+  seconds = seconds % SECONDS_PER_DAY
 
   local hours = math.floor(seconds / 3600)
   local minutes = math.floor((seconds % 3600) / 60)
@@ -199,10 +203,17 @@ end
 
 function MosieNavigator:_ParseWaypointZoneName(zoneName)
   local zoneParts = self:_SplitPlain(zoneName, "__")
-  local tokens = self:_Split(zoneParts[1], "_")
+  local tokens = self:_SplitPlain(zoneParts[1], "_")
 
   if tokens[1] ~= "MN" then
     return nil
+  end
+
+  for _, token in ipairs(tokens) do
+    if token == "" then
+      self:_Log("WARN: empty token in waypoint zone name: " .. zoneName)
+      return nil
+    end
   end
 
   local plan = tokens[2]
@@ -243,10 +254,17 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
 end
 
 function MosieNavigator:_ParseBeaconZoneName(zoneName)
-  local tokens = self:_Split(zoneName, "_")
+  local tokens = self:_SplitPlain(zoneName, "_")
 
   if tokens[1] ~= "MNB" or not tokens[2] then
     return nil
+  end
+
+  for _, token in ipairs(tokens) do
+    if token == "" then
+      self:_Log("WARN: empty token in beacon zone name: " .. zoneName)
+      return nil
+    end
   end
 
   return {
@@ -288,10 +306,10 @@ function MosieNavigator:_GetOutputDirectory()
   end
 
   if lfs and lfs.writedir then
-    return lfs.writedir() .. "Logs\\"
+    return lfs.writedir() .. "Logs/"
   end
 
-  return ".\\"
+  return "./"
 end
 
 function MosieNavigator:_FormatHeading(heading)
@@ -371,14 +389,14 @@ function MosieNavigator:_CalculateWindCorrectedGuidance(groupCoordinate, waypoin
   end
 
   local requiredGroundSpeedKt = distanceNm / (secondsToTot / 3600)
-  local requiredGroundSpeedMps = requiredGroundSpeedKt * 0.514444
+  local requiredGroundSpeedMps = UTILS.KnotsToMps(requiredGroundSpeedKt)
   local trackRadians = math.rad(trackTrue)
   local groundVectorX = math.sin(trackRadians) * requiredGroundSpeedMps
   local groundVectorZ = math.cos(trackRadians) * requiredGroundSpeedMps
   local windVector = groupCoordinate:GetWindVec3(UTILS.FeetToMeters(altitudeFt or 0)) or {x = 0, z = 0}
   local airVectorX = groundVectorX - (windVector.x or 0)
   local airVectorZ = groundVectorZ - (windVector.z or 0)
-  local requiredTas = math.sqrt(airVectorX * airVectorX + airVectorZ * airVectorZ) * 1.94384
+  local requiredTas = UTILS.MpsToKnots(math.sqrt(airVectorX * airVectorX + airVectorZ * airVectorZ))
   local headingTrue = self:_NormalizeHeading(math.deg(self:_Atan2(airVectorX, airVectorZ)))
   local requiredIas = self:_ConvertTasToIas(requiredTas, altitudeFt)
 
@@ -404,7 +422,7 @@ function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinat
   local currentX = currentVec.x - startVec.x
   local currentZ = currentVec.z - startVec.z
   local cross = legX * currentZ - legZ * currentX
-  local xteNm = math.abs(cross / legLength) / 1852
+  local xteNm = UTILS.MetersToNM(math.abs(cross / legLength))
   local side = cross > 0 and "port" or "stbd"
 
   return xteNm, side
@@ -450,7 +468,7 @@ function MosieNavigator:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legD
 
   local deltaSeconds = waypoint.timeOnTargetSeconds - previousWaypoint.timeOnTargetSeconds
   if deltaSeconds < 0 then
-    deltaSeconds = deltaSeconds + 86400
+    deltaSeconds = deltaSeconds + SECONDS_PER_DAY
   end
 
   if deltaSeconds <= 0 then
@@ -552,6 +570,18 @@ function MosieNavigator:_DiscoverZones()
   end)
 
   for _, plan in pairs(plans) do
+    local seenOrders = {}
+    for _, waypoint in ipairs(plan.waypoints) do
+      local existing = seenOrders[waypoint.order]
+      if existing then
+        self:_Log(string.format(
+          "WARN: plan %s has duplicate order %d: %s vs %s",
+          plan.name, waypoint.order, existing.zoneName, waypoint.zoneName
+        ))
+      end
+      seenOrders[waypoint.order] = waypoint
+    end
+
     table.sort(plan.waypoints, function(a, b)
       return a.order < b.order
     end)
@@ -562,7 +592,7 @@ end
 
 function MosieNavigator:_DrawWaypoint(plan, waypoint, color)
   local label = string.format("MN %s %02d %s\n%s", waypoint.plan, waypoint.order, waypoint.type, waypoint.name)
-  local radius = 250
+  local radius = self.Config.defaultWaypointRadiusM
 
   if waypoint.zone.GetRadius then
     radius = waypoint.zone:GetRadius()
@@ -710,7 +740,7 @@ function MosieNavigator:_GetAdjustedTotSeconds(waypoint, rolexSeconds)
     return nil
   end
 
-  return (waypoint.timeOnTargetSeconds + (rolexSeconds or 0)) % 86400
+  return (waypoint.timeOnTargetSeconds + (rolexSeconds or 0)) % SECONDS_PER_DAY
 end
 
 function MosieNavigator:_GetSecondsToWaypointTot(waypoint, rolexSeconds)
@@ -719,13 +749,13 @@ function MosieNavigator:_GetSecondsToWaypointTot(waypoint, rolexSeconds)
     return nil
   end
 
-  local now = timer.getAbsTime() % 86400
+  local now = timer.getAbsTime() % SECONDS_PER_DAY
   local delta = adjustedTot - now
 
-  if delta < -43200 then
-    delta = delta + 86400
-  elseif delta > 43200 then
-    delta = delta - 86400
+  if delta < -SECONDS_PER_HALF_DAY then
+    delta = delta + SECONDS_PER_DAY
+  elseif delta > SECONDS_PER_HALF_DAY then
+    delta = delta - SECONDS_PER_DAY
   end
 
   return delta
@@ -904,6 +934,30 @@ function MosieNavigator:TickNavigators()
   end
 end
 
+function MosieNavigator:_ComputeLegMetrics(plan, index)
+  local waypoint = plan.waypoints[index]
+  local previousWaypoint = plan.waypoints[index - 1]
+  local nextWaypoint = plan.waypoints[index + 1]
+  local metrics = {
+    legDistanceNm = nil,
+    legSpeedKnots = nil,
+    legIasKnots = nil,
+    trueCourse = nil,
+  }
+
+  if previousWaypoint then
+    metrics.legDistanceNm = UTILS.MetersToNM(previousWaypoint.coordinate:Get2DDistance(waypoint.coordinate))
+    metrics.legSpeedKnots = self:_CalculateLegSpeedKnots(previousWaypoint, waypoint, metrics.legDistanceNm)
+    metrics.legIasKnots = self:_ConvertTasToIas(metrics.legSpeedKnots, waypoint.altitudeFt)
+  end
+
+  if nextWaypoint then
+    metrics.trueCourse = waypoint.coordinate:HeadingTo(nextWaypoint.coordinate)
+  end
+
+  return metrics
+end
+
 function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
   local lines = {}
   local totalDistanceNm = 0
@@ -918,22 +972,9 @@ function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolex
   table.insert(lines, "")
 
   for index, waypoint in ipairs(plan.waypoints) do
-    local previousWaypoint = plan.waypoints[index - 1]
-    local nextWaypoint = plan.waypoints[index + 1]
-    local trueCourse = nil
-    local legDistanceNm = nil
-    local legSpeedKnots = nil
-    local legIasKnots = nil
-
-    if previousWaypoint then
-      legDistanceNm = UTILS.MetersToNM(previousWaypoint.coordinate:Get2DDistance(waypoint.coordinate))
-      totalDistanceNm = totalDistanceNm + legDistanceNm
-      legSpeedKnots = self:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legDistanceNm)
-      legIasKnots = self:_ConvertTasToIas(legSpeedKnots, waypoint.altitudeFt)
-    end
-
-    if nextWaypoint then
-      trueCourse = waypoint.coordinate:HeadingTo(nextWaypoint.coordinate)
+    local metrics = self:_ComputeLegMetrics(plan, index)
+    if metrics.legDistanceNm then
+      totalDistanceNm = totalDistanceNm + metrics.legDistanceNm
     end
 
     table.insert(lines, string.format(
@@ -943,11 +984,11 @@ function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolex
       self:_FitText(waypoint.name, 12),
       self:_FormatOptional(waypoint.altitudeFt),
       self:_FormatWaypointTot(waypoint, rolexSeconds),
-      self:_FormatHeading(trueCourse),
-      self:_FormatMagneticHeading(trueCourse, waypoint.coordinate),
-      legDistanceNm and string.format("%.1f", legDistanceNm) or "---",
-      self:_FormatSpeed(legSpeedKnots),
-      self:_FormatSpeed(legIasKnots),
+      self:_FormatHeading(metrics.trueCourse),
+      self:_FormatMagneticHeading(metrics.trueCourse, waypoint.coordinate),
+      metrics.legDistanceNm and string.format("%.1f", metrics.legDistanceNm) or "---",
+      self:_FormatSpeed(metrics.legSpeedKnots),
+      self:_FormatSpeed(metrics.legIasKnots),
       totalDistanceNm
     ))
   end
@@ -1071,23 +1112,9 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
   table.insert(lines, string.rep("-", 100))
 
   for index, waypoint in ipairs(plan.waypoints) do
-    local previousWaypoint = plan.waypoints[index - 1]
-    local nextWaypoint = plan.waypoints[index + 1]
-    local legDistanceNm = 0
-    local legSpeedKnots = nil
-    local legIasKnots = nil
-
-    if previousWaypoint then
-      legDistanceNm = UTILS.MetersToNM(previousWaypoint.coordinate:Get2DDistance(waypoint.coordinate))
-      totalDistanceNm = totalDistanceNm + legDistanceNm
-      legSpeedKnots = self:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legDistanceNm)
-      legIasKnots = self:_ConvertTasToIas(legSpeedKnots, waypoint.altitudeFt)
-    end
-
-    local trueCourse = nil
-    if nextWaypoint then
-      trueCourse = waypoint.coordinate:HeadingTo(nextWaypoint.coordinate)
-    end
+    local metrics = self:_ComputeLegMetrics(plan, index)
+    local legDistanceNm = metrics.legDistanceNm or 0
+    totalDistanceNm = totalDistanceNm + legDistanceNm
 
     local lat, lon = self:_FormatCoordinate(waypoint.coordinate)
 
@@ -1100,11 +1127,11 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
       lon,
       self:_FormatOptional(waypoint.altitudeFt),
       self:_FormatWaypointTot(waypoint, rolexSeconds),
-      self:_FormatHeading(trueCourse),
-      self:_FormatMagneticHeading(trueCourse, waypoint.coordinate),
+      self:_FormatHeading(metrics.trueCourse),
+      self:_FormatMagneticHeading(metrics.trueCourse, waypoint.coordinate),
       legDistanceNm,
-      self:_FormatSpeed(legSpeedKnots),
-      self:_FormatSpeed(legIasKnots),
+      self:_FormatSpeed(metrics.legSpeedKnots),
+      self:_FormatSpeed(metrics.legIasKnots),
       totalDistanceNm
     ))
   end

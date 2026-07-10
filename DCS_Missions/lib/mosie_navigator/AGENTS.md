@@ -159,3 +159,15 @@ Do not encode these in flight plan trigger zone names:
 - generated Lua fragments
 
 These belong in the future navigator script or builder integration, not in the plan data.
+
+## Testing
+
+Unit tests live in `MosieNavigator.spec.lua`. They load the real `lib/Moose.lua` behind a minimal DCS API shim, then exercise the parsers, formatters, math helpers, and zone discovery flow.
+
+Run from this directory:
+
+```bash
+lua MosieNavigator.spec.lua
+```
+
+Requires Lua 5.1 (or LuaJIT) — matches the DCS runtime. Exit code is 0 on success, 1 on any failure. Tests must remain compatible with Lua 5.1 semantics (no `goto`, no integer-only `//`, no bitwise operators).
