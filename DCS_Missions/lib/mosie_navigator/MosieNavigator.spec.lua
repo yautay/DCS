@@ -422,22 +422,39 @@ suite("ParseWaypointMetadata", function()
   it("A500FT", function()
     assertEq(M:_ParseWaypointMetadata({"A500FT"}).altitudeFt, 500)
   end)
-  it("ALT500 / ALT500FT", function()
-    assertEq(M:_ParseWaypointMetadata({"ALT500"}).altitudeFt, 500)
-    assertEq(M:_ParseWaypointMetadata({"ALT500FT"}).altitudeFt, 500)
+  it("ALT500 is unknown (alias removed)", function()
+    assertNil(M:_ParseWaypointMetadata({"ALT500"}).altitudeFt)
+  end)
+  it("ALT500FT is unknown (alias removed)", function()
+    assertNil(M:_ParseWaypointMetadata({"ALT500FT"}).altitudeFt)
   end)
   it("T14:30", function()
     local md = M:_ParseWaypointMetadata({"T14:30"})
     assertEq(md.timeOnTarget, "14:30")
     assertEq(md.timeOnTargetSeconds, 14 * 3600 + 30 * 60)
   end)
-  it("TOT14:30", function()
-    assertEq(M:_ParseWaypointMetadata({"TOT14:30"}).timeOnTarget, "14:30")
+  it("TOT14:30 is unknown (alias removed)", function()
+    assertNil(M:_ParseWaypointMetadata({"TOT14:30"}).timeOnTarget)
+  end)
+  it("S180 speed token", function()
+    assertEq(M:_ParseWaypointMetadata({"S180"}).speedKt, 180)
+  end)
+  it("S180KT speed token", function()
+    assertEq(M:_ParseWaypointMetadata({"S180KT"}).speedKt, 180)
+  end)
+  it("s200kt case-insensitive", function()
+    assertEq(M:_ParseWaypointMetadata({"s200kt"}).speedKt, 200)
   end)
   it("both A and T", function()
     local md = M:_ParseWaypointMetadata({"A500", "T14:30"})
     assertEq(md.altitudeFt, 500)
     assertEq(md.timeOnTarget, "14:30")
+  end)
+  it("A T and S together", function()
+    local md = M:_ParseWaypointMetadata({"A500", "T14:30", "S180"})
+    assertEq(md.altitudeFt, 500)
+    assertEq(md.timeOnTarget, "14:30")
+    assertEq(md.speedKt, 180)
   end)
   it("negative altitude", function()
     assertEq(M:_ParseWaypointMetadata({"A-500"}).altitudeFt, -500)
@@ -492,6 +509,22 @@ suite("ParseWaypointZoneName", function()
   it("nameExplicit true when explicit name present", function()
     assertEq(M:_ParseWaypointZoneName("MN_JERICHO_03_RENDEZVOUS_Rendezvous").nameExplicit, true)
     assertEq(M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF_Tangmere").nameExplicit, true)
+  end)
+  it("__S token parsed into speedKt", function()
+    local wp = M:_ParseWaypointZoneName("MN_JERICHO_02_NAV__S180")
+    assertNotNil(wp)
+    assertEq(wp.speedKt, 180)
+  end)
+  it("__A and __S and __T all parsed", function()
+    local wp = M:_ParseWaypointZoneName("MN_JERICHO_05_INGRESS_IP__A50__T14:28__S200")
+    assertNotNil(wp)
+    assertEq(wp.altitudeFt, 50)
+    assertEq(wp.speedKt, 200)
+    assertEq(wp.timeOnTargetSeconds, 14 * 3600 + 28 * 60)
+  end)
+  it("no __S → speedKt nil", function()
+    local wp = M:_ParseWaypointZoneName("MN_JERICHO_02_NAV")
+    assertNil(wp.speedKt)
   end)
 end)
 
@@ -625,23 +658,7 @@ suite("FormatDecimalMinutes / FitText", function()
   end)
 end)
 
-suite("CalculateLegSpeedKnots", function()
-  it("no TOT → nil", function()
-    local prev = { timeOnTargetSeconds = nil }
-    local cur = { timeOnTargetSeconds = 3600 }
-    assertNil(M:_CalculateLegSpeedKnots(prev, cur, 10))
-  end)
-  it("60 NM / 1 h = 60 kt", function()
-    local prev = { timeOnTargetSeconds = 0 }
-    local cur = { timeOnTargetSeconds = 3600 }
-    assertNear(M:_CalculateLegSpeedKnots(prev, cur, 60), 60)
-  end)
-  it("cross-midnight wrap", function()
-    local prev = { timeOnTargetSeconds = 23 * 3600 }
-    local cur = { timeOnTargetSeconds = 1 * 3600 }
-    assertNear(M:_CalculateLegSpeedKnots(prev, cur, 120), 60)
-  end)
-end)
+
 
 suite("ExtractPlan / ExtractRolex from group name", function()
   it("plan tag", function()
@@ -675,6 +692,30 @@ suite("FormatWaypointTot", function()
   it("with ROLEX shift", function()
     local wp = { timeOnTargetSeconds = 14 * 3600 + 30 * 60 }
     assertEq(M:_FormatWaypointTot(wp, 5 * 60), "14:35")
+  end)
+end)
+
+suite("ConvertIasToTas", function()
+  it("nil IAS → nil", function()
+    assertNil(M:_ConvertIasToTas(nil, 5000))
+  end)
+  it("nil altitude → nil", function()
+    assertNil(M:_ConvertIasToTas(200, nil))
+  end)
+  it("IAS = TAS at sea level", function()
+    assertNear(M:_ConvertIasToTas(200, 0), 200, 0.01)
+  end)
+  it("TAS > IAS at altitude", function()
+    local tas = M:_ConvertIasToTas(200, 10000)
+    assertTrue(tas > 200, "TAS should exceed IAS: " .. tostring(tas))
+    assertTrue(tas < 260, "TAS sanity range: " .. tostring(tas))
+  end)
+  it("round-trip with ConvertTasToIas", function()
+    local ias = 180
+    local alt = 8000
+    local tas = M:_ConvertIasToTas(ias, alt)
+    local iasBack = M:_ConvertTasToIas(tas, alt)
+    assertNear(iasBack, ias, 0.01, "round-trip IAS")
   end)
 end)
 
@@ -726,35 +767,7 @@ suite("GetAdjustedTotSeconds / GetSecondsToWaypointTot", function()
   end)
 end)
 
-suite("ComputeLegMetrics", function()
-  it("first waypoint: no leg, has trueCourse to next", function()
-    local a = { coordinate = makeCoord({x=0, z=0}) }
-    local b = { coordinate = makeCoord({x=1852, z=0}) }
-    local plan = { waypoints = {a, b} }
-    local m = M:_ComputeLegMetrics(plan, 1)
-    assertNil(m.legDistanceNm)
-    assertNil(m.legSpeedKnots)
-    assertNil(m.legIasKnots)
-    assertNotNil(m.trueCourse)
-  end)
-  it("mid waypoint: leg distance and speed", function()
-    local a = { coordinate = makeCoord({x=0, z=0}), timeOnTargetSeconds = 0 }
-    local b = { coordinate = makeCoord({x=1852, z=0}), timeOnTargetSeconds = 3600, altitudeFt = 0 }
-    local plan = { waypoints = {a, b} }
-    local m = M:_ComputeLegMetrics(plan, 2)
-    assertNear(m.legDistanceNm, 1, 0.001)
-    assertNear(m.legSpeedKnots, 1, 0.001)
-    assertNil(m.trueCourse)
-  end)
-  it("true course between waypoints", function()
-    local a = { coordinate = makeCoord({x=0, z=0}) }
-    local b = { coordinate = makeCoord({x=1000, z=0}) }
-    local c = { coordinate = makeCoord({x=1000, z=1000}) }
-    local plan = { waypoints = {a, b, c} }
-    local m = M:_ComputeLegMetrics(plan, 2)
-    assertNear(m.trueCourse, 0, 0.01)
-  end)
-end)
+
 
 suite("CalculateXte", function()
   it("no previous → nil, nil", function()
@@ -949,6 +962,536 @@ suite("CSV TOT formatting", function()
   end)
 end)
 
+suite("MatchProfile", function()
+  it("econ_low: IAS 200 at 5000 ft", function()
+    local p = M:_MatchProfile(200, 5000)
+    assertNotNil(p, "expected profile match")
+    assertEq(p.name, "econ_low")
+  end)
+  it("econ_high: IAS 175 at 15000 ft", function()
+    local p = M:_MatchProfile(175, 15000)
+    assertNotNil(p)
+    assertEq(p.name, "econ_high")
+  end)
+  it("fast_low: IAS 225 at 3000 ft", function()
+    local p = M:_MatchProfile(225, 3000)
+    assertNotNil(p)
+    assertEq(p.name, "fast_low")
+  end)
+  it("combat: IAS 250 at 8000 ft", function()
+    local p = M:_MatchProfile(250, 8000)
+    assertNotNil(p)
+    assertEq(p.name, "combat")
+  end)
+  it("no match: IAS 200 at 15000 ft (econ_high alt range, IAS out)", function()
+    -- econ_high requires IAS 165-185; IAS 200 at 15000 ft has no match
+    local p = M:_MatchProfile(200, 15000)
+    assertNil(p)
+  end)
+  it("picks lowest burn on tie", function()
+    -- If two profiles somehow both matched, lowest burn wins.
+    -- econ_low and econ_high don't overlap; just verify no crash.
+    local p = M:_MatchProfile(185, 5000)
+    assertNotNil(p)
+  end)
+end)
+
+-- ─── ComputePlan helpers ───────────────────────────────────────────────────
+
+local NM = 1852  -- metres per NM
+
+-- Builds a plan with coords laid out in a line along the z-axis.
+-- Each entry: { zoneName, zMetres, [lat], [lon] }
+-- Distances between consecutive WPs in NM = delta_z / 1852.
+local function makePlan(entries)
+  local wps = {}
+  for _, e in ipairs(entries) do
+    local wp = M:_ParseWaypointZoneName(e[1])
+    assert(wp, "parse failed: " .. e[1])
+    wp.coordinate = makeCoord({ x = 0, z = e[2] or 0, lat = e[3] or 50, lon = e[4] or 0 })
+    wp.zone = { GetRadius = function() return 100 end }
+    table.insert(wps, wp)
+  end
+  table.sort(wps, function(a,b) return a.order < b.order end)
+  return { name = "TEST", waypoints = wps }
+end
+
+local function etaHHMM(sec)
+  sec = sec % 86400
+  return string.format("%02d:%02d", math.floor(sec/3600), math.floor((sec%3600)/60))
+end
+
+suite("ComputePlan — validation", function()
+  it("error when no waypoints", function()
+    local r = M:_ComputePlan({ name="X", waypoints={} }, 0)
+    assertEq(r.valid, false)
+    assertMatch(r.error, "no waypoints")
+  end)
+
+  it("error when first WP not TAKE_OFF", function()
+    local plan = makePlan({
+      { "MN_TEST_01_NAV__T12:00__S180", 0 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, false)
+    assertMatch(r.error, "TAKE_OFF")
+  end)
+
+  it("error when TAKE_OFF missing __T", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__S180", 0 },
+      { "MN_TEST_02_NAV", NM * 20 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, false)
+    assertMatch(r.error, "__T")
+  end)
+
+  it("error when TAKE_OFF missing __S and no downstream __T", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T12:00", 0 },
+      { "MN_TEST_02_NAV", NM * 20 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, false)
+    assertMatch(r.error, "cannot compute speeds")
+  end)
+
+  it("valid when TAKE_OFF missing __S but has downstream __T pair", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T12:00", 0 },
+      { "MN_TEST_02_TARGET__T12:10", NM * 20 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, true)
+  end)
+end)
+
+suite("ComputePlan — Plan 1 BASIC (no __T in middle)", function()
+  -- 20+30+25+45 = 120 NM at 200 kt GS → 36 min total
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*20 },
+    { "MN_TEST_03_NAV",                          NM*50 },
+    { "MN_TEST_04_TARGET",                       NM*75 },
+    { "MN_TEST_05_LANDING",                      NM*120 },
+  })
+
+  it("returns valid", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, true)
+    assertNil(r.error)
+  end)
+
+  it("ETA[1] = 12:00", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(etaHHMM(r.waypoints[1].etaSec), "12:00")
+  end)
+
+  it("ETA[2] = 12:06 (20 NM at 200 kt)", function()
+    local r = M:_ComputePlan(plan, 0)
+    -- 20/200 h = 0.1 h = 6 min
+    assertNear(r.waypoints[2].etaSec, (12*3600 + 6*60), 2)
+  end)
+
+  it("all non-TAKEOFF legs have GS near 200 kt TAS", function()
+    local r = M:_ComputePlan(plan, 0)
+    for i = 2, #r.waypoints do
+      local w = r.waypoints[i]
+      assertNotNil(w.legGsKt, "legGsKt nil at WP" .. i)
+      assertNear(w.legGsKt, M:_ConvertIasToTas(200, 500), 2)
+    end
+  end)
+
+  it("TAKE_OFF has no leg data", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNil(r.waypoints[1].legGsKt)
+    assertNil(r.waypoints[1].legDistNm)
+  end)
+
+  it("fuel summary present with positive margin", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.fuel.marginImpGal > 0, "expected positive fuel margin")
+    assertTrue(r.fuel.totalImpGal > r.fuel.taxiImpGal, "total > taxi")
+  end)
+
+  it("no warnings", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(#r.warnings, 0)
+  end)
+end)
+
+suite("ComputePlan — Plan 2 MID_TOT (constraint derived speed)", function()
+  -- 75 NM total, __T12:20 on TARGET → 20 min → required 225 kt GS
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*20 },
+    { "MN_TEST_03_NAV",                          NM*50 },
+    { "MN_TEST_04_TARGET__T12:20",               NM*75 },
+    { "MN_TEST_05_LANDING",                      NM*120 },
+  })
+
+  it("segment [TAKE_OFF..TARGET] ETA hits constraint", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid)
+    -- TARGET should be at or very close to 12:20
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 20*60, 2)
+  end)
+
+  it("post-constraint leg reverts to default __S200", function()
+    local r = M:_ComputePlan(plan, 0)
+    -- leg to LANDING: default 200 kt (as IAS→TAS at 500ft)
+    local expectedGs = M:_ConvertIasToTas(200, 500)
+    assertNear(r.waypoints[5].legGsKt, expectedGs, 2)
+  end)
+end)
+
+suite("ComputePlan — Plan 5 MIXED_S (FIXED honored, FREE averaged)", function()
+  -- Segment [TAKE_OFF..TARGET] 50 NM in 15 min
+  -- WP3 INGRESS: FIXED __S220 (dist 10 NM from prev)
+  -- WP2 NAV and WP4 TARGET: FREE
+  -- FIXED leg (→WP3): 10 NM at 220 kt TAS = ~2.73 min
+  -- FREE legs (→WP2 20NM and →WP4 20NM) share remaining ~12.27 min
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV__A500",                    NM*20 },
+    { "MN_TEST_03_INGRESS__S220__A200",           NM*30 },
+    { "MN_TEST_04_TARGET__A200__T12:15",         NM*50 },
+    { "MN_TEST_05_LANDING",                      NM*95 },
+  })
+
+  it("FIXED leg at WP3 uses __S220 GS", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    local expectedGs = M:_ConvertIasToTas(220, 200)
+    assertNear(r.waypoints[3].legGsKt, expectedGs, 2)
+  end)
+
+  it("TARGET ETA hits __T12:15", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 15*60, 5)
+  end)
+
+  it("no warnings for valid mixed segment", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(#r.warnings, 0)
+  end)
+end)
+
+suite("ComputePlan — Plan 6 ALL_S_OVERRIDDEN", function()
+  -- All legs in segment are FIXED but __T wins
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV__S180",                    NM*20 },
+    { "MN_TEST_03_INGRESS__S220__A200",           NM*30 },
+    { "MN_TEST_04_TARGET__S200__A200__T12:15",   NM*50 },
+    { "MN_TEST_05_LANDING",                      NM*95 },
+  })
+
+  it("TARGET ETA hits __T12:15", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 15*60, 5)
+  end)
+
+  it("all segment legs get same GS (uniform derived)", function()
+    local r = M:_ComputePlan(plan, 0)
+    local gs2 = r.waypoints[2].legGsKt
+    local gs3 = r.waypoints[3].legGsKt
+    local gs4 = r.waypoints[4].legGsKt
+    assertNear(gs2, gs3, 0.5)
+    assertNear(gs3, gs4, 0.5)
+  end)
+
+  it("emits warning that __S ignored in all-FIXED segment", function()
+    local r = M:_ComputePlan(plan, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "all%-FIXED") or string.find(w, "ignored") then
+        found = true; break
+      end
+    end
+    assertTrue(found, "expected all-FIXED warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+end)
+
+suite("ComputePlan — Plan 3 HOLD_ANCHOR (__T on HOLD = arrival)", function()
+  -- TAKE_OFF 12:00, fly 50 NM to HOLD at 12:15, then 20 NM to TARGET at 12:30
+  -- HOLD arrival = 12:15 (from __T), exit computed from TARGET 12:30 minus flight 20NM/200kt = 6min → hold = 9min
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*30 },
+    { "MN_TEST_03_HOLD__T12:15",                 NM*50 },
+    { "MN_TEST_04_NAV",                          NM*65 },
+    { "MN_TEST_05_TARGET__T12:30",               NM*70 },
+    { "MN_TEST_06_LANDING",                      NM*120 },
+  })
+
+  it("HOLD ETA = arrival 12:15 (from __T)", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertNear(r.waypoints[3].etaSec, 12*3600 + 15*60, 5)
+  end)
+
+  it("HOLD duration positive", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue((r.waypoints[3].holdDurationSec or 0) > 0,
+      "expected hold duration > 0, got " .. tostring(r.waypoints[3].holdDurationSec))
+  end)
+
+  it("TARGET ETA hits 12:30", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[5].etaSec, 12*3600 + 30*60, 5)
+  end)
+end)
+
+suite("ComputePlan — Plan 4 HOLD_ABSORB (no __T on HOLD)", function()
+  -- 50 NM at 200 kt = 15 min → arrive HOLD 12:15; TARGET at 12:30; flight HOLD→TARGET 20NM = 6min
+  -- hold = 30 - 15 - 6 = 9 min
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*30 },
+    { "MN_TEST_03_HOLD",                         NM*50 },
+    { "MN_TEST_04_TARGET__T12:30",               NM*70 },
+    { "MN_TEST_05_LANDING",                      NM*120 },
+  })
+
+  it("HOLD absorbs slack", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertTrue((r.waypoints[3].holdDurationSec or 0) > 0,
+      "hold should absorb slack, got " .. tostring(r.waypoints[3].holdDurationSec))
+  end)
+
+  it("TARGET ETA hits 12:30", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 30*60, 5)
+  end)
+
+  it("no warnings", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(#r.warnings, 0)
+  end)
+end)
+
+suite("ComputePlan — Plan 7 MULTI_HOLD (last HOLD absorbs)", function()
+  -- H1 (no __T) then H2 (no __T), TARGET at 12:35
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD",                         NM*15 },
+    { "MN_TEST_03_NAV",                          NM*35 },
+    { "MN_TEST_04_HOLD",                         NM*60 },
+    { "MN_TEST_05_TARGET__T12:35",               NM*70 },
+    { "MN_TEST_06_LANDING",                      NM*120 },
+  })
+
+  it("H1 gets duration 0 + warning", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertEq(r.waypoints[2].holdDurationSec, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "not last") then found = true; break end
+    end
+    assertTrue(found, "expected 'not last' warning")
+  end)
+
+  it("H2 absorbs remaining slack", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue((r.waypoints[4].holdDurationSec or 0) > 0,
+      "H2 should absorb slack, got " .. tostring(r.waypoints[4].holdDurationSec))
+  end)
+
+  it("TARGET ETA hits 12:35", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.waypoints[5].etaSec, 12*3600 + 35*60, 5)
+  end)
+end)
+
+suite("ComputePlan — HOLD without downstream __T", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_HOLD",                         NM*15 },
+    { "MN_TEST_03_LANDING",                      NM*50 },
+  })
+
+  it("HOLD duration = 0 and warning emitted", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertEq(r.waypoints[2].holdDurationSec, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "no downstream") or string.find(w, "duration 0") then
+        found = true; break
+      end
+    end
+    assertTrue(found, "expected warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+end)
+
+suite("ComputePlan — __S override on individual WP", function()
+  -- WP3 NAV has __S140; others default 200
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*20 },
+    { "MN_TEST_03_NAV__S140",                    NM*30 },
+    { "MN_TEST_04_LANDING",                      NM*60 },
+  })
+
+  it("WP3 leg uses __S140 GS", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    local expectedGs = M:_ConvertIasToTas(140, 500)
+    assertNear(r.waypoints[3].legGsKt, expectedGs, 2)
+  end)
+
+  it("WP4 leg reverts to default 200 GS", function()
+    local r = M:_ComputePlan(plan, 0)
+    local expectedGs = M:_ConvertIasToTas(200, 500)
+    assertNear(r.waypoints[4].legGsKt, expectedGs, 2)
+  end)
+end)
+
+suite("ComputePlan — ROLEX shift", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_TARGET__T12:20",               NM*50 },
+    { "MN_TEST_03_LANDING",                      NM*90 },
+  })
+
+  it("ROLEX shifts ETA[1] by 5 min", function()
+    local r = M:_ComputePlan(plan, 5*60)
+    assertNear(r.waypoints[1].etaSec, 12*3600 + 5*60, 2)
+  end)
+
+  it("ROLEX shifts TARGET ETA too", function()
+    local r = M:_ComputePlan(plan, 5*60)
+    assertNear(r.waypoints[2].etaSec, 12*3600 + 25*60, 5)
+  end)
+end)
+
+suite("ComputePlan — altitude cascade", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A5000", 0 },
+    { "MN_TEST_02_NAV",                           NM*20 },
+    { "MN_TEST_03_INGRESS__A50",                  NM*40 },
+    { "MN_TEST_04_TARGET",                        NM*60 },
+    { "MN_TEST_05_LANDING__A200",                 NM*100 },
+  })
+
+  it("WP2 inherits 5000 ft from TAKE_OFF", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertEq(r.waypoints[2].resolvedAltFt, 5000)
+    assertEq(r.waypoints[2].altInherited, true)
+  end)
+
+  it("WP3 uses own __A50", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.waypoints[3].resolvedAltFt, 50)
+    assertEq(r.waypoints[3].altInherited, false)
+  end)
+
+  it("WP4 inherits 50 ft from WP3", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.waypoints[4].resolvedAltFt, 50)
+    assertEq(r.waypoints[4].altInherited, true)
+  end)
+
+  it("WP5 uses own __A200", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.waypoints[5].resolvedAltFt, 200)
+    assertEq(r.waypoints[5].altInherited, false)
+  end)
+end)
+
+suite("ComputePlan — no __A anywhere defaults to 0 ft + warning", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200", 0 },
+    { "MN_TEST_02_LANDING",                NM*50 },
+  })
+
+  it("resolvedAltFt = 0 and warning emitted", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertEq(r.waypoints[2].resolvedAltFt, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "__A") or string.find(w, "0 ft") then
+        found = true; break
+      end
+    end
+    assertTrue(found, "expected altitude warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+end)
+
+suite("ComputePlan — Plan 8 ENVELOPE_CLAMP", function()
+  -- 25 NM in 3 min → 500 kt required → clamped
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*15 },
+    { "MN_TEST_03_TARGET__T12:03",               NM*25 },
+    { "MN_TEST_04_LANDING",                      NM*75 },
+  })
+
+  it("emits clamp warning", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "clamped") or string.find(w, "IAS") then
+        found = true; break
+      end
+    end
+    assertTrue(found, "expected clamp warning, got: " .. table.concat(r.warnings, "; "))
+  end)
+
+  it("GS does not exceed envelope-derived max", function()
+    local r = M:_ComputePlan(plan, 0)
+    local maxGs = M:_ConvertIasToTas(M.Aircraft.envelope.maxIasKt, 500)
+    for i = 2, #r.waypoints do
+      if r.waypoints[i].legGsKt then
+        assertTrue(r.waypoints[i].legGsKt <= maxGs + 1,
+          "GS exceeds envelope at WP" .. i)
+      end
+    end
+  end)
+end)
+
+suite("ComputePlan — fuel calculation", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_LANDING",                      NM*60 },
+  })
+
+  it("taxi allowance in total", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.fuel.taxiImpGal, M.Aircraft.fuel.taxiAllowance)
+  end)
+
+  it("landing allowance in total", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.fuel.landingImpGal, M.Aircraft.fuel.landingAllowance)
+  end)
+
+  it("total = taxi + route + reserve + landing", function()
+    local r = M:_ComputePlan(plan, 0)
+    local expected = r.fuel.taxiImpGal + r.fuel.routeImpGal
+                   + r.fuel.reserveImpGal + r.fuel.landingImpGal
+    assertNear(r.fuel.totalImpGal, expected, 0.01)
+  end)
+
+  it("margin = tank - total", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertNear(r.fuel.marginImpGal, r.fuel.tankImpGal - r.fuel.totalImpGal, 0.01)
+  end)
+
+  it("tank capacity matches Aircraft config", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.fuel.tankImpGal, M.Aircraft.fuel.tankCapacity)
+  end)
+end)
+
 local function makeWaypointFromZone(zoneName, coordOpts)
   local wp = M:_ParseWaypointZoneName(zoneName)
   assertNotNil(wp, "parse failed for " .. zoneName)
@@ -983,9 +1526,9 @@ suite("Build flight plan CSV", function()
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
     assertEq(lines[1], "# PLAN,JERICHO")
-    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT")
-    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,,")
-    assertEq(lines[4], "2,NAV,,50.900000,-0.650000,,")
+    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
+    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,,,")
+    assertEq(lines[4], "2,NAV,,50.900000,-0.650000,,,")
   end)
 
   it("GROUP header included when groupName provided", function()
@@ -997,7 +1540,7 @@ suite("Build flight plan CSV", function()
     local lines = splitLines(csv)
     assertEq(lines[1], "# PLAN,JERICHO")
     assertEq(lines[2], "# GROUP,MOSQUITO 1-1")
-    assertEq(lines[3], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT")
+    assertEq(lines[3], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
   end)
 
   it("ROLEX_SEC header included only when non-zero", function()
@@ -1019,7 +1562,7 @@ suite("Build flight plan CSV", function()
     }
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[3], "^2,NAV,,")
+    assertMatch(lines[3], "^2,NAV,,")  -- NAME empty, then coords, ALT, TOT, SPEED_KT all follow
   end)
 
   it("explicit NAME preserved", function()
@@ -1032,24 +1575,34 @@ suite("Build flight plan CSV", function()
     assertMatch(lines[3], "^3,RENDEZVOUS,Rendezvous,")
   end)
 
-  it("altitude and TOT round-trip", function()
+  it("altitude and TOT round-trip; SPEED_KT empty when no __S", function()
     local plan = {
       name = "JERICHO",
       waypoints = {makeWaypointFromZone("MN_JERICHO_05_INGRESS_IP__A50__T14:28")},
     }
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[3], "^5,INGRESS,IP,[^,]+,[^,]+,50,14:28$")
+    assertMatch(lines[3], "^5,INGRESS,IP,[^,]+,[^,]+,50,14:28,$")
   end)
 
-  it("missing altitude and TOT stay empty", function()
+  it("__S token round-trips as SPEED_KT", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_05_INGRESS_IP__A50__T14:28__S180")},
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertMatch(lines[3], ",180$")
+  end)
+
+  it("missing altitude and TOT stay empty; SPEED_KT empty too", function()
     local plan = {
       name = "JERICHO",
       waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
     }
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[3], ",,$")
+    assertMatch(lines[3], ",,,$")
   end)
 
   it("row count matches waypoint count", function()

@@ -54,6 +54,29 @@ MosieNavigator.PlanColors = {
 
 MosieNavigator.BeaconColor = {0.20, 0.80, 0.20}
 
+MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
+  name = "Mosquito FB Mk VI",
+  profiles = {
+    { name = "econ_low",  altMaxFt = 10000, iasKtMin = 185, iasKtMax = 215, burnImpGph = 78  },
+    { name = "econ_high", altMinFt = 10000, iasKtMin = 165, iasKtMax = 185, burnImpGph = 75  },
+    { name = "fast_low",  altMaxFt = 10000, iasKtMin = 215, iasKtMax = 240, burnImpGph = 90  },
+    { name = "combat",                      iasKtMin = 240, iasKtMax = 260, burnImpGph = 115 },
+  },
+  envelope = {
+    minIasKt = 165,
+    maxIasKt = 260,
+  },
+  fuel = {
+    unit           = "IMP_GAL",
+    tankCapacity   = 546,
+    taxiAllowance  = 15,
+    landingAllowance = 5,
+    reserveMinutes = 30,
+  },
+  holdIasKt      = 140,
+  holdBurnImpGph = 65,
+}
+
 function MosieNavigator:_Log(message)
   env.info("MOSIE_NAVIGATOR: " .. tostring(message))
 end
@@ -183,17 +206,19 @@ function MosieNavigator:_ParseWaypointMetadata(metadataTokens)
     local upperToken = string.upper(token)
     local altitude = string.match(upperToken, "^A(%-?%d+)$")
       or string.match(upperToken, "^A(%-?%d+)FT$")
-      or string.match(upperToken, "^ALT(%-?%d+)$")
-      or string.match(upperToken, "^ALT(%-?%d+)FT$")
-    local timeText = string.match(token, "^TOT(.+)$") or string.match(token, "^T(.+)$")
+    local timeText = string.match(token, "^T(.+)$")
+    local speed = string.match(upperToken, "^S(%d+)$")
+      or string.match(upperToken, "^S(%d+)KT$")
 
     if altitude then
       metadata.altitudeFt = tonumber(altitude)
     elseif timeText then
       metadata.timeOnTarget, metadata.timeOnTargetSeconds = self:_ParseTimeOnTarget(timeText)
       if not metadata.timeOnTarget then
-        self:_Log("Ignoring invalid waypoint TOT token: " .. token)
+        self:_Log("Ignoring invalid waypoint T token: " .. token)
       end
+    elseif speed then
+      metadata.speedKt = tonumber(speed)
     else
       self:_Log("Ignoring unknown waypoint metadata token: " .. token)
     end
@@ -249,6 +274,7 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
     name = name,
     nameExplicit = nameExplicit,
     altitudeFt = metadata.altitudeFt,
+    speedKt = metadata.speedKt,
     timeOnTarget = metadata.timeOnTarget,
     timeOnTargetSeconds = metadata.timeOnTargetSeconds,
   }
@@ -359,6 +385,621 @@ function MosieNavigator:_ConvertTasToIas(tasKt, altitudeFt)
 
   local densityRatio = temperatureRatio ^ 4.25588
   return tasKt * math.sqrt(densityRatio)
+end
+
+function MosieNavigator:_ConvertIasToTas(iasKt, altitudeFt)
+  if not iasKt or not altitudeFt then
+    return nil
+  end
+
+  local altitudeM = UTILS.FeetToMeters(altitudeFt)
+  local temperatureRatio = 1 - (0.0065 * altitudeM / 288.15)
+  if temperatureRatio <= 0 then
+    return nil
+  end
+
+  local densityRatio = temperatureRatio ^ 4.25588
+  return iasKt / math.sqrt(densityRatio)
+end
+
+function MosieNavigator:_MatchProfile(iasKt, altFt)
+  local aircraft = self.Aircraft
+  local candidates = {}
+
+  for _, p in ipairs(aircraft.profiles) do
+    if p.altMinFt and altFt < p.altMinFt then
+      -- skip
+    elseif p.altMaxFt and altFt > p.altMaxFt then
+      -- skip
+    elseif iasKt < p.iasKtMin or iasKt > p.iasKtMax then
+      -- skip
+    else
+      table.insert(candidates, p)
+    end
+  end
+
+  if #candidates == 0 then
+    return nil
+  end
+
+  local best = candidates[1]
+  for i = 2, #candidates do
+    if candidates[i].burnImpGph < best.burnImpGph then
+      best = candidates[i]
+    end
+  end
+
+  return best
+end
+
+function MosieNavigator:_ClampSpeed(requiredIasKt, warnings, context)
+  local env = self.Aircraft.envelope
+  if requiredIasKt < env.minIasKt then
+    table.insert(warnings, string.format(
+      "%s: required %.0f IAS below minimum %.0f IAS — clamped",
+      context, requiredIasKt, env.minIasKt
+    ))
+    return env.minIasKt, true
+  elseif requiredIasKt > env.maxIasKt then
+    table.insert(warnings, string.format(
+      "%s: required %.0f IAS above maximum %.0f IAS — clamped",
+      context, requiredIasKt, env.maxIasKt
+    ))
+    return env.maxIasKt, true
+  end
+  return requiredIasKt, false
+end
+
+-- Resolves GS (kt) for each leg in a segment between two __T anchors (no HOLD).
+-- Returns table of gsKt per leg index (1-based within segment legs).
+function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, segLabel)
+  local n = #segLegs
+
+  -- Classify: FIXED = explicit __S on arriving WP, FREE = no explicit __S
+  local fixedIndices = {}
+  local freeIndices  = {}
+  for i, leg in ipairs(segLegs) do
+    if leg.speedKt then
+      table.insert(fixedIndices, i)
+    else
+      table.insert(freeIndices, i)
+    end
+  end
+
+  local result = {}
+
+  if #freeIndices == 0 then
+    -- All FIXED: __T wins, uniform derived speed
+    local totalDist = 0
+    for _, leg in ipairs(segLegs) do totalDist = totalDist + leg.distNm end
+    if totalTimeSec <= 0 or totalDist <= 0 then
+      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt end
+      return result
+    end
+    local derivedGs = totalDist / (totalTimeSec / 3600)
+    local avgAlt    = 0
+    for _, leg in ipairs(segLegs) do avgAlt = avgAlt + (leg.altFt or 0) end
+    avgAlt = avgAlt / n
+    local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
+    derivedIas = self:_ClampSpeed(derivedIas, warnings, segLabel .. " all-FIXED override")
+    local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
+    for i = 1, n do
+      if segLegs[i].speedKt then
+        table.insert(warnings, string.format(
+          "%s WP%02d __S%d ignored — all-FIXED segment uses __T-derived speed %.0f kt GS",
+          segLabel, segLegs[i].wpOrder, segLegs[i].speedKt, clampedGs
+        ))
+      end
+      result[i] = clampedGs
+    end
+    return result
+  end
+
+  if #fixedIndices == 0 then
+    -- All FREE: uniform derived speed
+    local totalDist = 0
+    for _, leg in ipairs(segLegs) do totalDist = totalDist + leg.distNm end
+    if totalTimeSec <= 0 or totalDist <= 0 then
+      for i = 1, n do result[i] = self.Aircraft.envelope.minIasKt end
+      return result
+    end
+    local derivedGs = totalDist / (totalTimeSec / 3600)
+    local avgAlt    = 0
+    for _, leg in ipairs(segLegs) do avgAlt = avgAlt + (leg.altFt or 0) end
+    avgAlt = avgAlt / n
+    local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
+    derivedIas, _ = self:_ClampSpeed(derivedIas, warnings, segLabel .. " FREE uniform")
+    local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
+    for i = 1, n do result[i] = clampedGs end
+    return result
+  end
+
+  -- Mixed: FIXED honored, FREE get averaged remainder
+  local fixedTime = 0
+  local fixedDist = 0
+  for _, i in ipairs(fixedIndices) do
+    local leg = segLegs[i]
+    local gs  = self:_ConvertIasToTas(leg.speedKt, leg.altFt or 0) or leg.speedKt
+    local t   = leg.distNm / gs * 3600
+    fixedTime = fixedTime + t
+    fixedDist = fixedDist + leg.distNm
+    result[i] = gs
+  end
+
+  local freeTime = totalTimeSec - fixedTime
+  local freeDist = 0
+  for _, i in ipairs(freeIndices) do freeDist = freeDist + segLegs[i].distNm end
+
+  if freeTime <= 0 or freeDist <= 0 then
+    table.insert(warnings, string.format(
+      "%s: FIXED __S legs consume entire time budget — FREE legs clamped to min speed",
+      segLabel
+    ))
+    local minGs = self:_ConvertIasToTas(self.Aircraft.envelope.minIasKt, 0) or self.Aircraft.envelope.minIasKt
+    for _, i in ipairs(freeIndices) do result[i] = minGs end
+    return result
+  end
+
+  local freeGs   = freeDist / (freeTime / 3600)
+  local avgAltFree = 0
+  for _, i in ipairs(freeIndices) do avgAltFree = avgAltFree + (segLegs[i].altFt or 0) end
+  avgAltFree = avgAltFree / #freeIndices
+  local freeIas = self:_ConvertTasToIas(freeGs, avgAltFree) or freeGs
+  freeIas, _    = self:_ClampSpeed(freeIas, warnings, segLabel .. " FREE averaged")
+  local clampedFreeGs = self:_ConvertIasToTas(freeIas, avgAltFree) or freeIas
+  for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs end
+
+  return result
+end
+
+-- Computes full flight plan: ETA, speeds, IAS, profiles, fuel, warnings.
+-- Returns { valid, error, waypoints, fuel, warnings }.
+function MosieNavigator:_ComputePlan(plan, rolexSeconds)
+  rolexSeconds = rolexSeconds or 0
+  local warnings = {}
+  local aircraft  = self.Aircraft
+
+  -- ── Validation ──────────────────────────────────────────────────────────
+  local wps = plan.waypoints
+  if not wps or #wps == 0 then
+    return { valid = false, error = "plan has no waypoints", warnings = warnings }
+  end
+
+  local takeoff = wps[1]
+  if takeoff.type ~= "TAKE_OFF" then
+    return { valid = false, error = "first waypoint must be TAKE_OFF", warnings = warnings }
+  end
+
+  if not takeoff.timeOnTargetSeconds then
+    return { valid = false, error = "TAKE_OFF must have __T (brake release time)", warnings = warnings }
+  end
+
+  -- Determine default plan speed (GS kt)
+  local defaultGs = nil
+  if takeoff.speedKt then
+    defaultGs = self:_ConvertIasToTas(takeoff.speedKt, takeoff.altitudeFt or 0) or takeoff.speedKt
+  end
+
+  if not defaultGs then
+    -- Try to derive from first downstream __T pair
+    local firstTotSec = takeoff.timeOnTargetSeconds
+    for i = 2, #wps do
+      if wps[i].timeOnTargetSeconds then
+        local totalDist = 0
+        for j = 2, i do
+          totalDist = totalDist + UTILS.MetersToNM(wps[j-1].coordinate:Get2DDistance(wps[j].coordinate))
+        end
+        local dt = wps[i].timeOnTargetSeconds - firstTotSec
+        if dt < 0 then dt = dt + 86400 end
+        if dt > 0 and totalDist > 0 then
+          defaultGs = totalDist / (dt / 3600)
+        end
+        break
+      end
+    end
+  end
+
+  if not defaultGs then
+    return {
+      valid = false,
+      error = "TAKE_OFF has no __S and no downstream __T constraints — cannot compute speeds",
+      warnings = warnings,
+    }
+  end
+
+  -- ── Altitude cascade ─────────────────────────────────────────────────────
+  local resolvedAlt = {}
+  local hasAnyAlt   = false
+  local prevAlt     = nil
+  for i, wp in ipairs(wps) do
+    if wp.altitudeFt then
+      resolvedAlt[i]  = wp.altitudeFt
+      prevAlt         = wp.altitudeFt
+      hasAnyAlt       = true
+    else
+      resolvedAlt[i]  = prevAlt  -- may still be nil for first WPs
+    end
+  end
+  if not hasAnyAlt then
+    table.insert(warnings, "no __A defined anywhere — all waypoints default to 0 ft MSL")
+    for i = 1, #wps do resolvedAlt[i] = resolvedAlt[i] or 0 end
+  else
+    for i = 1, #wps do resolvedAlt[i] = resolvedAlt[i] or 0 end
+  end
+
+  -- ── Build leg descriptors ─────────────────────────────────────────────────
+  -- legDesc[n] describes leg (n-1)->n (arriving at WPn); legDesc[1] = nil (TAKE_OFF)
+  local legDescs = {}
+  for i = 2, #wps do
+    legDescs[i] = {
+      distNm   = UTILS.MetersToNM(wps[i-1].coordinate:Get2DDistance(wps[i].coordinate)),
+      altFt    = resolvedAlt[i],
+      speedKt  = wps[i].speedKt,   -- explicit __S on WPn (nil = FREE)
+      wpOrder  = wps[i].order,
+      wpType   = wps[i].type,
+      wpIndex  = i,
+    }
+  end
+
+  -- ── Identify __T anchors ──────────────────────────────────────────────────
+  -- anchor[i] = true when wps[i] has timeOnTargetSeconds
+  local anchors = {}
+  for i, wp in ipairs(wps) do
+    if wp.timeOnTargetSeconds then
+      anchors[i] = true
+    end
+  end
+
+  -- ── Resolve GS per leg ───────────────────────────────────────────────────
+  local legGs = {}  -- legGs[i] = GS kt for leg arriving at WPi
+
+  local function legSpeedFromDecl(k)
+    local ld = legDescs[k]
+    if ld and ld.speedKt then
+      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt
+    end
+    return defaultGs
+  end
+
+  -- Collect sorted anchor indices
+  local anchorList = {}
+  for k = 1, #wps do
+    if anchors[k] then table.insert(anchorList, k) end
+  end
+
+  -- For each consecutive anchor pair, resolve the segment
+  for ai = 1, #anchorList do
+    local segStart = anchorList[ai]
+    local segEnd   = anchorList[ai + 1]
+
+    if not segEnd then
+      -- After last anchor: use __S / default
+      for k = segStart + 1, #wps do
+        legGs[k] = legSpeedFromDecl(k)
+      end
+    else
+      -- Check for HOLD inside this segment
+      local hasHold = false
+      for k = segStart + 1, segEnd do
+        if wps[k].type == "HOLD" then hasHold = true; break end
+      end
+
+      if hasHold then
+        for k = segStart + 1, segEnd do
+          legGs[k] = legSpeedFromDecl(k)
+        end
+      else
+        local totI = wps[segStart].timeOnTargetSeconds
+        local totJ = wps[segEnd].timeOnTargetSeconds
+        local dt   = totJ - totI
+        if dt < 0 then dt = dt + 86400 end
+
+        local segLegs  = {}
+        local segRange = {}
+        for k = segStart + 1, segEnd do
+          table.insert(segRange, k)
+          table.insert(segLegs, {
+            distNm  = legDescs[k].distNm,
+            altFt   = legDescs[k].altFt,
+            speedKt = legDescs[k].speedKt,
+            wpOrder = legDescs[k].wpOrder,
+          })
+        end
+
+        local segSpeeds = self:_ResolveSegmentSpeeds(
+          segLegs, dt, warnings,
+          string.format("segment [WP%02d..WP%02d]", wps[segStart].order, wps[segEnd].order)
+        )
+
+        for idx = 1, #segRange do
+          legGs[segRange[idx]] = segSpeeds[idx]
+        end
+      end
+    end
+  end
+
+  -- Legs before the first anchor (shouldn't normally happen, but guard)
+  if #anchorList > 0 then
+    for k = 2, anchorList[1] do
+      if not legGs[k] and wps[k].type ~= "HOLD" then
+        legGs[k] = legSpeedFromDecl(k)
+      end
+    end
+  end
+
+  -- Fill any remaining unset legs
+  for k = 2, #wps do
+    if not legGs[k] then
+      legGs[k] = legSpeedFromDecl(k)
+    end
+  end
+
+  -- ── ETA pass (first pass: ignoring HOLD durations) ────────────────────────
+  -- Used as "noHoldEta" for HOLD duration computation.
+  local etaSec = {}
+  etaSec[1] = (takeoff.timeOnTargetSeconds + rolexSeconds) % 86400
+
+  for k = 2, #wps do
+    local gs = legGs[k] or defaultGs
+    local legTimeSec = (legDescs[k] and legDescs[k].distNm or 0) / gs * 3600
+    etaSec[k] = etaSec[k-1] + legTimeSec
+  end
+
+  -- ── HOLD duration resolution ──────────────────────────────────────────────
+  local holdDurations = {}  -- holdDurations[k] seconds for HOLD at WPk
+
+  -- Find HOLD waypoints in order
+  local holdIndices = {}
+  for k = 2, #wps do
+    if wps[k].type == "HOLD" then
+      table.insert(holdIndices, k)
+    end
+  end
+
+  -- For each HOLD: find downstream anchor
+  local function findDownstreamAnchor(startIdx)
+    for k = startIdx + 1, #wps do
+      if anchors[k] then return k end
+    end
+    return nil
+  end
+
+  -- Identify last HOLD before each downstream anchor (for slack absorption)
+  local lastHoldBeforeAnchor = {}  -- [anchorIdx] = holdIdx
+  for _, hi in ipairs(holdIndices) do
+    if not wps[hi].timeOnTargetSeconds then
+      local a = findDownstreamAnchor(hi)
+      if a then
+        lastHoldBeforeAnchor[a] = hi  -- will overwrite with later HOLD, which is correct
+      end
+    end
+  end
+
+  for _, hi in ipairs(holdIndices) do
+    local holdTot = wps[hi].timeOnTargetSeconds
+    if holdTot then
+      -- __T on HOLD = arrival time; duration from downstream anchor
+      local arrivalSec = (holdTot + rolexSeconds) % 86400
+      local downstream = findDownstreamAnchor(hi)
+      if downstream then
+        local downTot = (wps[downstream].timeOnTargetSeconds + rolexSeconds) % 86400
+        -- Compute flight time from HOLD to downstream at default/declared speeds
+        local flightSec = 0
+        for k = hi + 1, downstream do
+          if wps[k].type ~= "HOLD" then
+            local gs = legGs[k] or defaultGs
+            flightSec = flightSec + (legDescs[k] and legDescs[k].distNm or 0) / gs * 3600
+          end
+        end
+        local dt = downTot - arrivalSec
+        if dt < 0 then dt = dt + 86400 end
+        local dur = dt - flightSec
+        if dur < 0 then
+          table.insert(warnings, string.format(
+            "WP%02d HOLD (%s): computed duration negative (%.0f s) — set to 0",
+            wps[hi].order, wps[hi].name, dur
+          ))
+          dur = 0
+        end
+        holdDurations[hi] = dur
+        -- Fix ETA for HOLD: arrival is from __T, not propagated
+        etaSec[hi] = arrivalSec
+      else
+        holdDurations[hi] = 0
+        etaSec[hi] = arrivalSec
+        table.insert(warnings, string.format(
+          "WP%02d HOLD (%s): has __T but no downstream __T — duration 0",
+          wps[hi].order, wps[hi].name
+        ))
+      end
+    else
+      -- No __T on HOLD
+      local downstream = findDownstreamAnchor(hi)
+      if downstream and lastHoldBeforeAnchor[downstream] == hi then
+        -- This is the last HOLD before the downstream anchor: absorb slack
+        local downTot = (wps[downstream].timeOnTargetSeconds + rolexSeconds) % 86400
+        local flightSec = 0
+        for k = hi + 1, downstream do
+          if wps[k].type ~= "HOLD" then
+            local gs = legGs[k] or defaultGs
+            flightSec = flightSec + (legDescs[k] and legDescs[k].distNm or 0) / gs * 3600
+          end
+        end
+        local eta_without_hold = etaSec[hi]  -- ETA at HOLD from first pass
+        local dt = downTot - eta_without_hold
+        if dt < 0 then dt = dt + 86400 end
+        local dur = dt - flightSec
+        if dur < 0 then
+          table.insert(warnings, string.format(
+            "WP%02d HOLD (%s): slack is negative (%.0f s) — set to 0",
+            wps[hi].order, wps[hi].name, dur
+          ))
+          dur = 0
+        end
+        holdDurations[hi] = dur
+      else
+        holdDurations[hi] = 0
+        if downstream then
+          table.insert(warnings, string.format(
+            "WP%02d HOLD (%s): no __T and not last HOLD before WP%02d constraint — duration 0",
+            wps[hi].order, wps[hi].name, wps[downstream].order
+          ))
+        else
+          table.insert(warnings, string.format(
+            "WP%02d HOLD (%s): no __T and no downstream __T constraint — duration 0",
+            wps[hi].order, wps[hi].name
+          ))
+        end
+      end
+    end
+  end
+
+  -- ── Second ETA pass: apply HOLD durations ─────────────────────────────────
+  -- Forward propagation: after each HOLD, shift subsequent WPs by hold duration.
+  -- HOLDs with explicit __T keep their arrival ETA; propagation resumes from exit.
+  local finalEta = {}
+  finalEta[1] = etaSec[1]
+  for k = 2, #wps do
+    local gs      = legGs[k] or defaultGs
+    local legTime = gs > 0 and ((legDescs[k] and legDescs[k].distNm or 0) / gs * 3600) or 0
+    if wps[k].type == "HOLD" and wps[k].timeOnTargetSeconds then
+      -- Explicit arrival from __T overrides propagation
+      finalEta[k] = (wps[k].timeOnTargetSeconds + rolexSeconds) % 86400
+    else
+      -- Propagate from previous WP departure (previous WP exit = arrival + holdDuration)
+      local prevDep = finalEta[k-1]
+      if wps[k-1].type == "HOLD" then
+        prevDep = prevDep + (holdDurations[k-1] or 0)
+      end
+      finalEta[k] = prevDep + legTime
+    end
+  end
+  for k = 1, #wps do etaSec[k] = finalEta[k] end
+
+  -- ── Build per-leg output ──────────────────────────────────────────────────
+  local outWps = {}
+  local fuelCum = aircraft.fuel.taxiAllowance  -- start with taxi allowance
+
+  -- Heading helpers need the magnetic declination at the WP coordinate
+  local function legTrueCourse(wpFrom, wpTo)
+    if not wpFrom or not wpTo then return nil end
+    return wpFrom.coordinate:HeadingTo(wpTo.coordinate)
+  end
+
+  for k = 1, #wps do
+    local wp = wps[k]
+    local ow = {
+      order              = wp.order,
+      type               = wp.type,
+      name               = wp.name,
+      nameExplicit       = wp.nameExplicit,
+      coordinate         = wp.coordinate,
+      zone               = wp.zone,
+      resolvedAltFt      = resolvedAlt[k],
+      altInherited       = (wp.altitudeFt == nil) and (resolvedAlt[k] ~= nil),
+      etaSec             = etaSec[k] % 86400,
+      rawSpeedKt         = wp.speedKt,
+      rawTimeOnTarget    = wp.timeOnTarget,
+      rawTimeOnTargetSec = wp.timeOnTargetSeconds,
+    }
+
+    if k == 1 then
+      -- TAKE_OFF: no incoming leg
+      ow.legDistNm       = nil
+      ow.legGsKt         = nil
+      ow.legIasKt        = nil
+      ow.legProfile      = nil
+      ow.legFuelImpGal   = aircraft.fuel.taxiAllowance
+      ow.trueCourse      = nil
+      ow.holdDurationSec = nil
+    elseif wp.type == "HOLD" then
+      local ld      = legDescs[k]
+      local inGs    = legGs[k] or defaultGs
+      local inIas   = self:_ConvertTasToIas(inGs, resolvedAlt[k]) or inGs
+      local legDist = ld and ld.distNm or 0
+      local legTime = inGs > 0 and (legDist / inGs) or 0
+
+      local prof    = self:_MatchProfile(inIas, resolvedAlt[k])
+      local legBurn = (prof and prof.burnImpGph or 100) * legTime
+
+      local holdDur  = holdDurations[k] or 0
+      local holdBurn = aircraft.holdBurnImpGph * (holdDur / 3600)
+
+      fuelCum = fuelCum + legBurn
+
+      ow.legDistNm       = legDist
+      ow.legGsKt         = inGs
+      ow.legIasKt        = inIas
+      ow.legProfile      = prof and prof.name or nil
+      ow.legFuelImpGal   = legBurn
+      ow.holdDurationSec = holdDur
+      ow.holdFuelImpGal  = holdBurn
+      ow.trueCourse      = legTrueCourse(wps[k-1], wp)
+
+      fuelCum = fuelCum + holdBurn
+    else
+      local ld      = legDescs[k]
+      local gs      = legGs[k] or defaultGs
+      local ias     = self:_ConvertTasToIas(gs, resolvedAlt[k]) or gs
+      local legDist = ld and ld.distNm or 0
+      local legTime = gs > 0 and (legDist / gs) or 0
+
+      local prof    = self:_MatchProfile(ias, resolvedAlt[k])
+      if not prof then
+        table.insert(warnings, string.format(
+          "WP%02d %s: no profile match for IAS %.0f kt at %d ft — using 100 gph fallback",
+          wp.order, wp.name, ias, resolvedAlt[k]
+        ))
+      end
+      local legBurn = (prof and prof.burnImpGph or 100) * legTime
+
+      fuelCum = fuelCum + legBurn
+
+      ow.legDistNm     = legDist
+      ow.legGsKt       = gs
+      ow.legIasKt      = ias
+      ow.legProfile    = prof and prof.name or nil
+      ow.legFuelImpGal = legBurn
+      ow.trueCourse    = legTrueCourse(wps[k-1], wp)
+    end
+
+    ow.fuelCumImpGal = fuelCum
+    table.insert(outWps, ow)
+  end
+
+  -- Reserve: 30 min at lowest burn profile
+  local lowestBurn = aircraft.profiles[1].burnImpGph
+  for _, p in ipairs(aircraft.profiles) do
+    if p.burnImpGph < lowestBurn then lowestBurn = p.burnImpGph end
+  end
+  local reserveFuel = aircraft.fuel.reserveMinutes / 60 * lowestBurn
+  local routeFuel   = fuelCum - aircraft.fuel.taxiAllowance
+  local totalFuel   = fuelCum + reserveFuel + aircraft.fuel.landingAllowance
+  local margin      = aircraft.fuel.tankCapacity - totalFuel
+
+  if totalFuel > aircraft.fuel.tankCapacity then
+    table.insert(warnings, string.format(
+      "FUEL: required %.1f IMP GAL exceeds tank %.1f IMP GAL (%.1f over)",
+      totalFuel, aircraft.fuel.tankCapacity, -margin
+    ))
+  end
+
+  return {
+    valid    = true,
+    error    = nil,
+    waypoints = outWps,
+    fuel = {
+      taxiImpGal      = aircraft.fuel.taxiAllowance,
+      routeImpGal     = routeFuel,
+      reserveImpGal   = reserveFuel,
+      landingImpGal   = aircraft.fuel.landingAllowance,
+      totalImpGal     = totalFuel,
+      tankImpGal      = aircraft.fuel.tankCapacity,
+      marginImpGal    = margin,
+      marginPercent   = margin / aircraft.fuel.tankCapacity * 100,
+    },
+    warnings = warnings,
+  }
 end
 
 function MosieNavigator:_FormatSpeed(speedKt)
@@ -505,22 +1146,7 @@ function MosieNavigator:_FitText(value, width)
   return value
 end
 
-function MosieNavigator:_CalculateLegSpeedKnots(previousWaypoint, waypoint, legDistanceNm)
-  if not previousWaypoint or not previousWaypoint.timeOnTargetSeconds or not waypoint.timeOnTargetSeconds then
-    return nil
-  end
 
-  local deltaSeconds = waypoint.timeOnTargetSeconds - previousWaypoint.timeOnTargetSeconds
-  if deltaSeconds < 0 then
-    deltaSeconds = deltaSeconds + SECONDS_PER_DAY
-  end
-
-  if deltaSeconds <= 0 then
-    return nil
-  end
-
-  return legDistanceNm / (deltaSeconds / 3600)
-end
 
 function MosieNavigator:_ExtractPlanFromGroupName(groupName)
   return string.match(groupName, self.Config.groupPlanTagPattern)
@@ -978,63 +1604,64 @@ function MosieNavigator:TickNavigators()
   end
 end
 
-function MosieNavigator:_ComputeLegMetrics(plan, index)
-  local waypoint = plan.waypoints[index]
-  local previousWaypoint = plan.waypoints[index - 1]
-  local nextWaypoint = plan.waypoints[index + 1]
-  local metrics = {
-    legDistanceNm = nil,
-    legSpeedKnots = nil,
-    legIasKnots = nil,
-    trueCourse = nil,
-  }
 
-  if previousWaypoint then
-    metrics.legDistanceNm = UTILS.MetersToNM(previousWaypoint.coordinate:Get2DDistance(waypoint.coordinate))
-    metrics.legSpeedKnots = self:_CalculateLegSpeedKnots(previousWaypoint, waypoint, metrics.legDistanceNm)
-    metrics.legIasKnots = self:_ConvertTasToIas(metrics.legSpeedKnots, waypoint.altitudeFt)
-  end
-
-  if nextWaypoint then
-    metrics.trueCourse = waypoint.coordinate:HeadingTo(nextWaypoint.coordinate)
-  end
-
-  return metrics
-end
 
 function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, rolexSeconds)
-  local lines = {}
-  local totalDistanceNm = 0
   rolexSeconds = rolexSeconds or 0
+  local computed = self:_ComputePlan(plan, rolexSeconds)
+  local lines = {}
 
   table.insert(lines, "MOSIE NAVIGATOR")
   table.insert(lines, "PLAN  : " .. plan.name)
-  table.insert(lines, "GROUP : " .. groupName)
+  table.insert(lines, "GROUP : " .. (groupName or "---"))
   if rolexSeconds ~= 0 then
     table.insert(lines, "ROLEX : " .. self:_FormatRolex(rolexSeconds))
   end
   table.insert(lines, "")
 
-  for index, waypoint in ipairs(plan.waypoints) do
-    local metrics = self:_ComputeLegMetrics(plan, index)
-    if metrics.legDistanceNm then
-      totalDistanceNm = totalDistanceNm + metrics.legDistanceNm
-    end
+  if not computed.valid then
+    table.insert(lines, "ERROR: " .. (computed.error or "unknown"))
+    return table.concat(lines, "\n")
+  end
+
+  for _, ow in ipairs(computed.waypoints) do
+    local altStr  = ow.resolvedAltFt ~= nil
+      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
+    local gsStr   = ow.legGsKt  and string.format("%.0f", ow.legGsKt)  or "---"
+    local iasStr  = ow.legIasKt and string.format("%.0f", ow.legIasKt) or "---"
+    local profStr = ow.legProfile or "---"
+    local fuelStr = ow.legFuelImpGal and string.format("%.1f", ow.legFuelImpGal) or "---"
 
     table.insert(lines, string.format(
-      "[%02d] %s %s: ALT %s ft, TOT %s, CRS %sT/%sM, LEG %s NM, TAS %s kt, IAS %s kt, DIST %.1f NM",
-      waypoint.order,
-      self:_FitText(waypoint.type, 10),
-      self:_FitText(waypoint.name, 12),
-      self:_FormatOptional(waypoint.altitudeFt),
-      self:_FormatWaypointTot(waypoint, rolexSeconds),
-      self:_FormatHeading(metrics.trueCourse),
-      self:_FormatMagneticHeading(metrics.trueCourse, waypoint.coordinate),
-      metrics.legDistanceNm and string.format("%.1f", metrics.legDistanceNm) or "---",
-      self:_FormatSpeed(metrics.legSpeedKnots),
-      self:_FormatSpeed(metrics.legIasKnots),
-      totalDistanceNm
+      "[%02d] %-10s %-12s  ALT %s  ETA %s  GS %s IAS %s  PROF %s  LEG %s gal",
+      ow.order,
+      self:_FitText(ow.type, 10),
+      self:_FitText(ow.name, 12),
+      altStr, self:_FormatClock(ow.etaSec), gsStr, iasStr, profStr, fuelStr
     ))
+
+    if ow.holdDurationSec and ow.holdDurationSec > 0 then
+      local holdMin  = math.floor(ow.holdDurationSec / 60)
+      local holdSec2 = ow.holdDurationSec % 60
+      local exitSec  = (ow.etaSec + ow.holdDurationSec) % 86400
+      table.insert(lines, string.format(
+        "     orbit %d:%02d @ %d IAS: %.1f gal  (exit %s)",
+        holdMin, holdSec2, self.Aircraft.holdIasKt,
+        ow.holdFuelImpGal or 0, self:_FormatClock(exitSec)
+      ))
+    end
+  end
+
+  local f = computed.fuel
+  table.insert(lines, "")
+  table.insert(lines, string.format("FUEL: %.1f / %.1f IMP GAL  (%.1f%% margin)",
+    f.totalImpGal, f.tankImpGal, f.marginPercent))
+
+  if #computed.warnings > 0 then
+    table.insert(lines, "WARNINGS:")
+    for _, w in ipairs(computed.warnings) do
+      table.insert(lines, "  " .. w)
+    end
   end
 
   return table.concat(lines, "\n")
@@ -1124,64 +1751,92 @@ function MosieNavigator:_StartMenuRefreshScheduler()
 end
 
 function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
-  local lines = {}
-  local totalDistanceNm = 0
   rolexSeconds = rolexSeconds or 0
+  local computed = self:_ComputePlan(plan, rolexSeconds)
+  local lines = {}
 
   table.insert(lines, "MOSIE NAVIGATOR FLIGHT PLAN")
-  table.insert(lines, "PLAN: " .. plan.name)
+  table.insert(lines, "PLAN  : " .. plan.name)
   if groupName then
-    table.insert(lines, "GROUP: " .. groupName)
+    table.insert(lines, "GROUP : " .. groupName)
   end
   if rolexSeconds ~= 0 then
-    table.insert(lines, "ROLEX: " .. self:_FormatRolex(rolexSeconds))
+    table.insert(lines, "ROLEX : " .. self:_FormatRolex(rolexSeconds))
   end
+  table.insert(lines, "ACFT  : " .. self.Aircraft.name)
   table.insert(lines, "")
-  table.insert(lines, string.format(
-    "%-2s %-10s %-12s %10s %11s %5s %-5s %5s %5s %6s %6s %6s %6s",
-    "NO",
-    "TYPE",
-    "NAME",
-    "LAT",
-    "LON",
-    "ALTFT",
-    "TOT",
-    "CRS_T",
-    "CRS_M",
-    "LEG",
-    "TAS",
-    "IAS",
-    "DIST"
-  ))
-  table.insert(lines, string.rep("-", 100))
 
-  for index, waypoint in ipairs(plan.waypoints) do
-    local metrics = self:_ComputeLegMetrics(plan, index)
-    local legDistanceNm = metrics.legDistanceNm or 0
-    totalDistanceNm = totalDistanceNm + legDistanceNm
+  if not computed.valid then
+    table.insert(lines, "ERROR: " .. (computed.error or "unknown"))
+    return table.concat(lines, "\n") .. "\n"
+  end
 
-    local lat, lon = self:_FormatCoordinate(waypoint.coordinate)
+  local hdr = string.format(
+    "%-2s %-10s %-12s %10s %11s %6s %5s %5s %5s %6s %5s %5s %-9s %6s %7s",
+    "NO","TYPE","NAME","LAT","LON","ALT","ETA","CRS_T","CRS_M","LEG","GS","IAS","PROF","FUEL","CUM"
+  )
+  table.insert(lines, hdr)
+  table.insert(lines, string.rep("-", string.len(hdr)))
+
+  local totalDist = 0
+  for _, ow in ipairs(computed.waypoints) do
+    local lat, lon = self:_FormatCoordinate(ow.coordinate)
+    local altStr  = ow.resolvedAltFt ~= nil
+      and (tostring(ow.resolvedAltFt) .. (ow.altInherited and "*" or "")) or "---"
+    local etaStr  = self:_FormatClock(ow.etaSec)
+    local crsT    = self:_FormatHeading(ow.trueCourse)
+    local crsM    = self:_FormatMagneticHeading(ow.trueCourse, ow.coordinate)
+    local legStr  = ow.legDistNm    and string.format("%6.1f", ow.legDistNm)    or "   ---"
+    local gsStr   = ow.legGsKt      and string.format("%5.0f", ow.legGsKt)      or "  ---"
+    local iasStr  = ow.legIasKt     and string.format("%5.0f", ow.legIasKt)     or "  ---"
+    local profStr = self:_FitText(ow.legProfile or "---", 9)
+    local fuelStr = ow.legFuelImpGal and string.format("%6.1f", ow.legFuelImpGal) or "   ---"
+    local cumStr  = string.format("%7.1f", ow.fuelCumImpGal or 0)
+
+    if ow.legDistNm then totalDist = totalDist + ow.legDistNm end
 
     table.insert(lines, string.format(
-      "%02d %-10s %-12s %10s %11s %5s %-5s %5s %5s %6.1f %6s %6s %6.1f",
-      waypoint.order,
-      self:_FitText(waypoint.type, 10),
-      self:_FitText(waypoint.name, 12),
-      lat,
-      lon,
-      self:_FormatOptional(waypoint.altitudeFt),
-      self:_FormatWaypointTot(waypoint, rolexSeconds),
-      self:_FormatHeading(metrics.trueCourse),
-      self:_FormatMagneticHeading(metrics.trueCourse, waypoint.coordinate),
-      legDistanceNm,
-      self:_FormatSpeed(metrics.legSpeedKnots),
-      self:_FormatSpeed(metrics.legIasKnots),
-      totalDistanceNm
+      "%02d %-10s %-12s %10s %11s %6s %5s %5s %5s %s %s %s %-9s %s %s",
+      ow.order,
+      self:_FitText(ow.type, 10),
+      self:_FitText(ow.name, 12),
+      lat, lon, altStr, etaStr, crsT, crsM, legStr, gsStr, iasStr, profStr, fuelStr, cumStr
     ))
+
+    if ow.holdDurationSec and ow.holdDurationSec > 0 then
+      local holdMin  = math.floor(ow.holdDurationSec / 60)
+      local holdSec2 = ow.holdDurationSec % 60
+      local exitSec  = (ow.etaSec + ow.holdDurationSec) % 86400
+      table.insert(lines, string.format(
+        "   orbit %d:%02d @ %d IAS: %.1f gal  (exit %s)",
+        holdMin, holdSec2, self.Aircraft.holdIasKt,
+        ow.holdFuelImpGal or 0, self:_FormatClock(exitSec)
+      ))
+    end
   end
 
+  local f = computed.fuel
   table.insert(lines, "")
-  table.insert(lines, string.format("TOTAL_DISTANCE_NM: %.1f", totalDistanceNm))
+  table.insert(lines, string.format("TOTAL_DIST: %.1f NM", totalDist))
+  table.insert(lines, "")
+  table.insert(lines, "FUEL:")
+  table.insert(lines, string.format("  TAXI:    %6.1f IMP GAL", f.taxiImpGal))
+  table.insert(lines, string.format("  ROUTE:   %6.1f IMP GAL", f.routeImpGal))
+  table.insert(lines, string.format("  RESERVE: %6.1f IMP GAL  (%d min)",
+    f.reserveImpGal, self.Aircraft.fuel.reserveMinutes))
+  table.insert(lines, string.format("  LANDING: %6.1f IMP GAL", f.landingImpGal))
+  table.insert(lines, string.format("  TOTAL:   %6.1f IMP GAL", f.totalImpGal))
+  table.insert(lines, string.format("  TANK:    %6.1f IMP GAL", f.tankImpGal))
+  table.insert(lines, string.format("  MARGIN:  %6.1f IMP GAL  (%.1f%%)",
+    f.marginImpGal, f.marginPercent))
+
+  if #computed.warnings > 0 then
+    table.insert(lines, "")
+    table.insert(lines, "WARNINGS:")
+    for _, w in ipairs(computed.warnings) do
+      table.insert(lines, "  - " .. w)
+    end
+  end
 
   return table.concat(lines, "\n") .. "\n"
 end
@@ -1198,13 +1853,14 @@ function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
     table.insert(lines, "# ROLEX_SEC," .. tostring(rolexSeconds))
   end
 
-  table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT")
+  table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
 
   for _, waypoint in ipairs(plan.waypoints) do
     local lat, lon = self:_FormatCoordinateForCsvDD(waypoint.coordinate)
-    local nameField = waypoint.nameExplicit and waypoint.name or ""
-    local altField = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
-    local totField = self:_FormatTotForCsv(waypoint)
+    local nameField  = waypoint.nameExplicit and waypoint.name or ""
+    local altField   = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
+    local totField   = self:_FormatTotForCsv(waypoint)
+    local speedField = waypoint.speedKt ~= nil and tostring(waypoint.speedKt) or ""
 
     table.insert(lines, self:_FormatCsvRow({
       waypoint.order,
@@ -1214,6 +1870,7 @@ function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
       lon,
       altField,
       totField,
+      speedField,
     }))
   end
 

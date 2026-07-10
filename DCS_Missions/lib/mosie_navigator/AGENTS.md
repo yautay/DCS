@@ -45,7 +45,7 @@ Flight plans are discovered from trigger zone names.
 Required format:
 
 ```text
-MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>]
+MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<HH:MM[:SS]>][__S<GS_KT>]
 ```
 
 Fields:
@@ -55,29 +55,25 @@ Fields:
 - `ORDER`: zero-padded waypoint order.
 - `TYPE`: waypoint type enum.
 - `NAME`: optional human-readable waypoint name without spaces. If omitted, the waypoint type is used as the display name.
-- `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`.
-- `__T<TOT>`: optional planned time on target, using `HH:MM` or `HH:MM:SS`, for example `__T14:30`.
+- `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`. On `TAKE_OFF` this sets the default cruise altitude for the whole plan; individual waypoints may override it.
+- `__T<HH:MM[:SS]>`: planned time (ETA) at this waypoint, for example `__T14:30` or `__T14:30:15`. **Mandatory on `TAKE_OFF`** (brake release time). On other waypoints it acts as a timing constraint for the flight plan algorithm (see Flight Plan Semantics).
+- `__S<GS_KT>`: planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint, for example `__S180`. On `TAKE_OFF` this sets the default cruise GS for the whole plan.
 
-If both ends of a leg define `__T`, `MosieNavigator.lua` may calculate required leg TAS in knots. If either end has no `__T`, TAS for that leg must be omitted or displayed as `---`. Static FP/navlog output may also show IAS calculated from the row waypoint altitude (`__A`) and magnetic course corrected for declination only. Wind-corrected magnetic heading belongs to active navigator guidance, not static FP/navlog output.
+Only the suffixes `__A` and `__T` and `__S` are recognised. The legacy aliases `__ALT`, `__TOT` are **not** supported and will be logged as unknown tokens and ignored.
+
+A `TAKE_OFF` waypoint **must** have `__T`. A plan without `__T` on `TAKE_OFF` will not generate a flight plan. A plan without `__S` on `TAKE_OFF` and without any downstream `__T` pair to derive speed from will also fail to generate.
 
 Example:
 
 ```text
-MN_JERICHO_01_TAKE_OFF_Tangmere
+MN_JERICHO_01_TAKE_OFF_Tangmere__T12:00__S180__A500
 MN_JERICHO_02_NAV
 MN_JERICHO_03_RENDEZVOUS_Rendezvous
 MN_JERICHO_04_HOLD_Hold
-MN_JERICHO_05_INGRESS_IP
-MN_JERICHO_06_TARGET_Prison
-MN_JERICHO_07_EGRESS_Egress
-MN_JERICHO_08_LANDING_Tangmere
-```
-
-Optional planned altitude and TOT example:
-
-```text
-MN_JERICHO_05_INGRESS_IP__A50__T14:28
+MN_JERICHO_05_INGRESS_IP__A50__S200
 MN_JERICHO_06_TARGET_Prison__A50__T14:30
+MN_JERICHO_07_EGRESS_Egress
+MN_JERICHO_08_LANDING_Tangmere__A200
 ```
 
 Allowed waypoint `type` values:
@@ -92,6 +88,39 @@ Allowed waypoint `type` values:
 - `HOLD`
 
 Use `INGRESS` for IP / initial point semantics. Do not add a separate `IP` or `INITIAL_POINT` type unless the contract is explicitly changed.
+
+## Flight Plan Semantics
+
+For prose, examples, and a worked tutorial see **[FLIGHT_PLANS.md](FLIGHT_PLANS.md)**.
+
+The flight plan algorithm (`_ComputePlan`) runs on every navlog / F10 / CSV generation.
+
+**Altitude cascade.** `__A` on `TAKE_OFF` is the default cruise altitude. Each waypoint without its own `__A` inherits the previous waypoint's resolved altitude. Inherited values are marked with `*` in the navlog.
+
+**Speed resolution (per leg).** Each leg is classified relative to `__T` anchors:
+
+1. Segment between two `__T` anchors with **no HOLD** inside:
+   - If all legs are FIXED (`__S` declared): `__T` wins — uniform derived GS used for all legs; any `__S` values are ignored (warning emitted).
+   - If some legs are FIXED, others FREE: FIXED legs use their `__S`; FREE legs share the remaining time budget proportionally (averaged GS, clamped to envelope).
+   - If all legs are FREE: uniform derived GS from `(dist / Δtime)`.
+2. Segment with HOLD inside, or after the last `__T` anchor: each leg uses its `__S` override or the plan default GS.
+
+**HOLD duration.**
+- HOLD with `__T`: `__T` = arrival time; duration computed from the next downstream `__T`.
+- HOLD without `__T`: the *last* HOLD before a downstream `__T` absorbs the remaining slack; earlier HOLDs get duration 0 + warning.
+- HOLD with no downstream `__T` at all: duration 0 + warning.
+
+**ETA = TOT.** There is no distinction. `__T` is an ETA constraint, not a separate concept.
+
+**ROLEX.** Applied to all ETAs for that group (shifts T0 and all downstream times).
+
+**Speed envelope.** Speeds are expressed and clamped in IAS (converted from GS using `__A`). The Mosquito envelope is defined in `MosieNavigator.Aircraft.envelope` (`minIasKt` / `maxIasKt`). Violations emit a warning and clamp to the nearest bound.
+
+## Aircraft Profiles & Fuel
+
+`MosieNavigator.Aircraft` defines the Mosquito FB Mk VI performance table used for fuel estimation. Each profile covers an IAS range and altitude band and specifies a burn rate in Imperial gallons per hour. The flight plan algorithm matches each leg to a profile and accumulates fuel across the route.
+
+Fuel summary components: taxi allowance + route burn + HOLD orbit burn + reserve (30 min at lowest-burn profile) + landing allowance. A warning is emitted if the total exceeds tank capacity (546 IMP GAL).
 
 ## Beacon Trigger Zone Contract
 
@@ -165,13 +194,14 @@ Flight plan CSV layout:
 # PLAN,<plan>
 # GROUP,<group>          (only when a group is assigned)
 # ROLEX_SEC,<seconds>    (only when non-zero)
-ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT
+ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT
 ```
 
 - `LAT`, `LON` are signed decimal degrees to 6 dp.
 - `NAME` is empty when the source zone had no explicit `_<NAME>` token (the display name defaulted to the type).
 - `ALT_FT` is empty when the source zone had no `__A` token.
 - `TOT` is empty when the source zone had no `__T` token. When present, format is `HH:MM` or `HH:MM:SS`. TOT is the raw planned value; ROLEX shift is not applied in CSV (the group ROLEX is recorded in the header comment).
+- `SPEED_KT` is the raw `__S` value in knots (ground speed). Empty when the source zone had no `__S` token. Computed ETA and IAS values are **not** written to CSV — they are output-only in the navlog and F10 message.
 
 Beacon CSV layout:
 
