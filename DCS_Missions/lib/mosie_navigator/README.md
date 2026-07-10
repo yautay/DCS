@@ -109,6 +109,32 @@ Static FP/navlog magnetic course is declination-corrected but does not include w
 
 For assigned groups with `__R...`, `Show FP` and the generated group navlog show ROLEX-adjusted TOT values.
 
+Alongside each text navlog, the script also writes a source-of-truth CSV per group and a single mission-wide beacons CSV, intended for a future import path (defining plans and beacons in files instead of trigger zones):
+
+```text
+<Saved Games DCS>/Logs/MosieNavigator_<GROUP>_<PLAN>.csv
+<Saved Games DCS>/Logs/MosieNavigator_Beacons.csv
+```
+
+Flight plan CSV columns:
+
+```text
+# PLAN,<plan>
+# GROUP,<group>          (only when a group is assigned)
+# ROLEX_SEC,<seconds>    (only when non-zero)
+ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT
+```
+
+Beacons CSV columns:
+
+```text
+ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON
+```
+
+Coordinates are written as signed decimal degrees to 6 dp. `NAME`, `ALT_FT`, `TOT`, and `FREQUENCY` are left empty when the source zone does not define them, so an importer can reconstruct the exact zone name. `TOT` in the CSV is the raw planned value (no ROLEX shift); the group ROLEX lives in the `# ROLEX_SEC` header.
+
+CSV output can be toggled independently via `MosieNavigator.Config.generateCsvFiles` (default `true`).
+
 By default the script starts automatically. To disable auto-start, set this before loading the file:
 
 ```lua

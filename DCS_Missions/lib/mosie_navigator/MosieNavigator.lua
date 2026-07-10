@@ -16,6 +16,7 @@ MosieNavigator.Config = MosieNavigator.Config or {
   defaultBeaconAltitudeFt = 0,
   defaultWaypointRadiusM = 250,
   generateFlightPlanFiles = true,
+  generateCsvFiles = true,
   flightPlanOutputDirectory = nil,
   groupPlanTagPattern = "%[MN:([%w%-]+)%]",
   menuName = "Mosie Navigator",
@@ -230,10 +231,9 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
     return nil
   end
 
-  local name = self:_Join(tokens, nameStartIndex, "_")
-  if name == "" then
-    name = waypointType
-  end
+  local rawName = self:_Join(tokens, nameStartIndex, "_")
+  local nameExplicit = rawName ~= ""
+  local name = nameExplicit and rawName or waypointType
 
   local metadataTokens = {}
   for index = 2, #zoneParts do
@@ -247,6 +247,7 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
     order = order,
     type = waypointType,
     name = name,
+    nameExplicit = nameExplicit,
     altitudeFt = metadata.altitudeFt,
     timeOnTarget = metadata.timeOnTarget,
     timeOnTargetSeconds = metadata.timeOnTargetSeconds,
@@ -449,6 +450,49 @@ end
 function MosieNavigator:_FormatCoordinate(coordinate)
   local lat, lon = coordinate:GetLLDDM()
   return self:_FormatDecimalMinutes(lat, "N", "S", 2), self:_FormatDecimalMinutes(lon, "E", "W", 3)
+end
+
+function MosieNavigator:_FormatCoordinateForCsvDD(coordinate)
+  local lat, lon = coordinate:GetLLDDM()
+  return string.format("%.6f", lat), string.format("%.6f", lon)
+end
+
+function MosieNavigator:_FormatCsvField(value)
+  if value == nil then
+    return ""
+  end
+
+  local text = tostring(value)
+  if string.find(text, "[,\"\n\r]") then
+    return "\"" .. string.gsub(text, "\"", "\"\"") .. "\""
+  end
+
+  return text
+end
+
+function MosieNavigator:_FormatCsvRow(fields)
+  local escaped = {}
+  for index, value in ipairs(fields) do
+    escaped[index] = self:_FormatCsvField(value)
+  end
+  return table.concat(escaped, ",")
+end
+
+function MosieNavigator:_FormatTotForCsv(waypoint)
+  local seconds = waypoint and waypoint.timeOnTargetSeconds
+  if not seconds then
+    return ""
+  end
+
+  local hours = math.floor(seconds / 3600)
+  local minutes = math.floor((seconds % 3600) / 60)
+  local clockSeconds = seconds % 60
+
+  if clockSeconds == 0 then
+    return string.format("%02d:%02d", hours, minutes)
+  end
+
+  return string.format("%02d:%02d:%02d", hours, minutes, clockSeconds)
 end
 
 function MosieNavigator:_FitText(value, width)
@@ -1142,6 +1186,62 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, rolexSeconds)
   return table.concat(lines, "\n") .. "\n"
 end
 
+function MosieNavigator:_BuildFlightPlanCsv(plan, groupName, rolexSeconds)
+  local lines = {}
+  rolexSeconds = rolexSeconds or 0
+
+  table.insert(lines, "# PLAN," .. self:_FormatCsvField(plan.name))
+  if groupName then
+    table.insert(lines, "# GROUP," .. self:_FormatCsvField(groupName))
+  end
+  if rolexSeconds ~= 0 then
+    table.insert(lines, "# ROLEX_SEC," .. tostring(rolexSeconds))
+  end
+
+  table.insert(lines, "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT")
+
+  for _, waypoint in ipairs(plan.waypoints) do
+    local lat, lon = self:_FormatCoordinateForCsvDD(waypoint.coordinate)
+    local nameField = waypoint.nameExplicit and waypoint.name or ""
+    local altField = waypoint.altitudeFt ~= nil and tostring(waypoint.altitudeFt) or ""
+    local totField = self:_FormatTotForCsv(waypoint)
+
+    table.insert(lines, self:_FormatCsvRow({
+      waypoint.order,
+      waypoint.type,
+      nameField,
+      lat,
+      lon,
+      altField,
+      totField,
+    }))
+  end
+
+  return table.concat(lines, "\n") .. "\n"
+end
+
+function MosieNavigator:_BuildBeaconsCsv(beacons)
+  local lines = {}
+
+  table.insert(lines, "ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON")
+
+  for _, beacon in ipairs(beacons) do
+    local lat, lon = self:_FormatCoordinateForCsvDD(beacon.coordinate)
+    local frequencyField = beacon.frequency or ""
+
+    table.insert(lines, self:_FormatCsvRow({
+      beacon.id,
+      frequencyField,
+      beacon.powerNm,
+      beacon.altitudeFt,
+      lat,
+      lon,
+    }))
+  end
+
+  return table.concat(lines, "\n") .. "\n"
+end
+
 function MosieNavigator:_WriteFlightPlanFile(plan, groupName, rolexSeconds)
   if not io then
     self:_Log("cannot write flight plan file: io is not available")
@@ -1171,8 +1271,61 @@ function MosieNavigator:_WriteFlightPlanFile(plan, groupName, rolexSeconds)
   self:_Log("wrote flight plan file: " .. path)
 end
 
+function MosieNavigator:_WriteFlightPlanCsvFile(plan, groupName, rolexSeconds)
+  if not io then
+    self:_Log("cannot write flight plan CSV file: io is not available")
+    return
+  end
+
+  local outputDirectory = self:_GetOutputDirectory()
+  local filename = nil
+
+  if groupName then
+    filename = string.format("MosieNavigator_%s_%s.csv", self:_SanitizeFilename(groupName), self:_SanitizeFilename(plan.name))
+  else
+    filename = string.format("MosieNavigator_%s.csv", self:_SanitizeFilename(plan.name))
+  end
+
+  local path = outputDirectory .. filename
+  local file = io.open(path, "w")
+
+  if not file then
+    self:_Log("cannot write flight plan CSV file: " .. path)
+    return
+  end
+
+  file:write(self:_BuildFlightPlanCsv(plan, groupName, rolexSeconds))
+  file:close()
+
+  self:_Log("wrote flight plan CSV file: " .. path)
+end
+
+function MosieNavigator:_WriteBeaconsCsvFile(beacons)
+  if not beacons or #beacons == 0 then
+    return
+  end
+
+  if not io then
+    self:_Log("cannot write beacons CSV file: io is not available")
+    return
+  end
+
+  local path = self:_GetOutputDirectory() .. "MosieNavigator_Beacons.csv"
+  local file = io.open(path, "w")
+
+  if not file then
+    self:_Log("cannot write beacons CSV file: " .. path)
+    return
+  end
+
+  file:write(self:_BuildBeaconsCsv(beacons))
+  file:close()
+
+  self:_Log("wrote beacons CSV file: " .. path)
+end
+
 function MosieNavigator:_WriteFlightPlanFiles(plans)
-  if not self.Config.generateFlightPlanFiles then
+  if not self.Config.generateFlightPlanFiles and not self.Config.generateCsvFiles then
     return
   end
 
@@ -1180,7 +1333,12 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
 
   if #assignments > 0 then
     for _, assignment in ipairs(assignments) do
-      self:_WriteFlightPlanFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
+      if self.Config.generateFlightPlanFiles then
+        self:_WriteFlightPlanFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
+      end
+      if self.Config.generateCsvFiles then
+        self:_WriteFlightPlanCsvFile(assignment.plan, assignment.groupName, assignment.rolexSeconds)
+      end
     end
     return
   end
@@ -1188,7 +1346,12 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
   self:_Log("no group assignments found; writing one debug navlog per plan")
 
   for _, plan in pairs(plans) do
-    self:_WriteFlightPlanFile(plan, nil)
+    if self.Config.generateFlightPlanFiles then
+      self:_WriteFlightPlanFile(plan, nil)
+    end
+    if self.Config.generateCsvFiles then
+      self:_WriteFlightPlanCsvFile(plan, nil)
+    end
   end
 end
 
@@ -1213,6 +1376,9 @@ function MosieNavigator:DrawDebug()
 
   self:_CreateGroupMenus(plans)
   self:_WriteFlightPlanFiles(plans)
+  if self.Config.generateCsvFiles then
+    self:_WriteBeaconsCsvFile(beacons)
+  end
 
   self:_Log(string.format(
     "debug draw complete: %d plans, %d waypoints, %d beacons",

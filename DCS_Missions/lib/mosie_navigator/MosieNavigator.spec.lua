@@ -485,6 +485,14 @@ suite("ParseWaypointZoneName", function()
     local wp = M:_ParseWaypointZoneName("MN_PLAN_04_HOLD_Some_Long_Name")
     assertEq(wp.name, "Some_Long_Name")
   end)
+  it("nameExplicit false when no explicit name", function()
+    assertEq(M:_ParseWaypointZoneName("MN_JERICHO_02_NAV").nameExplicit, false)
+    assertEq(M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF").nameExplicit, false)
+  end)
+  it("nameExplicit true when explicit name present", function()
+    assertEq(M:_ParseWaypointZoneName("MN_JERICHO_03_RENDEZVOUS_Rendezvous").nameExplicit, true)
+    assertEq(M:_ParseWaypointZoneName("MN_JERICHO_01_TAKE_OFF_Tangmere").nameExplicit, true)
+  end)
 end)
 
 suite("ParseBeaconZoneName", function()
@@ -871,6 +879,315 @@ suite("DiscoverZones (fake SET_ZONE)", function()
       assertNotNil(plans["JERICHO"]); assertNotNil(plans["ESCORT"])
       assertEq(#plans["JERICHO"].waypoints, 1)
       assertEq(#plans["ESCORT"].waypoints, 2)
+    end)
+  end)
+end)
+
+suite("CSV field formatting", function()
+  it("nil → empty", function()
+    assertEq(M:_FormatCsvField(nil), "")
+  end)
+  it("plain value unchanged", function()
+    assertEq(M:_FormatCsvField("JERICHO"), "JERICHO")
+  end)
+  it("number stringified", function()
+    assertEq(M:_FormatCsvField(42), "42")
+  end)
+  it("comma triggers quoting", function()
+    assertEq(M:_FormatCsvField("a,b"), "\"a,b\"")
+  end)
+  it("double quote doubled and wrapped", function()
+    assertEq(M:_FormatCsvField('he said "hi"'), "\"he said \"\"hi\"\"\"")
+  end)
+  it("newline triggers quoting", function()
+    assertEq(M:_FormatCsvField("a\nb"), "\"a\nb\"")
+  end)
+  it("carriage return triggers quoting", function()
+    assertEq(M:_FormatCsvField("a\rb"), "\"a\rb\"")
+  end)
+end)
+
+suite("CSV row formatting", function()
+  it("joins escaped fields with commas", function()
+    assertEq(M:_FormatCsvRow({"a", "b", 3}), "a,b,3")
+  end)
+  it("escapes fields containing commas", function()
+    assertEq(M:_FormatCsvRow({"a,b", "c"}), "\"a,b\",c")
+  end)
+  it("empty string fields preserved", function()
+    assertEq(M:_FormatCsvRow({"a", "", "c"}), "a,,c")
+  end)
+end)
+
+suite("CSV coordinate formatting", function()
+  it("positive lat/lon 6 dp", function()
+    local coord = makeCoord({lat = 50.5, lon = -0.75})
+    local lat, lon = M:_FormatCoordinateForCsvDD(coord)
+    assertEq(lat, "50.500000")
+    assertEq(lon, "-0.750000")
+  end)
+  it("negative lat", function()
+    local coord = makeCoord({lat = -12.345678, lon = 100.123456})
+    local lat, lon = M:_FormatCoordinateForCsvDD(coord)
+    assertEq(lat, "-12.345678")
+    assertEq(lon, "100.123456")
+  end)
+end)
+
+suite("CSV TOT formatting", function()
+  it("nil TOT → empty", function()
+    assertEq(M:_FormatTotForCsv({}), "")
+  end)
+  it("HH:MM when seconds=0", function()
+    assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 14 * 3600 + 30 * 60}), "14:30")
+  end)
+  it("HH:MM:SS when seconds > 0", function()
+    assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 14 * 3600 + 30 * 60 + 45}), "14:30:45")
+  end)
+  it("zero-pads single-digit hour", function()
+    assertEq(M:_FormatTotForCsv({timeOnTargetSeconds = 5 * 3600}), "05:00")
+  end)
+end)
+
+local function makeWaypointFromZone(zoneName, coordOpts)
+  local wp = M:_ParseWaypointZoneName(zoneName)
+  assertNotNil(wp, "parse failed for " .. zoneName)
+  wp.coordinate = makeCoord(coordOpts or {lat = 50.0, lon = -0.5})
+  return wp
+end
+
+local function makeBeaconFromZone(zoneName, coordOpts)
+  local b = M:_ParseBeaconZoneName(zoneName)
+  assertNotNil(b, "parse failed for " .. zoneName)
+  b.coordinate = makeCoord(coordOpts or {lat = 50.0, lon = -0.5})
+  return b
+end
+
+local function splitLines(text)
+  local lines = {}
+  for line in string.gmatch(text, "([^\n]*)\n") do
+    table.insert(lines, line)
+  end
+  return lines
+end
+
+suite("Build flight plan CSV", function()
+  it("headers and rows for minimal plan", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {
+        makeWaypointFromZone("MN_JERICHO_01_TAKE_OFF_Tangmere", {lat = 50.85, lon = -0.7}),
+        makeWaypointFromZone("MN_JERICHO_02_NAV", {lat = 50.9, lon = -0.65}),
+      },
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertEq(lines[1], "# PLAN,JERICHO")
+    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT")
+    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,,")
+    assertEq(lines[4], "2,NAV,,50.900000,-0.650000,,")
+  end)
+
+  it("GROUP header included when groupName provided", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, "MOSQUITO 1-1", 0)
+    local lines = splitLines(csv)
+    assertEq(lines[1], "# PLAN,JERICHO")
+    assertEq(lines[2], "# GROUP,MOSQUITO 1-1")
+    assertEq(lines[3], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT")
+  end)
+
+  it("ROLEX_SEC header included only when non-zero", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
+    }
+    local csvZero = M:_BuildFlightPlanCsv(plan, "GRP", 0)
+    assertTrue(not string.find(csvZero, "ROLEX_SEC"), "ROLEX header should be absent")
+
+    local csvRolex = M:_BuildFlightPlanCsv(plan, "GRP", 300)
+    assertMatch(csvRolex, "# ROLEX_SEC,300")
+  end)
+
+  it("empty NAME for zones with no explicit name", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertMatch(lines[3], "^2,NAV,,")
+  end)
+
+  it("explicit NAME preserved", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_03_RENDEZVOUS_Rendezvous")},
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertMatch(lines[3], "^3,RENDEZVOUS,Rendezvous,")
+  end)
+
+  it("altitude and TOT round-trip", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_05_INGRESS_IP__A50__T14:28")},
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertMatch(lines[3], "^5,INGRESS,IP,[^,]+,[^,]+,50,14:28$")
+  end)
+
+  it("missing altitude and TOT stay empty", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {makeWaypointFromZone("MN_JERICHO_02_NAV")},
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    assertMatch(lines[3], ",,$")
+  end)
+
+  it("row count matches waypoint count", function()
+    local plan = {
+      name = "JERICHO",
+      waypoints = {
+        makeWaypointFromZone("MN_JERICHO_01_TAKE_OFF"),
+        makeWaypointFromZone("MN_JERICHO_02_NAV"),
+        makeWaypointFromZone("MN_JERICHO_03_RENDEZVOUS_RV"),
+      },
+    }
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = splitLines(csv)
+    -- 1 PLAN header + 1 column header + 3 waypoint rows
+    assertEq(#lines, 5)
+  end)
+end)
+
+suite("Build beacons CSV", function()
+  it("full beacon emits all fields", function()
+    local beacons = {makeBeaconFromZone("MNB_TANGMERE_310KHZ_120NM_200FT", {lat = 50.85, lon = -0.7})}
+    local csv = M:_BuildBeaconsCsv(beacons)
+    local lines = splitLines(csv)
+    assertEq(lines[1], "ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON")
+    assertEq(lines[2], "TANGMERE,310KHZ,120,200,50.850000,-0.700000")
+  end)
+
+  it("minimal beacon uses defaults and empty frequency", function()
+    local beacons = {makeBeaconFromZone("MNB_BAYEUX", {lat = 49.27, lon = -0.7})}
+    local csv = M:_BuildBeaconsCsv(beacons)
+    local lines = splitLines(csv)
+    assertEq(lines[2], "BAYEUX,,60,0,49.270000,-0.700000")
+  end)
+
+  it("multiple beacons", function()
+    local beacons = {
+      makeBeaconFromZone("MNB_TANGMERE_310KHZ_120NM_200FT"),
+      makeBeaconFromZone("MNB_BAYEUX"),
+    }
+    local csv = M:_BuildBeaconsCsv(beacons)
+    local lines = splitLines(csv)
+    assertEq(#lines, 3)
+  end)
+
+  it("empty beacon list yields header only", function()
+    local csv = M:_BuildBeaconsCsv({})
+    local lines = splitLines(csv)
+    assertEq(#lines, 1)
+    assertEq(lines[1], "ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON")
+  end)
+end)
+
+suite("WriteFlightPlanFiles flag interaction", function()
+  local function withSpies(opts, fn)
+    local originalTxt = M._WriteFlightPlanFile
+    local originalCsv = M._WriteFlightPlanCsvFile
+    local originalDiscover = M._DiscoverGroupAssignments
+    local originalTxtFlag = M.Config.generateFlightPlanFiles
+    local originalCsvFlag = M.Config.generateCsvFiles
+
+    local txtCalls = {}
+    local csvCalls = {}
+
+    M._WriteFlightPlanFile = function(self, plan, groupName, rolexSeconds)
+      table.insert(txtCalls, {plan = plan and plan.name, groupName = groupName, rolexSeconds = rolexSeconds})
+    end
+    M._WriteFlightPlanCsvFile = function(self, plan, groupName, rolexSeconds)
+      table.insert(csvCalls, {plan = plan and plan.name, groupName = groupName, rolexSeconds = rolexSeconds})
+    end
+    M._DiscoverGroupAssignments = function() return opts.assignments or {} end
+    M.Config.generateFlightPlanFiles = opts.txt
+    M.Config.generateCsvFiles = opts.csv
+
+    local ok, err = pcall(fn, txtCalls, csvCalls)
+
+    M._WriteFlightPlanFile = originalTxt
+    M._WriteFlightPlanCsvFile = originalCsv
+    M._DiscoverGroupAssignments = originalDiscover
+    M.Config.generateFlightPlanFiles = originalTxtFlag
+    M.Config.generateCsvFiles = originalCsvFlag
+
+    if not ok then error(err, 2) end
+  end
+
+  local samplePlan = {name = "JERICHO", waypoints = {}}
+  local samplePlans = {JERICHO = samplePlan}
+  local sampleAssignment = {plan = samplePlan, groupName = "MOSQUITO 1-1", rolexSeconds = 300}
+
+  it("calls both writers when both flags enabled and assignments exist", function()
+    withSpies({txt = true, csv = true, assignments = {sampleAssignment}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 1)
+      assertEq(#csvCalls, 1)
+      assertEq(txtCalls[1].groupName, "MOSQUITO 1-1")
+      assertEq(csvCalls[1].groupName, "MOSQUITO 1-1")
+      assertEq(csvCalls[1].rolexSeconds, 300)
+    end)
+  end)
+
+  it("only TXT writer called when only txt flag enabled", function()
+    withSpies({txt = true, csv = false, assignments = {sampleAssignment}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 1)
+      assertEq(#csvCalls, 0)
+    end)
+  end)
+
+  it("only CSV writer called when only csv flag enabled", function()
+    withSpies({txt = false, csv = true, assignments = {sampleAssignment}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 0)
+      assertEq(#csvCalls, 1)
+    end)
+  end)
+
+  it("returns early when both flags disabled", function()
+    withSpies({txt = false, csv = false, assignments = {sampleAssignment}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 0)
+      assertEq(#csvCalls, 0)
+    end)
+  end)
+
+  it("fallback branch writes per plan without groupName when no assignments", function()
+    withSpies({txt = true, csv = true, assignments = {}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 1)
+      assertEq(#csvCalls, 1)
+      assertNil(txtCalls[1].groupName)
+      assertNil(csvCalls[1].groupName)
+    end)
+  end)
+
+  it("fallback branch honors csv-only flag", function()
+    withSpies({txt = false, csv = true, assignments = {}}, function(txtCalls, csvCalls)
+      M:_WriteFlightPlanFiles(samplePlans)
+      assertEq(#txtCalls, 0)
+      assertEq(#csvCalls, 1)
     end)
   end)
 end)

@@ -129,20 +129,61 @@ Flight plan zones must not define beacons. Beacon zones must not assign beacons 
 
 ## Coordinates
 
-- Coordinates come from DCS Mission Editor trigger zone positions.
-- Do not store lat/lon in files for the primary workflow.
-- The future script should read coordinates with MOOSE zone APIs such as `ZONE:New(name):GetCoordinate()`.
+- Coordinates for the primary workflow come from DCS Mission Editor trigger zone positions.
+- Trigger zone names must not encode lat/lon.
+- The future script reads coordinates with MOOSE zone APIs such as `ZONE:New(name):GetCoordinate()`.
+- Lat/lon may appear in exported CSV files (see CSV Export Contract) because those files are the source of truth for the future import path.
 
 ## Debug Lua Contract
 
 - `MosieNavigator.lua` may discover zones and draw F10 debug markup.
 - `MosieNavigator.lua` may write plain text navlog files for discovered plans.
+- `MosieNavigator.lua` may write CSV flight plan files per assigned group and one mission-wide CSV beacons file, intended as source-of-truth for a future import path.
 - `MosieNavigator.lua` may periodically refresh group menus for client aircraft that become active after mission start.
 - `MosieNavigator.lua` may provide an active text navigator per assigned group, with configurable report intervals, manual waypoint changes, wind-corrected magnetic heading, XTE guidance, and mandatory 60/30 second waypoint callouts.
 - It may depend on MOOSE being loaded before it.
 - It must not require YAML files.
 - It must not implement player navigation state until explicitly requested.
 - It may implement minimal F10 debug menu actions explicitly requested by the user.
+- It must not implement CSV import until explicitly requested; the CSV export is only the write half of the round-trip.
+
+## CSV Export Contract
+
+CSV files are the intended source of truth for a future import path (defining plans and beacons in files instead of in the Mission Editor). Export must remain round-trip-lossless so a future importer can rebuild the exact `MN_...` / `MNB_...` zone name.
+
+Filenames (written to the same directory as the text navlog):
+
+```text
+MosieNavigator_<GROUP>_<PLAN>.csv
+MosieNavigator_<PLAN>.csv            (fallback when no group is assigned)
+MosieNavigator_Beacons.csv
+```
+
+Flight plan CSV layout:
+
+```text
+# PLAN,<plan>
+# GROUP,<group>          (only when a group is assigned)
+# ROLEX_SEC,<seconds>    (only when non-zero)
+ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT
+```
+
+- `LAT`, `LON` are signed decimal degrees to 6 dp.
+- `NAME` is empty when the source zone had no explicit `_<NAME>` token (the display name defaulted to the type).
+- `ALT_FT` is empty when the source zone had no `__A` token.
+- `TOT` is empty when the source zone had no `__T` token. When present, format is `HH:MM` or `HH:MM:SS`. TOT is the raw planned value; ROLEX shift is not applied in CSV (the group ROLEX is recorded in the header comment).
+
+Beacon CSV layout:
+
+```text
+ID,FREQUENCY,POWER_NM,ALT_FT,LAT,LON
+```
+
+- `FREQUENCY` is empty when the source zone was in the minimal `MNB_<ID>` form.
+- `POWER_NM` and `ALT_FT` are always populated (defaults substituted when the zone is minimal).
+- `LAT`, `LON` are signed decimal degrees to 6 dp.
+
+Toggle CSV output independently via `MosieNavigator.Config.generateCsvFiles` (default `true`). It is independent from `generateFlightPlanFiles` (text navlog).
 
 ## Explicitly Forbidden In Flight Plan Zone Names
 
