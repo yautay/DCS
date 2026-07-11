@@ -170,7 +170,7 @@ Fields:
 - `__T<TOT>`: planned time at that waypoint, using `HH:MM`, for example `__T14:30`. Mandatory on `TAKE_OFF`.
 - `__S<GS_KT>`: optional speed override in knots. On `TAKE_OFF`, it overrides the default cruise speed for the whole plan.
 
-If `TAKE_OFF` has no `__S`, the default cruise speed is 240 mph converted to 208.6 kt. Individual waypoint `__S` tokens override only the leg arriving at that waypoint. Segments between `__T` anchors may derive speeds to satisfy timing constraints.
+If `TAKE_OFF` has no `__S`, the default cruise speed is 228 mph converted internally to 198.1 kt. `__S` tokens are always knots; individual waypoint `__S` tokens override only the leg arriving at that waypoint. Segments between `__T` anchors may derive speeds to satisfy timing constraints.
 
 Example:
 
@@ -212,7 +212,7 @@ The first waypoint must be `TAKE_OFF`, and the last waypoint must be `LANDING`; 
 
 Fuel output includes a DCS-specific recommendation for the Mosquito internal fuel slider and drop tanks. It uses 3269 lb internal fuel, 7.215 lb/gal, and `NONE` / `2x50 GAL` / `2x100 GAL` drop tank options. Internal-only recommendations add a 1% buffer after rounding up, capped at 100%.
 
-Route fuel burn is interpolated by IAS between Merlin 25 engine settings from the Mosquito manual. Internal profile codes are `CRZ`, `MCW`, `MCR`, `CLB`, or interpolated pairs such as `MCW-MCR`. The sea-level IAS references are provisional calibration values and can be refined after DCS testing.
+Route fuel burn is interpolated by IAS between Merlin 25 engine settings from the Mosquito manual. Internal profile codes are `CRZ`, `MCW`, `MCR`, `CLB`, or interpolated pairs such as `MCW-MCR`. IAS references are DCS-tested mph values converted internally to knots for calculation.
 
 ## Beacon Trigger Zones
 

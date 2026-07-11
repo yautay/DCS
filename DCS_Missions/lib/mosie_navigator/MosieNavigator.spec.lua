@@ -1060,23 +1060,23 @@ suite("Fuel profile interpolation", function()
     assertEq(curve[1].id, "cruise_weak")
     assertEq(curve[4].id, "max_climb")
   end)
-  it("180 IAS uses cruise weak burn", function()
-    local p = M:_EstimateFuelProfile(180, 0)
+  it("192 mph IAS uses cruise weak burn", function()
+    local p = M:_EstimateFuelProfile(192 * 0.8689762419, 0)
     assertEq(p.name, "CRZ")
     assertNear(p.burnImpGph, 84, 0.01)
   end)
-  it("215 IAS uses max continuous weak burn", function()
-    local p = M:_EstimateFuelProfile(215, 0)
+  it("228 mph IAS uses max continuous weak burn", function()
+    local p = M:_EstimateFuelProfile(228 * 0.8689762419, 0)
     assertEq(p.name, "CRZ-MCW")
     assertNear(p.burnImpGph, 126, 0.01)
   end)
-  it("227.5 IAS interpolates between weak and rich continuous", function()
-    local p = M:_EstimateFuelProfile(227.5, 0)
+  it("232.5 mph IAS interpolates between weak and rich continuous", function()
+    local p = M:_EstimateFuelProfile(232.5 * 0.8689762419, 0)
     assertEq(p.name, "MCW-MCR")
     assertNear(p.burnImpGph, 143, 0.01)
   end)
-  it("250 IAS interpolates between rich continuous and climb", function()
-    local p = M:_EstimateFuelProfile(250, 0)
+  it("238.5 mph IAS interpolates between rich continuous and climb", function()
+    local p = M:_EstimateFuelProfile(238.5 * 0.8689762419, 0)
     assertEq(p.name, "MCR-CLB")
     assertNear(p.burnImpGph, 175, 0.01)
   end)
@@ -1084,7 +1084,7 @@ suite("Fuel profile interpolation", function()
     assertNear(M:_EstimateFuelProfile(140, 0).burnImpGph, 84, 0.01)
   end)
   it("above curve clamps to highest route burn", function()
-    assertNear(M:_EstimateFuelProfile(280, 0).burnImpGph, 190, 0.01)
+    assertNear(M:_EstimateFuelProfile(250 * 0.8689762419, 0).burnImpGph, 190, 0.01)
   end)
 end)
 
@@ -1159,15 +1159,25 @@ suite("ComputePlan — validation", function()
     assertMatch(r.error, "__T")
   end)
 
-  it("valid when TAKE_OFF missing __S uses 240 mph default cruise speed", function()
+  it("valid when TAKE_OFF missing __S uses 228 mph default cruise speed", function()
     local plan = makePlan({
       { "MN_TEST_01_TAKE_OFF__T12:00", 0 },
       { "MN_TEST_02_LANDING", NM * 20 },
     })
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.valid, true)
-    assertNear(M.Aircraft.defaultCruiseSpeedKt, 208.554, 0.001)
+    assertNear(M.Aircraft.defaultCruiseSpeedKt, 198.127, 0.001)
     assertNear(r.waypoints[2].legGsKt, M.Aircraft.defaultCruiseSpeedKt, 0.01)
+  end)
+
+  it("TAKE_OFF __S remains knots and overrides mph default", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T12:00__S200", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local r = M:_ComputePlan(plan, 0)
+    assertEq(r.valid, true)
+    assertNear(r.waypoints[2].legGsKt, 200, 0.01)
   end)
 
   it("valid when TAKE_OFF missing __S but has downstream __T pair", function()
@@ -1237,20 +1247,20 @@ suite("ComputePlan — Plan 1 BASIC (no __T in middle)", function()
 end)
 
 suite("ComputePlan — Plan 2 MID_TOT (constraint derived speed)", function()
-  -- 75 NM total, __T12:20 on TARGET → 20 min → required 225 kt GS
+  -- 75 NM total, __T12:25 on TARGET → 25 min → required 180 kt GS
   local plan = makePlan({
     { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
     { "MN_TEST_02_NAV",                          NM*20 },
     { "MN_TEST_03_NAV",                          NM*50 },
-    { "MN_TEST_04_TARGET__T12:20",               NM*75 },
+    { "MN_TEST_04_TARGET__T12:25",               NM*75 },
     { "MN_TEST_05_LANDING",                      NM*120 },
   })
 
   it("segment [TAKE_OFF..TARGET] ETA hits constraint", function()
     local r = M:_ComputePlan(plan, 0)
     assertTrue(r.valid)
-    -- TARGET should be at or very close to 12:20
-    assertNear(r.waypoints[4].etaSec, 12*3600 + 20*60, 2)
+    -- TARGET should be at or very close to 12:25
+    assertNear(r.waypoints[4].etaSec, 12*3600 + 25*60, 2)
   end)
 
   it("post-constraint leg reverts to default __S200", function()
@@ -1468,7 +1478,7 @@ suite("ComputePlan — __S override on individual WP", function()
 end)
 
 suite("ComputePlan — ROLEX shift", function()
-  -- 60 NM in 20 min = 180 kt required, feasible in envelope [165..260].
+  -- 60 NM in 20 min = 180 kt required, feasible in the Mosquito envelope.
   local plan = makePlan({
     { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
     { "MN_TEST_02_TARGET__T12:20",               NM*60 },

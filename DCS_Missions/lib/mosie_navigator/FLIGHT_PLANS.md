@@ -173,7 +173,7 @@ MOSQUITO 1-2 [MN:JERICHO]__R0:05
 1. The first waypoint **must** be `TAKE_OFF`.
 2. `TAKE_OFF` **must** have `__T` (brake release time). Without it, no navlog is generated.
 3. The last waypoint **must** be `LANDING`.
-4. If `TAKE_OFF` has no `__S`, the plan default cruise speed is 240 mph converted to 208.6 kt. Individual waypoint `__S` tokens still override the arriving leg.
+4. If `TAKE_OFF` has no `__S`, the plan default cruise speed is 228 mph converted internally to 198.1 kt. `__S` tokens are always knots; individual waypoint `__S` tokens still override the arriving leg.
 
 ### 5.2 Altitude cascade
 
@@ -214,7 +214,7 @@ between consecutive anchors:
 
 Each leg uses its own `__S` or the plan default GS. The HOLD absorbs timing slack (see §5.4).
 
-**Default GS.** Comes from `__S` on `TAKE_OFF`, or from the Mosquito default cruise speed of 240 mph (208.6 kt) when `TAKE_OFF __S` is absent. It propagates forward until overridden by a later `__S` (which applies to that one leg only).
+**Default GS.** Comes from `__S` on `TAKE_OFF` in knots, or from the Mosquito default cruise speed of 228 mph (198.1 kt) when `TAKE_OFF __S` is absent. It propagates forward until overridden by a later `__S` (which applies to that one leg only).
 
 ### 5.4 HOLD duration
 
@@ -259,15 +259,16 @@ Manual fuel values are per engine; Mosie Navigator stores total aircraft burn fo
 |---|---|---:|---|---:|---:|---:|---:|
 | — | `takeoff_emergency_18` | 3000 | Rich | +18 | — | — | — |
 | — | `takeoff_12` | 3000 | Rich | +12 | 115 | 230 | — |
-| `CLB` | `max_climb` | 2850 | Rich | +9 | 95 | 190 | 260 |
-| `MCR` | `max_cont_rich` | 2650 | Rich | +7 | 80 | 160 | 240 |
-| `MCW` | `max_cont_weak` | 2650 | Weak | +7 | 63 | 126 | 215 |
-| `CRZ` | `cruise_weak` | 2300 | Weak | +2 | 42 | 84 | 180 |
+| `CLB` | `max_climb` | 2850 | Rich | +9 | 95 | 190 | 240 mph / 208.6 kt |
+| `MCR` | `max_cont_rich` | 2650 | Rich | +7 | 80 | 160 | 237 mph / 205.9 kt |
+| `MCW` | `max_cont_weak` | 2650 | Weak | +7 | 63 | 126 | 228 mph / 198.1 kt |
+| `CRZ` | `cruise_weak` | 2300 | Weak | +2 | 42 | 84 | 192 mph / 166.8 kt |
 
 Route fuel burn is linearly interpolated by computed IAS between the route IAS reference
 points. Values below the lowest point use `cruise_weak`; values above the highest point use
-`max_climb`. The IAS reference points are provisional calibration values and should be refined
-after DCS flight tests.
+`max_climb`. The IAS reference points are DCS-tested mph measurements converted internally to
+knots. `max_climb` is set to 240 mph to keep the interpolation curve monotonic when measured
+2650/+7 rich and 2850/+9 rich speeds overlap.
 
 Interpolated `PROF` values use two enum codes, for example `CRZ-MCW`, `MCW-MCR`, or `MCR-CLB`.
 
@@ -582,10 +583,10 @@ TARGET ETA = 12:30. No warnings.
 ```
 
 **Algorithm:** Segment [01..03] = 25 NM in 3 min → required GS ≈ 500 kt → IAS ≈ 498 kt.
-Envelope max = 260 IAS → clamped to 260 IAS. TARGET `__T12:03` will not be met (actual
+Envelope max = 245 mph / 212.9 kt IAS → clamped to 212.9 kt IAS. TARGET `__T12:03` will not be met (actual
 ETA ~12:05:46).
 
-**Warning:** `segment [WP01..WP03]: required 498 IAS above maximum 260 IAS — clamped`
+**Warning:** `segment [WP01..WP03]: required 498 IAS above maximum 213 IAS — clamped`
 
 ---
 

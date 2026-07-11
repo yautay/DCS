@@ -28,7 +28,7 @@ MN_<PLAN>_<ORDER>_<TYPE>[_<NAME>][__A<ALT_FT>][__T<TOT>][__S<GS_KT>]
 
 `PLAN` must not contain underscores. Use names like `JERICHO`, `ESCORT`, or `MOSSIE1`.
 `NAME` is optional. If omitted, the waypoint type is used as the display name.
-`__A<ALT_FT>` is optional. `__T<TOT>` is mandatory on `TAKE_OFF`; later `__T` tokens are timing constraints. `__S<GS_KT>` overrides speed; if omitted on `TAKE_OFF`, the default cruise speed is 240 mph / 208.6 kt.
+`__A<ALT_FT>` is optional. `__T<TOT>` is mandatory on `TAKE_OFF`; later `__T` tokens are timing constraints. `__S<GS_KT>` overrides speed in knots; if omitted on `TAKE_OFF`, the default cruise speed is 228 mph / 198.1 kt.
 
 Example Operation Jericho plan:
 

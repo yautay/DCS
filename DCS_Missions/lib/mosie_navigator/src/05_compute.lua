@@ -130,7 +130,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   end
 
   -- Determine default plan speed. TAKE_OFF __S overrides the Mosquito default
-  -- cruise speed of 240 mph, expressed internally in knots.
+  -- cruise speed of 228 mph, expressed internally in knots.
   local defaultIasKt = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
   local defaultGs = self:_ConvertIasToTas(defaultIasKt, takeoff.altitudeFt or 0) or defaultIasKt
 

@@ -63,11 +63,11 @@ Fields:
 - `NAME`: optional human-readable waypoint name without spaces. If omitted, the waypoint type is used as the display name.
 - `__A<ALT_FT>`: optional planned altitude in feet, for example `__A500` or `__A500FT`. On `TAKE_OFF` this sets the default cruise altitude for the whole plan; individual waypoints may override it.
 - `__T<HH:MM>`: planned time (ETA) at this waypoint, for example `__T14:30`. **Mandatory on `TAKE_OFF`** (brake release time). On other waypoints it acts as a timing constraint for the flight plan algorithm (see Flight Plan Semantics).
-- `__S<GS_KT>`: planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint, for example `__S180`. On `TAKE_OFF` this overrides the default cruise GS for the whole plan.
+- `__S<GS_KT>`: planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint, for example `__S180`. On `TAKE_OFF` this overrides the default cruise GS for the whole plan. `__S` is always knots; the no-`__S` default below is documented in mph and converted internally to knots.
 
 Only the suffixes `__A` and `__T` and `__S` are recognised. The legacy aliases `__ALT`, `__TOT` are **not** supported and will be logged as unknown tokens and ignored.
 
-A `TAKE_OFF` waypoint **must** have `__T`. A plan without `__T` on `TAKE_OFF` will not generate a flight plan. When `TAKE_OFF` has no `__S`, the plan default cruise speed is 240 mph, converted to 208.6 kt.
+A `TAKE_OFF` waypoint **must** have `__T`. A plan without `__T` on `TAKE_OFF` will not generate a flight plan. When `TAKE_OFF` has no `__S`, the plan default cruise speed is 228 mph, converted internally to 198.1 kt.
 
 The last waypoint in every plan **must** be `LANDING`. A discovered plan ending with any other waypoint type fails flight-plan generation.
 
@@ -112,7 +112,7 @@ The flight plan algorithm (`_ComputePlan`) runs when a static FP/navlog result i
 
 **Speed resolution (per leg).** Each leg is classified relative to `__T` anchors:
 
-1. Segment with a HOLD anywhere in it (HOLD at `segStart`, in the interior, or at `segEnd`): each leg uses its `__S` override or the plan default GS. The plan default is `TAKE_OFF __S`, or 240 mph / 208.6 kt when `TAKE_OFF __S` is absent. The HOLD absorbs any slack — legs are **not** re-derived from the time budget.
+1. Segment with a HOLD anywhere in it (HOLD at `segStart`, in the interior, or at `segEnd`): each leg uses its `__S` override or the plan default GS. The plan default is `TAKE_OFF __S` in knots, or 228 mph / 198.1 kt when `TAKE_OFF __S` is absent. The HOLD absorbs any slack — legs are **not** re-derived from the time budget.
 2. Segment between two `__T` anchors with **no HOLD** at any position:
    - If all legs are FIXED (`__S` declared): `__T` wins — uniform derived GS used for all legs; any `__S` values are ignored (warning emitted).
    - If some legs are FIXED, others FREE: FIXED legs use their `__S`; FREE legs share the remaining time budget proportionally (averaged GS, clamped to envelope).
@@ -135,7 +135,7 @@ The flight plan algorithm (`_ComputePlan`) runs when a static FP/navlog result i
 
 ## Aircraft Profiles & Fuel
 
-`MosieNavigator.Aircraft` defines Mosquito FB Mk VI Merlin 25 engine settings used for fuel estimation. Route fuel burn is interpolated by computed IAS between documented engine settings with provisional sea-level IAS reference points. Internal fuel profile codes use short enums (`CRZ`, `MCW`, `MCR`, `CLB`, or interpolated pairs like `MCW-MCR`). These IAS reference points are calibration data and may be refined after DCS testing.
+`MosieNavigator.Aircraft` defines Mosquito FB Mk VI Merlin 25 engine settings used for fuel estimation. Route fuel burn is interpolated by computed IAS between documented engine settings with DCS-tested sea-level IAS reference points. Internal fuel profile codes use short enums (`CRZ`, `MCW`, `MCR`, `CLB`, or interpolated pairs like `MCW-MCR`). Measured mph reference points are stored alongside their knot conversion; duplicate measured speeds may be separated by a small calibration offset for monotonic interpolation.
 
 Fuel summary components: taxi allowance + interpolated route burn + HOLD orbit burn + reserve (30 min at lowest documented route burn) + landing allowance. HOLD orbit burn uses the documented cruise weak burn rate.
 

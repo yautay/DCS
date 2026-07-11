@@ -62,8 +62,8 @@ MosieNavigator.BeaconColor = {0.20, 0.80, 0.20}
 
 MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
   name = "Mosquito FB Mk VI",
-  defaultCruiseSpeedMph = 240,
-  defaultCruiseSpeedKt = 240 * 0.8689762419,
+  defaultCruiseSpeedMph = 228,
+  defaultCruiseSpeedKt = 228 * 0.8689762419,
   engineSettings = {
     {
       id = "takeoff_emergency_18",
@@ -96,7 +96,9 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
       limitMin = 60,
       fuelImpGphPerEngine = 95,
       fuelImpGph = 190,
-      seaLevelIasKt = 260,
+      seaLevelIasMph = 240,
+      tenThousandFtIasMph = 240,
+      seaLevelIasKt = 240 * 0.8689762419,
       profileName = "climb",
       profileCode = "CLB",
     },
@@ -108,7 +110,9 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
       boostPsi = 7,
       fuelImpGphPerEngine = 80,
       fuelImpGph = 160,
-      seaLevelIasKt = 240,
+      seaLevelIasMph = 237,
+      tenThousandFtIasMph = 237,
+      seaLevelIasKt = 237 * 0.8689762419,
       profileName = "cont_r",
       profileCode = "MCR",
     },
@@ -120,7 +124,9 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
       boostPsi = 7,
       fuelImpGphPerEngine = 63,
       fuelImpGph = 126,
-      seaLevelIasKt = 215,
+      seaLevelIasMph = 228,
+      tenThousandFtIasMph = 226,
+      seaLevelIasKt = 228 * 0.8689762419,
       profileName = "cont_w",
       profileCode = "MCW",
     },
@@ -132,7 +138,9 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
       boostPsi = 2,
       fuelImpGphPerEngine = 42,
       fuelImpGph = 84,
-      seaLevelIasKt = 180,
+      seaLevelIasMph = 192,
+      tenThousandFtIasMph = 198,
+      seaLevelIasKt = 192 * 0.8689762419,
       profileName = "cruise",
       profileCode = "CRZ",
     },
@@ -145,7 +153,8 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
   },
   envelope = {
     minIasKt = 165,
-    maxIasKt = 260,
+    maxIasMph = 245,
+    maxIasKt = 245 * 0.8689762419,
   },
   fuel = {
     unit           = "IMP_GAL",
@@ -868,7 +877,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   end
 
   -- Determine default plan speed. TAKE_OFF __S overrides the Mosquito default
-  -- cruise speed of 240 mph, expressed internally in knots.
+  -- cruise speed of 228 mph, expressed internally in knots.
   local defaultIasKt = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
   local defaultGs = self:_ConvertIasToTas(defaultIasKt, takeoff.altitudeFt or 0) or defaultIasKt
 
