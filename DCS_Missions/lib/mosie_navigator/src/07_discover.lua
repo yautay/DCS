@@ -3,8 +3,12 @@ function MosieNavigator:_ExtractPlanFromGroupName(groupName)
 end
 
 function MosieNavigator:_ExtractRolexFromGroupName(groupName)
-  local rolexText = string.match(groupName, "__[Rr]([%d:]+)")
+  local rolexText = string.match(groupName, "__[Rr]([%d:]+)$")
   if not rolexText then
+    local invalidToken = string.match(groupName, "(__[Rr]%S*)")
+    if invalidToken then
+      self:_Log("Ignoring invalid group ROLEX token: " .. invalidToken)
+    end
     return 0
   end
 

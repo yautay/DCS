@@ -3,7 +3,7 @@ SECONDS_PER_HALF_DAY = 43200
 
 MosieNavigator = MosieNavigator or {}
 
-MosieNavigator.Config = MosieNavigator.Config or {
+local MosieNavigatorConfigDefaults = {
   flightZonePrefix = "MN_",
   beaconZonePrefix = "MNB_",
   coalition = -1,
@@ -28,8 +28,19 @@ MosieNavigator.Config = MosieNavigator.Config or {
   navigatorReportIntervals = {30, 60, 120, 300},
   navigatorMessageDuration = 20,
   navigatorCalloutSeconds = {60, 30},
+  navigatorTakeoffCalloutSeconds = {30, 20, 10, 5},
+  navigatorWaypointCalloutSeconds = {300, 120, 60},
+  navigatorTargetCalloutSeconds = {300, 240, 180, 120, 60, 45, 30, 15, 10},
+  navigatorHoldExitCalloutSeconds = {300, 240, 180, 120, 60, 30},
   navigatorXteStepNm = 1,
 }
+
+MosieNavigator.Config = MosieNavigator.Config or {}
+for key, value in pairs(MosieNavigatorConfigDefaults) do
+  if MosieNavigator.Config[key] == nil then
+    MosieNavigator.Config[key] = value
+  end
+end
 
 MosieNavigator.WaypointTypes = {
   TAKE_OFF = true,

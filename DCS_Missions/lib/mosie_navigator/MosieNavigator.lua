@@ -10,7 +10,7 @@ SECONDS_PER_HALF_DAY = 43200
 
 MosieNavigator = MosieNavigator or {}
 
-MosieNavigator.Config = MosieNavigator.Config or {
+local MosieNavigatorConfigDefaults = {
   flightZonePrefix = "MN_",
   beaconZonePrefix = "MNB_",
   coalition = -1,
@@ -35,8 +35,19 @@ MosieNavigator.Config = MosieNavigator.Config or {
   navigatorReportIntervals = {30, 60, 120, 300},
   navigatorMessageDuration = 20,
   navigatorCalloutSeconds = {60, 30},
+  navigatorTakeoffCalloutSeconds = {30, 20, 10, 5},
+  navigatorWaypointCalloutSeconds = {300, 120, 60},
+  navigatorTargetCalloutSeconds = {300, 240, 180, 120, 60, 45, 30, 15, 10},
+  navigatorHoldExitCalloutSeconds = {300, 240, 180, 120, 60, 30},
   navigatorXteStepNm = 1,
 }
+
+MosieNavigator.Config = MosieNavigator.Config or {}
+for key, value in pairs(MosieNavigatorConfigDefaults) do
+  if MosieNavigator.Config[key] == nil then
+    MosieNavigator.Config[key] = value
+  end
+end
 
 MosieNavigator.WaypointTypes = {
   TAKE_OFF = true,
@@ -757,6 +768,20 @@ end
 
 -- Resolves GS (kt) for each leg in a segment between two __T anchors (no HOLD).
 -- Returns table of gsKt per leg index (1-based within segment legs).
+function MosieNavigator:_ClampGroundSpeed(gsKt, altitudeFt, warnings, context)
+  if not gsKt then
+    return nil
+  end
+
+  local iasKt = self:_ConvertTasToIas(gsKt, altitudeFt or 0) or gsKt
+  local clampedIas, clamped = self:_ClampSpeed(iasKt, warnings, context)
+  if clamped then
+    return self:_ConvertIasToTas(clampedIas, altitudeFt or 0) or clampedIas, true
+  end
+
+  return gsKt, false
+end
+
 function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, segLabel)
   local n = #segLegs
 
@@ -827,7 +852,12 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
   local fixedTime = 0
   for _, i in ipairs(fixedIndices) do
     local leg = segLegs[i]
-    local gs  = self:_ConvertIasToTas(leg.speedKt, leg.altFt or 0) or leg.speedKt
+    local gs  = self:_ClampGroundSpeed(
+      leg.speedKt,
+      leg.altFt or 0,
+      warnings,
+      string.format("%s WP%02d __S", segLabel, leg.wpOrder)
+    ) or leg.speedKt
     local t   = leg.distNm / gs * 3600
     fixedTime = fixedTime + t
     result[i] = gs
@@ -888,8 +918,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
   -- Determine default plan speed. TAKE_OFF __S overrides the Mosquito default
   -- cruise speed of 228 mph, expressed internally in knots.
-  local defaultIasKt = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
-  local defaultGs = self:_ConvertIasToTas(defaultIasKt, takeoff.altitudeFt or 0) or defaultIasKt
+  local defaultGsRaw = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
 
   -- ── Altitude cascade ─────────────────────────────────────────────────────
   local resolvedAlt = {}
@@ -941,9 +970,21 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   local function legSpeedFromDecl(k)
     local ld = legDescs[k]
     if ld and ld.speedKt then
-      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt, "explicit"
+      return self:_ClampGroundSpeed(
+        ld.speedKt,
+        ld.altFt or 0,
+        warnings,
+        string.format("WP%02d __S", ld.wpOrder)
+      ) or ld.speedKt, "explicit"
     end
-    return defaultGs, "default"
+    local altitudeFt = ld and ld.altFt or 0
+    local wpOrder = ld and ld.wpOrder or k
+    return self:_ClampGroundSpeed(
+      defaultGsRaw,
+      altitudeFt,
+      warnings,
+      string.format("WP%02d default __S", wpOrder)
+    ) or defaultGsRaw, "default"
   end
 
   local function setLegSpeedFromDecl(k)
@@ -1056,7 +1097,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   etaSec[1] = (takeoff.timeOnTargetSeconds + rolexSeconds) % 86400
 
   for k = 2, #wps do
-    local gs      = legGs[k] or defaultGs
+    local gs      = legGs[k] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[k] or 0, warnings, string.format("WP%02d default __S", wps[k].order)) or defaultGsRaw)
     local legTime = gs > 0 and ((legDescs[k] and legDescs[k].distNm or 0) / gs * 3600) or 0
 
     -- Propagated arrival = previous departure + leg time.
@@ -1094,7 +1135,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
         local downTot = (wps[downstream].timeOnTargetSeconds + rolexSeconds) % 86400
         local flightSec = 0
         for j = k + 1, downstream do
-          local jgs = legGs[j] or defaultGs
+          local jgs = legGs[j] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[j] or 0, warnings, string.format("WP%02d default __S", wps[j].order)) or defaultGsRaw)
           flightSec = flightSec + (legDescs[j] and legDescs[j].distNm or 0) / jgs * 3600
         end
         local dt = downTot - arrivalSec
@@ -1158,7 +1199,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.holdDurationSec = nil
     elseif wp.type == "HOLD" then
       local ld      = legDescs[k]
-      local inGs    = legGs[k] or defaultGs
+      local inGs    = legGs[k] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[k] or 0, warnings, string.format("WP%02d default __S", wp.order)) or defaultGsRaw)
       local legDist = ld and ld.distNm or 0
       local legTime = inGs > 0 and (legDist / inGs) or 0
       local legTimeSec = legTime * 3600
@@ -1195,7 +1236,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       fuelCum = fuelCum + holdBurn
     else
       local ld      = legDescs[k]
-      local gs      = legGs[k] or defaultGs
+      local gs      = legGs[k] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[k] or 0, warnings, string.format("WP%02d default __S", wp.order)) or defaultGsRaw)
       local legDist = ld and ld.distNm or 0
       local legTime = gs > 0 and (legDist / gs) or 0
       local legTimeSec = legTime * 3600
@@ -1384,8 +1425,12 @@ function MosieNavigator:_ExtractPlanFromGroupName(groupName)
 end
 
 function MosieNavigator:_ExtractRolexFromGroupName(groupName)
-  local rolexText = string.match(groupName, "__[Rr]([%d:]+)")
+  local rolexText = string.match(groupName, "__[Rr]([%d:]+)$")
   if not rolexText then
+    local invalidToken = string.match(groupName, "(__[Rr]%S*)")
+    if invalidToken then
+      self:_Log("Ignoring invalid group ROLEX token: " .. invalidToken)
+    end
     return 0
   end
 
@@ -1709,9 +1754,36 @@ function MosieNavigator:_GetInitialNavigatorWpIndex(plan)
   return 1
 end
 
-function MosieNavigator:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds)
+function MosieNavigator:_GetSecondsToClockSeconds(clockSeconds)
+  if clockSeconds == nil then
+    return nil
+  end
+
+  local now = timer.getAbsTime() % SECONDS_PER_DAY
+  local delta = (clockSeconds % SECONDS_PER_DAY) - now
+
+  if delta < -SECONDS_PER_HALF_DAY then
+    delta = delta + SECONDS_PER_DAY
+  elseif delta > SECONDS_PER_HALF_DAY then
+    delta = delta - SECONDS_PER_DAY
+  end
+
+  return delta
+end
+
+function MosieNavigator:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds, computed)
   for index, waypoint in ipairs(plan.waypoints) do
-    local secondsToTot = self:_GetSecondsToWaypointTot(waypoint, rolexSeconds or 0)
+    local computedWaypoint = computed and computed.valid and computed.waypoints and computed.waypoints[index]
+    local secondsToTot = computedWaypoint and self:_GetSecondsToClockSeconds(computedWaypoint.etaSec)
+      or self:_GetSecondsToWaypointTot(waypoint, rolexSeconds or 0)
+    if waypoint.type == "HOLD" and secondsToTot and secondsToTot <= 0 then
+      local holdDurationSeconds = computedWaypoint and (computedWaypoint.holdDurationSec or 0)
+        or self:_GetNavigatorHoldDurationSecondsForPlan(plan, index, rolexSeconds or 0)
+      if secondsToTot + holdDurationSeconds > 0 then
+        return index
+      end
+    end
+
     if secondsToTot and secondsToTot > 0 and waypoint.type ~= "TAKE_OFF" then
       return index
     end
@@ -1720,7 +1792,7 @@ function MosieNavigator:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds)
   return self:_GetInitialNavigatorWpIndex(plan)
 end
 
-function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds)
+function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds, baseRolexSeconds, pilotRolexSeconds)
   self.NavigatorStates = self.NavigatorStates or {}
 
   local groupKey = self:_GetGroupKey(group)
@@ -1733,10 +1805,13 @@ function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds)
       groupName = groupKey,
       plan = plan,
       rolexSeconds = rolexSeconds or 0,
+      baseRolexSeconds = baseRolexSeconds or rolexSeconds or 0,
+      pilotRolexSeconds = pilotRolexSeconds or 0,
       currentWpIndex = self:_GetInitialNavigatorWpIndex(plan),
       reportInterval = self.Config.navigatorReportIntervalDefault,
       lastReportTime = nil,
       callouts = {},
+      timedCallouts = {},
     }
     self.NavigatorStates[groupKey] = state
   end
@@ -1744,6 +1819,8 @@ function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds)
   state.group = group
   state.plan = plan
   state.rolexSeconds = rolexSeconds or 0
+  state.baseRolexSeconds = baseRolexSeconds or state.baseRolexSeconds or state.rolexSeconds
+  state.pilotRolexSeconds = pilotRolexSeconds or state.pilotRolexSeconds or 0
   return state
 end
 
@@ -1756,21 +1833,41 @@ function MosieNavigator:_GetAdjustedTotSeconds(waypoint, rolexSeconds)
 end
 
 function MosieNavigator:_GetSecondsToWaypointTot(waypoint, rolexSeconds)
+  if not waypoint then
+    return nil
+  end
+
   local adjustedTot = self:_GetAdjustedTotSeconds(waypoint, rolexSeconds)
   if not adjustedTot then
     return nil
   end
 
-  local now = timer.getAbsTime() % SECONDS_PER_DAY
-  local delta = adjustedTot - now
+  return self:_GetSecondsToClockSeconds(adjustedTot)
+end
 
-  if delta < -SECONDS_PER_HALF_DAY then
-    delta = delta + SECONDS_PER_DAY
-  elseif delta > SECONDS_PER_HALF_DAY then
-    delta = delta - SECONDS_PER_DAY
+function MosieNavigator:_GetTakeoffWaypoint(plan)
+  if not plan or not plan.waypoints then
+    return nil
   end
 
-  return delta
+  local waypoint = plan.waypoints[1]
+  if waypoint and waypoint.type == "TAKE_OFF" then
+    return waypoint
+  end
+
+  return nil
+end
+
+function MosieNavigator:_IsNavigatorGroupAirborne(group)
+  if group and type(group.IsAirborne) == "function" then
+    return group:IsAirborne()
+  end
+
+  if group and type(group.IsAir) == "function" then
+    return group:IsAir()
+  end
+
+  return false
 end
 
 function MosieNavigator:_FormatDuration(seconds)
@@ -1789,6 +1886,302 @@ function MosieNavigator:_FormatDuration(seconds)
   return string.format("%s%d:%02d", prefix, minutes, remainingSeconds)
 end
 
+function MosieNavigator:_FormatDurationHoursMinutes(seconds)
+  if not seconds then
+    return "--"
+  end
+
+  local prefix = ""
+  if seconds < 0 then
+    prefix = "-"
+    seconds = -seconds
+  end
+
+  local totalMinutes = math.ceil(seconds / 60)
+  local hours = math.floor(totalMinutes / 60)
+  local minutes = totalMinutes % 60
+  return string.format("%s%02d:%02d", prefix, hours, minutes)
+end
+
+function MosieNavigator:_FormatCountdown(seconds)
+  if not seconds then
+    return "--"
+  end
+
+  local prefix = ""
+  if seconds < 0 then
+    prefix = "-"
+    seconds = -seconds
+  end
+
+  seconds = math.floor(seconds + 0.5)
+  local hours = math.floor(seconds / 3600)
+  local minutes = math.floor((seconds % 3600) / 60)
+  local remainingSeconds = seconds % 60
+
+  if hours > 0 then
+    return string.format("%s%d:%02d:%02d", prefix, hours, minutes, remainingSeconds)
+  end
+
+  return string.format("%s%d:%02d", prefix, minutes, remainingSeconds)
+end
+
+function MosieNavigator:_FormatTimedCalloutReason(seconds)
+  if seconds and seconds >= 60 and seconds % 60 == 0 then
+    return string.format("%d min", seconds / 60)
+  end
+
+  return string.format("%d sec", seconds or 0)
+end
+
+function MosieNavigator:_GetNavigatorWaypointAltitudeFt(plan, index)
+  if not plan or not plan.waypoints then
+    return nil
+  end
+
+  for waypointIndex = index, 1, -1 do
+    local waypoint = plan.waypoints[waypointIndex]
+    if waypoint and waypoint.altitudeFt then
+      return waypoint.altitudeFt
+    end
+  end
+
+  return 0
+end
+
+function MosieNavigator:_GetNavigatorWaypointLabel(waypoint)
+  if not waypoint then
+    return "WP--"
+  end
+
+  if waypoint.type == "TARGET" then
+    return string.format("TARGET WP%02d %s", waypoint.order, waypoint.name)
+  end
+
+  if waypoint.type == "HOLD" then
+    return string.format("HOLD WP%02d %s", waypoint.order, waypoint.name)
+  end
+
+  if waypoint.type == "LANDING" then
+    return string.format("HOME PLATE WP%02d %s", waypoint.order, waypoint.name)
+  end
+
+  return string.format("WP%02d %s", waypoint.order, waypoint.name)
+end
+
+function MosieNavigator:_GetNavigatorComputedWaypoint(state, index)
+  if type(self._GetActiveComputedPlan) ~= "function" and type(self._GetComputedPlan) ~= "function" then
+    return nil
+  end
+
+  local computed = nil
+  if type(self._GetActiveComputedPlan) == "function" then
+    computed = self:_GetActiveComputedPlan(state.plan, state.baseRolexSeconds or state.rolexSeconds or 0, state.pilotRolexSeconds or 0)
+  else
+    computed = self:_GetComputedPlan(state.plan, state.rolexSeconds)
+  end
+
+  if not computed or not computed.valid or not computed.waypoints then
+    return nil
+  end
+
+  return computed.waypoints[index]
+end
+
+function MosieNavigator:_GetNavigatorComputedWaypointForPlan(plan, index, rolexSeconds)
+  if type(self._GetComputedPlan) ~= "function" then
+    return nil
+  end
+
+  local computed = self:_GetComputedPlan(plan, rolexSeconds or 0)
+  if not computed or not computed.valid or not computed.waypoints then
+    return nil
+  end
+
+  return computed.waypoints[index]
+end
+
+function MosieNavigator:_GetSecondsToNavigatorWaypointEta(state, index)
+  local computedWaypoint = self:_GetNavigatorComputedWaypoint(state, index)
+  if computedWaypoint and computedWaypoint.etaSec ~= nil then
+    return self:_GetSecondsToClockSeconds(computedWaypoint.etaSec)
+  end
+
+  local waypoint = state.plan and state.plan.waypoints and state.plan.waypoints[index]
+  return self:_GetSecondsToWaypointTot(waypoint, state.rolexSeconds)
+end
+
+function MosieNavigator:_GetNavigatorHoldDurationSeconds(state, index)
+  local computedWaypoint = self:_GetNavigatorComputedWaypoint(state, index)
+  if computedWaypoint and computedWaypoint.holdDurationSec then
+    return computedWaypoint.holdDurationSec
+  end
+
+  local waypoint = state.plan.waypoints[index]
+  return (waypoint and waypoint.holdDurationSec) or 0
+end
+
+function MosieNavigator:_GetNavigatorHoldDurationSecondsForPlan(plan, index, rolexSeconds)
+  local computedWaypoint = self:_GetNavigatorComputedWaypointForPlan(plan, index, rolexSeconds)
+  if computedWaypoint and computedWaypoint.holdDurationSec then
+    return computedWaypoint.holdDurationSec
+  end
+
+  local waypoint = plan and plan.waypoints and plan.waypoints[index]
+  return (waypoint and waypoint.holdDurationSec) or 0
+end
+
+function MosieNavigator:_BuildNavigatorXtePhrase(state, waypoint, groupCoordinate)
+  local previousWaypoint = state.plan.waypoints[state.currentWpIndex - 1]
+  local xteNm, xteSide = self:_CalculateXte(previousWaypoint, waypoint, groupCoordinate)
+  if not xteNm then
+    return "We are on track."
+  end
+
+  local roundedXteNm = math.floor(xteNm + 0.5)
+  if roundedXteNm < 1 then
+    return "We are on track."
+  end
+
+  local sideText = xteSide == "stbd" and "starboard" or xteSide
+  return string.format("We are approx. %d NM %s of track.", roundedXteNm, sideText)
+end
+
+function MosieNavigator:_GetSecondsToNavigatorHoldExit(state, index)
+  local secondsToArrival = self:_GetSecondsToNavigatorWaypointEta(state, index)
+  if not secondsToArrival then
+    return nil
+  end
+
+  return secondsToArrival + self:_GetNavigatorHoldDurationSeconds(state, index)
+end
+
+function MosieNavigator:_BuildNavigatorTakeoffMessage(state, reason)
+  local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
+  return string.format("NAV: Brake release in %s. Stand by.", self:_FormatCountdown(secondsToTakeoff))
+end
+
+function MosieNavigator:_BuildNavigatorWaypointCalloutMessage(state, reason)
+  local group = state.group
+  local waypoint = state.plan.waypoints[state.currentWpIndex]
+
+  if not waypoint then
+    return "NAV: no active waypoint"
+  end
+
+  local groupCoordinate = group:GetCoordinate()
+  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+  local currentAltitudeFt = UTILS.MetersToFeet(group:GetAltitude(false) or 0)
+  local headingTrue, _, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, currentAltitudeFt)
+  local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
+  local plannedAltitudeFt = self:_GetNavigatorWaypointAltitudeFt(state.plan, state.currentWpIndex)
+
+  return string.format(
+    "NAV: %s in %s. Steer %sM, height %s feet, IAS %s knots. %s",
+    self:_GetNavigatorWaypointLabel(waypoint),
+    self:_FormatCountdown(secondsToTot),
+    headingMagnetic,
+    self:_FormatOptional(plannedAltitudeFt, "%.0f"),
+    self:_FormatSpeed(requiredIas),
+    self:_BuildNavigatorXtePhrase(state, waypoint, groupCoordinate)
+  )
+end
+
+function MosieNavigator:_BuildNavigatorCourseChangeMessage(state)
+  local group = state.group
+  local waypoint = state.plan.waypoints[state.currentWpIndex]
+
+  if not waypoint then
+    return "NAV: no active waypoint"
+  end
+
+  local groupCoordinate = group:GetCoordinate()
+  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+  local currentAltitudeFt = UTILS.MetersToFeet(group:GetAltitude(false) or 0)
+  local headingTrue, _, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, currentAltitudeFt)
+  local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
+  local plannedAltitudeFt = self:_GetNavigatorWaypointAltitudeFt(state.plan, state.currentWpIndex)
+
+  return string.format(
+    "NAV: Set course for %s. Steer %sM, height %s feet, IAS %s knots, ETA %s. %s",
+    self:_GetNavigatorWaypointLabel(waypoint),
+    headingMagnetic,
+    self:_FormatOptional(plannedAltitudeFt),
+    self:_FormatSpeed(requiredIas),
+    self:_FormatCountdown(secondsToTot),
+    self:_BuildNavigatorXtePhrase(state, waypoint, groupCoordinate)
+  )
+end
+
+function MosieNavigator:_BuildNavigatorHoldEntryMessage(state, holdRemainingSeconds)
+  local waypoint = state.plan.waypoints[state.currentWpIndex]
+  return string.format(
+    "NAV: Holding at %s. Remain in hold %s.",
+    self:_GetNavigatorWaypointLabel(waypoint),
+    self:_FormatCountdown(holdRemainingSeconds)
+  )
+end
+
+function MosieNavigator:_BuildNavigatorHoldRemainingMessage(state, reason, holdRemainingSeconds)
+  local waypoint = state.plan.waypoints[state.currentWpIndex]
+  return string.format(
+    "NAV: %s, %s to leave hold.",
+    self:_GetNavigatorWaypointLabel(waypoint),
+    self:_FormatCountdown(holdRemainingSeconds)
+  )
+end
+
+function MosieNavigator:_BuildNavigatorHoldExitMessage(state)
+  local message = self:_BuildNavigatorCourseChangeMessage(state)
+  return string.gsub(message, "^NAV: Set course", "NAV: Leaving hold. Set course")
+end
+
+function MosieNavigator:_TickNavigatorHold(state, waypoint, now)
+  local holdRemainingSeconds = self:_GetSecondsToNavigatorHoldExit(state, state.currentWpIndex)
+
+  if not holdRemainingSeconds or holdRemainingSeconds <= 0 then
+    if state.currentWpIndex < #state.plan.waypoints then
+      self:_SetNavigatorWaypoint(state, state.currentWpIndex + 1, "hold exit")
+      return true
+    end
+
+    return false
+  end
+
+  state.holdEntries = state.holdEntries or {}
+  local holdState = state.holdEntries[state.currentWpIndex] or {}
+  state.holdEntries[state.currentWpIndex] = holdState
+
+  if not holdState.entryAnnounced then
+    holdState.entryAnnounced = true
+    state.lastReportTime = now
+    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorHoldEntryMessage(state, holdRemainingSeconds))
+    return true
+  end
+
+  local eventKey = string.format("HOLD_EXIT:%d", state.currentWpIndex)
+  local sentCallout = self:_RunTimedCallouts(state, eventKey, holdRemainingSeconds, self.Config.navigatorHoldExitCalloutSeconds, function(calloutSeconds)
+    return self:_BuildNavigatorHoldRemainingMessage(state, self:_FormatTimedCalloutReason(calloutSeconds), holdRemainingSeconds)
+  end)
+
+  if sentCallout then
+    return true
+  end
+
+  local suppressIntervalSeconds = self.Config.navigatorHoldExitCalloutSeconds and self.Config.navigatorHoldExitCalloutSeconds[1]
+  if suppressIntervalSeconds and holdRemainingSeconds <= suppressIntervalSeconds then
+    return true
+  end
+
+  if not state.lastReportTime or now - state.lastReportTime >= state.reportInterval then
+    state.lastReportTime = now
+    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorHoldRemainingMessage(state, "report", holdRemainingSeconds))
+    return true
+  end
+
+  return true
+end
+
 function MosieNavigator:_BuildNavigatorStatusMessage(state, reason)
   local group = state.group
   local plan = state.plan
@@ -1801,7 +2194,7 @@ function MosieNavigator:_BuildNavigatorStatusMessage(state, reason)
   local groupCoordinate = group:GetCoordinate()
   local distanceNm = UTILS.MetersToNM(groupCoordinate:Get2DDistance(waypoint.coordinate))
   local trueCourse = groupCoordinate:HeadingTo(waypoint.coordinate)
-  local secondsToTot = self:_GetSecondsToWaypointTot(waypoint, state.rolexSeconds)
+  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
   local altitudeFt = UTILS.MetersToFeet(group:GetAltitude(false) or 0)
   local headingTrue, requiredTas, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, altitudeFt)
   local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
@@ -1845,9 +2238,74 @@ end
 
 function MosieNavigator:_ResetNavigatorCallouts(state)
   state.callouts = {}
+  state.timedCallouts = {}
+  state.holdEntries = {}
   for _, calloutSeconds in ipairs(self.Config.navigatorCalloutSeconds) do
     state.callouts[calloutSeconds] = false
   end
+end
+
+function MosieNavigator:_RunTimedCallouts(state, eventKey, secondsToEvent, thresholds, buildMessage)
+  if not secondsToEvent or secondsToEvent <= 0 then
+    return false
+  end
+
+  state.timedCallouts = state.timedCallouts or {}
+  local eventCallouts = state.timedCallouts[eventKey]
+  if not eventCallouts then
+    eventCallouts = {}
+    state.timedCallouts[eventKey] = eventCallouts
+  end
+
+  for _, calloutSeconds in ipairs(thresholds or {}) do
+    if secondsToEvent <= calloutSeconds and not eventCallouts[calloutSeconds] then
+      eventCallouts[calloutSeconds] = true
+      self:_SendNavigatorMessage(state.group, buildMessage(calloutSeconds))
+      return true
+    end
+  end
+
+  return false
+end
+
+function MosieNavigator:_TickNavigatorTakeoff(state, takeoff, secondsToTakeoff, now)
+  local eventKey = "TAKE_OFF:brake_release"
+
+  if secondsToTakeoff <= 0 then
+    state.timedCallouts = state.timedCallouts or {}
+    local eventCallouts = state.timedCallouts[eventKey] or {}
+    state.timedCallouts[eventKey] = eventCallouts
+
+    if not eventCallouts.brakeRelease then
+      eventCallouts.brakeRelease = true
+      state.lastReportTime = now
+      self:_SendNavigatorMessage(state.group, "NAV: Brakes! Brakes! Brakes! Commence take-off!")
+      return true
+    end
+
+    return false
+  end
+
+  local sentCallout = self:_RunTimedCallouts(state, eventKey, secondsToTakeoff, self.Config.navigatorTakeoffCalloutSeconds, function(calloutSeconds)
+    return self:_BuildNavigatorTakeoffMessage(state, string.format("%d sec", calloutSeconds))
+  end)
+
+  if sentCallout then
+    return true
+  end
+
+  local suppressIntervalSeconds = self.Config.navigatorTakeoffCalloutSeconds and self.Config.navigatorTakeoffCalloutSeconds[1]
+  if suppressIntervalSeconds and secondsToTakeoff <= suppressIntervalSeconds then
+    return true
+  end
+
+  if not state.lastReportTime or now - state.lastReportTime >= state.reportInterval then
+    state.lastReportTime = now
+    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorTakeoffMessage(state, "report"))
+    return true
+  end
+
+  return true
 end
 
 function MosieNavigator:_SetNavigatorWaypoint(state, index, reason)
@@ -1858,7 +2316,13 @@ function MosieNavigator:_SetNavigatorWaypoint(state, index, reason)
   state.currentWpIndex = index
   state.lastReportTime = timer.getTime()
   self:_ResetNavigatorCallouts(state)
-  self:_SendNavigatorMessage(state.group, self:_BuildNavigatorStatusMessage(state, reason or "WP change"))
+  if reason == "new WP" then
+    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorCourseChangeMessage(state))
+  elseif reason == "hold exit" then
+    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorHoldExitMessage(state))
+  else
+    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorStatusMessage(state, reason or "WP change"))
+  end
 end
 
 function MosieNavigator:_AdvanceNavigatorWaypoint(state, reason)
@@ -1867,14 +2331,24 @@ function MosieNavigator:_AdvanceNavigatorWaypoint(state, reason)
   end
 end
 
-function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled)
-  local state = self:_GetNavigatorState(group, plan, rolexSeconds)
+function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled, baseRolexSeconds, pilotRolexSeconds)
+  local state = self:_GetNavigatorState(group, plan, rolexSeconds, baseRolexSeconds, pilotRolexSeconds)
   state.enabled = enabled
 
   if enabled then
-    state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds)
+    local computed = nil
+    if type(self._GetActiveComputedPlan) == "function" then
+      computed = self:_GetActiveComputedPlan(plan, state.baseRolexSeconds or rolexSeconds or 0, state.pilotRolexSeconds or 0)
+    end
+    state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds, computed)
     self:_ResetNavigatorCallouts(state)
-    self:_SendNavigatorMessage(group, self:_BuildNavigatorStatusMessage(state, "on"))
+    local takeoff = self:_GetTakeoffWaypoint(plan)
+    local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
+    if takeoff and secondsToTakeoff and secondsToTakeoff > 0 and not self:_IsNavigatorGroupAirborne(group) then
+      self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "on"))
+    else
+      self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "on"))
+    end
   else
     self:_SendNavigatorMessage(group, "NAV off")
   end
@@ -1886,9 +2360,15 @@ function MosieNavigator:_SetNavigatorReportInterval(group, plan, rolexSeconds, i
   self:_SendNavigatorMessage(group, string.format("NAV report interval %d sec", interval))
 end
 
-function MosieNavigator:_NavigatorStatusNow(group, plan, rolexSeconds)
-  local state = self:_GetNavigatorState(group, plan, rolexSeconds)
-  self:_SendNavigatorMessage(group, self:_BuildNavigatorStatusMessage(state, "status"))
+function MosieNavigator:_NavigatorStatusNow(group, plan, rolexSeconds, baseRolexSeconds, pilotRolexSeconds)
+  local state = self:_GetNavigatorState(group, plan, rolexSeconds, baseRolexSeconds, pilotRolexSeconds)
+  local takeoff = self:_GetTakeoffWaypoint(plan)
+  local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
+  if takeoff and secondsToTakeoff and secondsToTakeoff > 0 and not self:_IsNavigatorGroupAirborne(group) then
+    self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "status"))
+  else
+    self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "status"))
+  end
 end
 
 function MosieNavigator:_TickNavigatorState(state)
@@ -1901,19 +2381,41 @@ function MosieNavigator:_TickNavigatorState(state)
     return
   end
 
-  local secondsToTot = self:_GetSecondsToWaypointTot(waypoint, state.rolexSeconds)
+  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
   local now = timer.getTime()
 
+  local takeoff = self:_GetTakeoffWaypoint(state.plan)
+  local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
+  if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(state.group) then
+    if self:_TickNavigatorTakeoff(state, takeoff, secondsToTakeoff, now) then
+      return
+    end
+  end
+
   if secondsToTot then
-    for _, calloutSeconds in ipairs(self.Config.navigatorCalloutSeconds) do
-      if secondsToTot <= calloutSeconds and secondsToTot > 0 and not state.callouts[calloutSeconds] then
-        state.callouts[calloutSeconds] = true
-        self:_SendNavigatorMessage(state.group, self:_BuildNavigatorStatusMessage(state, string.format("%d sec", calloutSeconds)))
+    if waypoint.type == "HOLD" and secondsToTot <= 0 then
+      if self:_TickNavigatorHold(state, waypoint, now) then
+        return
       end
     end
 
     if secondsToTot <= 0 and state.currentWpIndex < #state.plan.waypoints then
       self:_AdvanceNavigatorWaypoint(state, "new WP")
+      return
+    end
+
+    local thresholds = waypoint.type == "TARGET" and self.Config.navigatorTargetCalloutSeconds or self.Config.navigatorWaypointCalloutSeconds
+    local eventKey = string.format("%s:%d", waypoint.type == "TARGET" and "TARGET" or "WP", state.currentWpIndex)
+    local sentCallout = self:_RunTimedCallouts(state, eventKey, secondsToTot, thresholds, function(calloutSeconds)
+      return self:_BuildNavigatorWaypointCalloutMessage(state, self:_FormatTimedCalloutReason(calloutSeconds))
+    end)
+
+    if sentCallout then
+      return
+    end
+
+    local suppressIntervalSeconds = thresholds and thresholds[1]
+    if suppressIntervalSeconds and secondsToTot <= suppressIntervalSeconds then
       return
     end
   end
@@ -2194,7 +2696,10 @@ function MosieNavigator:_RefreshNavigatorRolex(groupPlanState, reason)
   state.group = groupPlanState.group
   state.plan = groupPlanState.plan
   state.rolexSeconds = self:_GetActiveRolexSeconds(groupPlanState)
-  state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(state.plan, state.rolexSeconds)
+  state.baseRolexSeconds = groupPlanState.baseRolexSeconds or 0
+  state.pilotRolexSeconds = groupPlanState.pilotRolexSeconds or 0
+  local computed = self:_GetActiveComputedPlan(state.plan, state.baseRolexSeconds, state.pilotRolexSeconds)
+  state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(state.plan, state.rolexSeconds, computed)
   self:_ResetNavigatorCallouts(state)
 
   if state.enabled then
@@ -2235,11 +2740,11 @@ function MosieNavigator:_CreateGroupMenus(plans)
       local navigatorMenu = MENU_GROUP:New(group, "NAVIGATOR", rootMenu)
       MENU_GROUP_COMMAND:New(group, "Automatic ON", navigatorMenu, function()
         local state = MosieNavigator:_GetGroupPlanState(group, assignment)
-        MosieNavigator:_SetNavigatorEnabled(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), true)
+        MosieNavigator:_SetNavigatorEnabled(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), true, state.baseRolexSeconds, state.pilotRolexSeconds)
       end)
       MENU_GROUP_COMMAND:New(group, "Automatic OFF", navigatorMenu, function()
         local state = MosieNavigator:_GetGroupPlanState(group, assignment)
-        MosieNavigator:_SetNavigatorEnabled(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), false)
+        MosieNavigator:_SetNavigatorEnabled(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), false, state.baseRolexSeconds, state.pilotRolexSeconds)
       end)
       MENU_GROUP_COMMAND:New(group, "Show FP", navigatorMenu, function()
         local state = MosieNavigator:_GetGroupPlanState(group, assignment)
@@ -2247,16 +2752,16 @@ function MosieNavigator:_CreateGroupMenus(plans)
       end)
       MENU_GROUP_COMMAND:New(group, "Status Now", navigatorMenu, function()
         local state = MosieNavigator:_GetGroupPlanState(group, assignment)
-        MosieNavigator:_NavigatorStatusNow(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state))
+        MosieNavigator:_NavigatorStatusNow(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), state.baseRolexSeconds, state.pilotRolexSeconds)
       end)
       MENU_GROUP_COMMAND:New(group, "Next WP", navigatorMenu, function()
         local planState = MosieNavigator:_GetGroupPlanState(group, assignment)
-        local navState = MosieNavigator:_GetNavigatorState(group, planState.plan, MosieNavigator:_GetActiveRolexSeconds(planState))
+        local navState = MosieNavigator:_GetNavigatorState(group, planState.plan, MosieNavigator:_GetActiveRolexSeconds(planState), planState.baseRolexSeconds, planState.pilotRolexSeconds)
         MosieNavigator:_AdvanceNavigatorWaypoint(navState, "manual WP")
       end)
       MENU_GROUP_COMMAND:New(group, "Prev WP", navigatorMenu, function()
         local planState = MosieNavigator:_GetGroupPlanState(group, assignment)
-        local navState = MosieNavigator:_GetNavigatorState(group, planState.plan, MosieNavigator:_GetActiveRolexSeconds(planState))
+        local navState = MosieNavigator:_GetNavigatorState(group, planState.plan, MosieNavigator:_GetActiveRolexSeconds(planState), planState.baseRolexSeconds, planState.pilotRolexSeconds)
         MosieNavigator:_SetNavigatorWaypoint(navState, navState.currentWpIndex - 1, "manual WP")
       end)
 

@@ -224,6 +224,7 @@ for _, name in ipairs(_src_modules) do dofile(name) end
 ------------------------------------------------------------
 
 local function setAbsTime(v) fakeAbsTime = v end
+local function setTime(v) fakeTime = v end
 
 -- Coordinate mock factory. Uses simple 2D geometry: distance is
 -- Euclidean over (x,z); heading is atan2(dx,dz) in degrees, north = +z.
@@ -339,6 +340,25 @@ end
 ------------------------------------------------------------
 
 local M = MosieNavigator
+
+suite("Config defaults", function()
+  it("merges partial pre-load config with defaults", function()
+    local originalConfig = MosieNavigator.Config
+    MosieNavigator.Config = { flightPlanOutputDirectory = "custom/" }
+
+    local ok, err = pcall(dofile, "src/01_config.lua")
+
+    local merged = MosieNavigator.Config
+    MosieNavigator.Config = originalConfig
+    M.Config = originalConfig
+    if not ok then error(err) end
+
+    assertEq(merged.flightPlanOutputDirectory, "custom/")
+    assertEq(merged.flightZonePrefix, "MN_")
+    assertEq(merged.navigatorTickInterval, 5)
+    assertEq(merged.generateCsvFiles, true)
+  end)
+end)
 
 suite("Split / SplitPlain / Join", function()
   it("_Split splits on separator", function()
@@ -733,6 +753,20 @@ suite("ExtractPlan / ExtractRolex from group name", function()
   end)
   it("case-insensitive R", function()
     assertEq(M:_ExtractRolexFromGroupName("MOSQUITO [MN:X]__r5"), 5 * 60)
+  end)
+  it("rejects malformed rolex suffix instead of parsing prefix", function()
+    local logs = {}
+    local originalLog = M._Log
+    M._Log = function(_, message) table.insert(logs, message) end
+
+    local ok, result = pcall(function()
+      return M:_ExtractRolexFromGroupName("MOSQUITO [MN:X]__R5BAD")
+    end)
+
+    M._Log = originalLog
+    if not ok then error(result) end
+    assertEq(result, 0)
+    assertTrue(string.find(logs[1] or "", "invalid group ROLEX") ~= nil)
   end)
 end)
 
@@ -1225,12 +1259,12 @@ suite("ComputePlan — Plan 1 BASIC (no __T in middle)", function()
     assertNear(r.waypoints[2].etaSec, (12*3600 + 6*60), 5)
   end)
 
-  it("all non-TAKEOFF legs have GS near 200 kt TAS", function()
+  it("all non-TAKEOFF legs use declared 200 kt GS", function()
     local r = M:_ComputePlan(plan, 0)
     for i = 2, #r.waypoints do
       local w = r.waypoints[i]
       assertNotNil(w.legGsKt, "legGsKt nil at WP" .. i)
-      assertNear(w.legGsKt, M:_ConvertIasToTas(200, 500), 2)
+      assertNear(w.legGsKt, 200, 0.1)
     end
   end)
 
@@ -1271,31 +1305,29 @@ suite("ComputePlan — Plan 2 MID_TOT (constraint derived speed)", function()
 
   it("post-constraint leg reverts to default __S200", function()
     local r = M:_ComputePlan(plan, 0)
-    -- leg to LANDING: default 200 kt (as IAS→TAS at 500ft)
-    local expectedGs = M:_ConvertIasToTas(200, 500)
-    assertNear(r.waypoints[5].legGsKt, expectedGs, 2)
+    -- leg to LANDING: default 200 kt GS
+    assertNear(r.waypoints[5].legGsKt, 200, 0.1)
   end)
 end)
 
 suite("ComputePlan — Plan 5 MIXED_S (FIXED honored, FREE averaged)", function()
   -- Segment [TAKE_OFF..TARGET] 50 NM in 15 min
-  -- WP3 INGRESS: FIXED __S220 (dist 10 NM from prev)
+  -- WP3 INGRESS: FIXED __S200 (dist 10 NM from prev)
   -- WP2 NAV and WP4 TARGET: FREE
-  -- FIXED leg (→WP3): 10 NM at 220 kt TAS = ~2.73 min
-  -- FREE legs (→WP2 20NM and →WP4 20NM) share remaining ~12.27 min
+  -- FIXED leg (→WP3): 10 NM at 200 kt GS = 3 min
+  -- FREE legs (→WP2 20NM and →WP4 20NM) share remaining 12 min
   local plan = makePlan({
     { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
     { "MN_TEST_02_NAV__A500",                    NM*20 },
-    { "MN_TEST_03_INGRESS__S220__A200",           NM*30 },
+    { "MN_TEST_03_INGRESS__S200__A200",           NM*30 },
     { "MN_TEST_04_TARGET__A200__T12:15",         NM*50 },
     { "MN_TEST_05_LANDING",                      NM*95 },
   })
 
-  it("FIXED leg at WP3 uses __S220 GS", function()
+  it("FIXED leg at WP3 uses __S200 GS", function()
     local r = M:_ComputePlan(plan, 0)
     assertTrue(r.valid, r.error or "")
-    local expectedGs = M:_ConvertIasToTas(220, 200)
-    assertNear(r.waypoints[3].legGsKt, expectedGs, 2)
+    assertNear(r.waypoints[3].legGsKt, 200, 0.1)
   end)
 
   it("TARGET ETA hits __T12:15", function()
@@ -1461,25 +1493,47 @@ suite("ComputePlan — HOLD without downstream __T", function()
 end)
 
 suite("ComputePlan — __S override on individual WP", function()
-  -- WP3 NAV has __S140; others default 200
+  -- WP3 NAV has __S170; others default 200
   local plan = makePlan({
     { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
     { "MN_TEST_02_NAV",                          NM*20 },
-    { "MN_TEST_03_NAV__S140",                    NM*30 },
+    { "MN_TEST_03_NAV__S170",                    NM*30 },
     { "MN_TEST_04_LANDING",                      NM*60 },
   })
 
-  it("WP3 leg uses __S140 GS", function()
+  it("WP3 leg uses __S170 GS", function()
     local r = M:_ComputePlan(plan, 0)
     assertTrue(r.valid, r.error or "")
-    local expectedGs = M:_ConvertIasToTas(140, 500)
-    assertNear(r.waypoints[3].legGsKt, expectedGs, 2)
+    assertNear(r.waypoints[3].legGsKt, 170, 0.1)
   end)
 
   it("WP4 leg reverts to default 200 GS", function()
     local r = M:_ComputePlan(plan, 0)
-    local expectedGs = M:_ConvertIasToTas(200, 500)
-    assertNear(r.waypoints[4].legGsKt, expectedGs, 2)
+    assertNear(r.waypoints[4].legGsKt, 200, 0.1)
+  end)
+end)
+
+suite("ComputePlan — explicit __S envelope clamp", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV__S140",                    NM*20 },
+    { "MN_TEST_03_LANDING",                      NM*60 },
+  })
+
+  it("clamps explicit __S below minimum IAS", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    local expectedGs = M:_ConvertIasToTas(M.Aircraft.envelope.minIasKt, 500)
+    assertNear(r.waypoints[2].legGsKt, expectedGs, 0.1)
+  end)
+
+  it("emits warning for explicit __S clamp", function()
+    local r = M:_ComputePlan(plan, 0)
+    local found = false
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "WP02 __S") and string.find(w, "clamped") then found = true; break end
+    end
+    assertTrue(found, "expected explicit __S clamp warning, got: " .. table.concat(r.warnings, "; "))
   end)
 end)
 
@@ -1816,7 +1870,8 @@ suite("ComputePlan — HOLD(__T) with no downstream __T", function()
 end)
 
 suite("ComputePlan — multi-HOLD with local __S (feasible)", function()
-  -- Feasible variant: HOLD1 uses local __S400 for arrival, HOLD2 has own __T,
+  -- HOLD1/HOLD2 local speed overrides exceed the envelope and are clamped.
+  -- HOLD2 has own __T,
   -- TARGET has local __S300 and __T15:00, LANDING has __T15:20.
   local plan = makePlan({
     { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
@@ -1840,16 +1895,25 @@ suite("ComputePlan — multi-HOLD with local __S (feasible)", function()
       "expected HOLD2 duration > 0")
   end)
 
-  it("Leg to HOLD1 uses declared __S400 (not clamped in HOLD segment)", function()
+  it("Leg to HOLD1 clamps declared __S400 to envelope", function()
     local r = M:_ComputePlan(plan, 0)
-    local expectedGs = M:_ConvertIasToTas(400, 500)
+    local expectedGs = M:_ConvertIasToTas(M.Aircraft.envelope.maxIasKt, 500)
     assertNear(r.waypoints[2].legGsKt, expectedGs, 2)
   end)
 
-  it("Leg to TARGET uses declared __S300", function()
+  it("Leg to TARGET clamps declared __S300 to envelope", function()
     local r = M:_ComputePlan(plan, 0)
-    local expectedGs = M:_ConvertIasToTas(300, 500)
+    local expectedGs = M:_ConvertIasToTas(M.Aircraft.envelope.maxIasKt, 500)
     assertNear(r.waypoints[4].legGsKt, expectedGs, 2)
+  end)
+
+  it("emits clamp warnings for local __S overrides", function()
+    local r = M:_ComputePlan(plan, 0)
+    local count = 0
+    for _, w in ipairs(r.warnings) do
+      if string.find(w, "__S") and string.find(w, "clamped") then count = count + 1 end
+    end
+    assertTrue(count >= 2, "expected __S clamp warnings, got: " .. table.concat(r.warnings, "; "))
   end)
 
   it("TARGET ETA = 15:00, LANDING ETA = 15:20", function()
@@ -1930,39 +1994,39 @@ end
 suite("Build flight plan messages", function()
   it("F10 flight plan uses operational heading and speed columns", function()
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0 },
       { "MN_TEST_02_NAV", NM * 20 },
       { "MN_TEST_03_LANDING", NM * 40 },
     })
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
     assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)%s+SOG%s+DIST%s+TIME%s+ETA%s+GAS")
     assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:00%s+%-%-%-")
-    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05%s+%d+%.%d")
-    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:11%s+%d+%.%d")
+    assertMatch(msg, "02 NAV%s+1500%*%s+225%*%s+200%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+200%s+20%.0%s+6%s+07:06%s+%d+%.%d")
+    assertMatch(msg, "03 LANDING%s+1500%*%s+225%*%s+200%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+200%s+20%.0%s+6%s+07:12%s+%d+%.%d")
   end)
 
   it("wind correction shifts HDG(T) from COG and updates TAS/IAS", function()
     local windField = function() return {x = 10, y = 0, z = 0} end
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0, nil, nil, nil, windField },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0, nil, nil, nil, windField },
       { "MN_TEST_02_NAV", NM * 20, nil, nil, nil, windField },
       { "MN_TEST_03_LANDING", NM * 40, nil, nil, nil, windField },
     })
     local r = M:_ComputePlan(plan, 0)
     assertEq(r.valid, true)
     assertNear(r.waypoints[2].trueCourse, 0, 0.01)
-    assertNear(r.waypoints[2].headingTrue, 355.06, 0.1)
-    assertNear(r.waypoints[2].windCorrectionDeg, -4.94, 0.1)
-    assertNear(r.waypoints[2].tasCorrectionKt, 0.83, 0.1)
+    assertNear(r.waypoints[2].headingTrue, 354.45, 0.1)
+    assertNear(r.waypoints[2].windCorrectionDeg, -5.55, 0.1)
+    assertNear(r.waypoints[2].tasCorrectionKt, 0.94, 0.1)
     assertTrue(r.waypoints[2].legTasKt > r.waypoints[2].legGsKt, "crosswind should increase required TAS")
 
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
-    assertMatch(msg, "02 NAV%s+1500%*%s+254%*%s+226%s+000%s+%-05%s+%+01%s+355")
+    assertMatch(msg, "02 NAV%s+1500%*%s+226%*%s+201%s+000%s+%-06%s+%+01%s+354")
   end)
 
   it("F10 flight plan includes multi-line fuel summary", function()
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0 },
       { "MN_TEST_02_LANDING", NM * 20 },
     })
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
@@ -1981,7 +2045,7 @@ suite("Build flight plan messages", function()
 
   it("TXT navlog includes DCS fuel recommendation", function()
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0 },
       { "MN_TEST_02_LANDING", NM * 20 },
     })
     local text = M:_BuildFlightPlanTable(plan, nil, 0)
@@ -1994,7 +2058,7 @@ suite("Build flight plan messages", function()
 
   it("TXT navlog ETA column uses minute-rounded display ETA without shifting COG", function()
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0 },
       { "MN_TEST_02_NAV", NM * 20 },
       { "MN_TEST_03_LANDING", NM * 40 },
     })
@@ -2007,12 +2071,12 @@ suite("Build flight plan messages", function()
     assertNotNil(header)
     assertNotNil(row)
     assertNotNil(string.find(header, "COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)"))
-    assertNotNil(string.find(row, "000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05%s+%d+%.%d"))
+    assertNotNil(string.find(row, "000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+200%s+20%.0%s+6%s+07:06%s+%d+%.%d"))
   end)
 
   it("TXT navlog GAS column shows inbound leg fuel only", function()
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0 },
       { "MN_TEST_02_HOLD__T07:20", NM * 20 },
       { "MN_TEST_03_LANDING__T07:40", NM * 40 },
     })
@@ -2025,13 +2089,13 @@ suite("Build flight plan messages", function()
 
   it("TXT navlog marks inherited ALT and IAS with star", function()
     local plan = makePlan({
-      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_01_TAKE_OFF__T07:00__S200__A1500", 0 },
       { "MN_TEST_02_NAV", NM * 20 },
       { "MN_TEST_03_LANDING__S200", NM * 40 },
     })
     local text = M:_BuildFlightPlanTable(plan, nil, 0)
-    assertMatch(text, "02 NAV%s+1500%*%s+253%*")
-    assertMatch(text, "03 LANDING%s+1500%*%s+230%s")
+    assertMatch(text, "02 NAV%s+1500%*%s+225%*")
+    assertMatch(text, "03 LANDING%s+1500%*%s+225%s")
   end)
 
   it("static FP render uses cached computed plan per plan and ROLEX", function()
@@ -2125,6 +2189,547 @@ suite("Build flight plan messages", function()
 
     local pilot = M:_BuildFlightPlanTable(plan, "GRP [MN:TEST]__R5", 5 * 60, 10 * 60)
     assertMatch(pilot, "ROLEX : %+00:10")
+  end)
+end)
+
+suite("Navigator takeoff callouts", function()
+  local function makeNavGroup(name, airborne)
+    return {
+      GetName = function() return name end,
+      IsAlive = function() return true end,
+      IsAirborne = function() return airborne or false end,
+    }
+  end
+
+  local function withCapturedNavigatorMessages(fn)
+    local messages = {}
+    local originalSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+    local ok, err = pcall(function() fn(messages) end)
+    M._SendNavigatorMessage = originalSend
+    M.NavigatorStates = nil
+    if not ok then error(err, 2) end
+  end
+
+  it("reports time to takeoff by interval before the final 30 seconds", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV__T00:20", NM * 20 },
+        { "MN_TEST_03_LANDING", NM * 40 },
+      })
+      local group = makeNavGroup("MOSQUITO 1-1 [MN:TEST]")
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.reportInterval = 30
+      state.lastReportTime = 0
+
+      setAbsTime(20)
+      setTime(31)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 1)
+      assertEq(messages[1], "NAV: Brake release in 0:40. Stand by.")
+    end)
+  end)
+
+  it("always emits 30/20/10/5 second takeoff callouts", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV__T00:20", NM * 20 },
+        { "MN_TEST_03_LANDING", NM * 40 },
+      })
+      local group = makeNavGroup("MOSQUITO 1-1 [MN:TEST]")
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.reportInterval = 120
+
+      setAbsTime(30); setTime(30); M:_TickNavigatorState(state)
+      setAbsTime(40); setTime(40); M:_TickNavigatorState(state)
+      setAbsTime(50); setTime(50); M:_TickNavigatorState(state)
+      setAbsTime(55); setTime(55); M:_TickNavigatorState(state)
+
+      assertEq(#messages, 4)
+      assertEq(messages[1], "NAV: Brake release in 0:30. Stand by.")
+      assertEq(messages[2], "NAV: Brake release in 0:20. Stand by.")
+      assertEq(messages[3], "NAV: Brake release in 0:10. Stand by.")
+      assertEq(messages[4], "NAV: Brake release in 0:05. Stand by.")
+    end)
+  end)
+
+  it("suppresses interval reports from 30 seconds to brake release", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV__T00:20", NM * 20 },
+        { "MN_TEST_03_LANDING", NM * 40 },
+      })
+      local group = makeNavGroup("MOSQUITO 1-1 [MN:TEST]")
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.reportInterval = 10
+      state.lastReportTime = 20
+      state.timedCallouts = { ["TAKE_OFF:brake_release"] = { [30] = true } }
+
+      setAbsTime(35)
+      setTime(35)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 0)
+    end)
+  end)
+
+  it("announces brake release once", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV__T00:20", NM * 20 },
+        { "MN_TEST_03_LANDING", NM * 40 },
+      })
+      local group = makeNavGroup("MOSQUITO 1-1 [MN:TEST]")
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.reportInterval = 120
+
+      setAbsTime(60); setTime(60); M:_TickNavigatorState(state)
+      setAbsTime(61); setTime(61); M:_TickNavigatorState(state)
+
+      assertEq(#messages, 1)
+      assertEq(messages[1], "NAV: Brakes! Brakes! Brakes! Commence take-off!")
+    end)
+  end)
+
+  it("Status Now before takeoff does not consume automatic threshold callouts", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV__T00:20", NM * 20 },
+        { "MN_TEST_03_LANDING", NM * 40 },
+      })
+      local group = makeNavGroup("MOSQUITO 1-1 [MN:TEST]")
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+
+      setAbsTime(30)
+      setTime(30)
+      M:_NavigatorStatusNow(group, plan, 0)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 2)
+      assertEq(messages[1], "NAV: Brake release in 0:30. Stand by.")
+      assertEq(messages[2], "NAV: Brake release in 0:30. Stand by.")
+    end)
+  end)
+end)
+
+suite("Navigator waypoint callouts", function()
+  local function makeAirborneNavGroup(name, x, z, altitudeM, velocityKt)
+    return {
+      GetName = function() return name end,
+      IsAlive = function() return true end,
+      IsAirborne = function() return true end,
+      GetCoordinate = function() return makeCoord({x = x or 0, z = z or 0}) end,
+      GetAltitude = function() return altitudeM or 0 end,
+      GetVelocityKNOTS = function() return velocityKt or 0 end,
+    }
+  end
+
+  local function withCapturedNavigatorMessages(fn)
+    local messages = {}
+    local originalSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+    local ok, err = pcall(function() fn(messages) end)
+    M._SendNavigatorMessage = originalSend
+    M.NavigatorStates = nil
+    if not ok then error(err, 2) end
+  end
+
+  it("emits 5/2/1 minute waypoint callouts with HDG ALT and IAS", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(0); setTime(0); M:_TickNavigatorState(state)
+      setAbsTime(180); setTime(180); M:_TickNavigatorState(state)
+      setAbsTime(240); setTime(240); M:_TickNavigatorState(state)
+
+      assertEq(#messages, 3)
+      assertEq(messages[1], "NAV: WP02 Checkpoint in 5:00. Steer 000M, height 1500 feet, IAS 180 knots. We are on track.")
+      assertEq(messages[2], "NAV: WP02 Checkpoint in 2:00. Steer 000M, height 1500 feet, IAS 450 knots. We are on track.")
+      assertEq(messages[3], "NAV: WP02 Checkpoint in 1:00. Steer 000M, height 1500 feet, IAS 900 knots. We are on track.")
+    end)
+  end)
+
+  it("suppresses interval reports from 5 minutes to the active waypoint", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+      state.reportInterval = 10
+      state.lastReportTime = 0
+      state.timedCallouts = { ["WP:2"] = { [300] = true } }
+
+      setAbsTime(1)
+      setTime(20)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 0)
+    end)
+  end)
+
+  it("announces course change with next waypoint guidance", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_INGRESS_IP__T00:10__A500", NM * 30 },
+        { "MN_TEST_04_LANDING", NM * 45 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(300)
+      setTime(300)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 1)
+      assertEq(messages[1], "NAV: Set course for WP03 IP. Steer 000M, height 500 feet, IAS 360 knots, ETA 5:00. We are on track.")
+      assertEq(state.currentWpIndex, 3)
+    end)
+  end)
+
+  it("resets timed waypoint callouts after automatic course change", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_INGRESS_IP__T00:10__A500", NM * 30 },
+        { "MN_TEST_04_LANDING", NM * 45 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+      state.timedCallouts = { ["WP:2"] = { [300] = true, [120] = true, [60] = true } }
+
+      setAbsTime(300); setTime(300); M:_TickNavigatorState(state)
+      setAbsTime(301); setTime(301); M:_TickNavigatorState(state)
+
+      assertEq(#messages, 2)
+      assertEq(messages[2], "NAV: WP03 IP in 4:59. Steer 000M, height 500 feet, IAS 361 knots. We are on track.")
+    end)
+  end)
+
+  it("uses target-specific 5/4/3/2/1 minute and 45/30/15/10 second callouts", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_TARGET_Prison__T00:05__A50", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(0); setTime(0); M:_TickNavigatorState(state)
+      setAbsTime(60); setTime(60); M:_TickNavigatorState(state)
+      setAbsTime(120); setTime(120); M:_TickNavigatorState(state)
+      setAbsTime(180); setTime(180); M:_TickNavigatorState(state)
+      setAbsTime(240); setTime(240); M:_TickNavigatorState(state)
+      setAbsTime(255); setTime(255); M:_TickNavigatorState(state)
+      setAbsTime(270); setTime(270); M:_TickNavigatorState(state)
+      setAbsTime(285); setTime(285); M:_TickNavigatorState(state)
+      setAbsTime(290); setTime(290); M:_TickNavigatorState(state)
+
+      assertEq(#messages, 9)
+      assertEq(messages[1], "NAV: TARGET WP02 Prison in 5:00. Steer 000M, height 50 feet, IAS 180 knots. We are on track.")
+      assertEq(messages[2], "NAV: TARGET WP02 Prison in 4:00. Steer 000M, height 50 feet, IAS 225 knots. We are on track.")
+      assertEq(messages[3], "NAV: TARGET WP02 Prison in 3:00. Steer 000M, height 50 feet, IAS 300 knots. We are on track.")
+      assertEq(messages[4], "NAV: TARGET WP02 Prison in 2:00. Steer 000M, height 50 feet, IAS 450 knots. We are on track.")
+      assertEq(messages[5], "NAV: TARGET WP02 Prison in 1:00. Steer 000M, height 50 feet, IAS 900 knots. We are on track.")
+      assertEq(messages[6], "NAV: TARGET WP02 Prison in 0:45. Steer 000M, height 50 feet, IAS 1200 knots. We are on track.")
+      assertEq(messages[7], "NAV: TARGET WP02 Prison in 0:30. Steer 000M, height 50 feet, IAS 1800 knots. We are on track.")
+      assertEq(messages[8], "NAV: TARGET WP02 Prison in 0:15. Steer 000M, height 50 feet, IAS 3600 knots. We are on track.")
+      assertEq(messages[9], "NAV: TARGET WP02 Prison in 0:10. Steer 000M, height 50 feet, IAS 5400 knots. We are on track.")
+    end)
+  end)
+
+  it("suppresses interval reports from 5 minutes to target", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_TARGET_Prison__T00:05__A50", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+      state.reportInterval = 10
+      state.lastReportTime = 0
+      state.timedCallouts = { ["TARGET:2"] = { [300] = true } }
+
+      setAbsTime(1)
+      setTime(20)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 0)
+    end)
+  end)
+
+  it("announces course change to target as TARGET", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_TARGET_Prison__T00:10__A50", NM * 30 },
+        { "MN_TEST_04_LANDING", NM * 45 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(300)
+      setTime(300)
+      M:_TickNavigatorState(state)
+
+      assertEq(messages[1], "NAV: Set course for TARGET WP03 Prison. Steer 000M, height 50 feet, IAS 360 knots, ETA 5:00. We are on track.")
+    end)
+  end)
+
+  it("labels landing waypoint as home plate", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_LANDING_Tangmere__T00:05__A500", NM * 15 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(0)
+      setTime(0)
+      M:_TickNavigatorState(state)
+
+      assertEq(messages[1], "NAV: HOME PLATE WP02 Tangmere in 5:00. Steer 000M, height 500 feet, IAS 180 knots. We are on track.")
+    end)
+  end)
+
+  it("reports cross-track error rounded to 1 NM", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", NM, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(0)
+      setTime(0)
+      M:_TickNavigatorState(state)
+
+      assertEq(messages[1], "NAV: WP02 Checkpoint in 5:00. Steer 356M, height 1500 feet, IAS 180 knots. We are approx. 1 NM starboard of track.")
+    end)
+  end)
+
+  it("reports port cross-track error rounded to 1 NM", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", -NM, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(0)
+      setTime(0)
+      M:_TickNavigatorState(state)
+
+      assertEq(messages[1], "NAV: WP02 Checkpoint in 5:00. Steer 004M, height 1500 feet, IAS 180 knots. We are approx. 1 NM port of track.")
+    end)
+  end)
+
+  it("Status Now after takeoff uses operational callout phrase without consuming thresholds", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_TARGET_Prison__T00:05__A50", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(0)
+      setTime(0)
+      M:_NavigatorStatusNow(group, plan, 0)
+      M:_TickNavigatorState(state)
+
+      assertEq(#messages, 2)
+      assertEq(messages[1], "NAV: TARGET WP02 Prison in 5:00. Steer 000M, height 50 feet, IAS 180 knots. We are on track.")
+      assertEq(messages[2], "NAV: TARGET WP02 Prison in 5:00. Steer 000M, height 50 feet, IAS 180 knots. We are on track.")
+    end)
+  end)
+
+  it("Automatic ON after takeoff uses operational callout phrase", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S220__A1500", 0 },
+        { "MN_TEST_02_LANDING_Tangmere__T00:05__A500", NM * 15 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+
+      setAbsTime(0)
+      setTime(0)
+      M:_SetNavigatorEnabled(group, plan, 0, true)
+
+      assertEq(messages[1], "NAV: HOME PLATE WP02 Tangmere in 5:00. Steer 000M, height 500 feet, IAS 180 knots. We are on track.")
+    end)
+  end)
+
+  it("holds active waypoint until computed hold exit and then gives next waypoint guidance", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S200__A1500", 0 },
+        { "MN_TEST_02_HOLD_Orbit__T00:05", NM * 10 },
+        { "MN_TEST_03_NAV_Exit__T00:15__A500", NM * 20 },
+        { "MN_TEST_04_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(300); setTime(300); M:_TickNavigatorState(state)
+      setAbsTime(480); setTime(480); M:_TickNavigatorState(state)
+      setAbsTime(540); setTime(540); M:_TickNavigatorState(state)
+
+      assertEq(messages[1], "NAV: Holding at HOLD WP02 Orbit. Remain in hold 7:00.")
+      assertEq(messages[2], "NAV: HOLD WP02 Orbit, 4:00 to leave hold.")
+      assertEq(messages[3], "NAV: HOLD WP02 Orbit, 3:00 to leave hold.")
+      assertEq(state.currentWpIndex, 2)
+
+      setAbsTime(725); setTime(725); M:_TickNavigatorState(state)
+
+      assertEq(messages[#messages], "NAV: Leaving hold. Set course for WP03 Exit. Steer 000M, height 500 feet, IAS 411 knots, ETA 2:55. We are on track.")
+      assertEq(state.currentWpIndex, 3)
+    end)
+  end)
+
+  it("initial waypoint selection stays on active hold", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T00:00__S200__A1500", 0 },
+      { "MN_TEST_02_HOLD_Orbit__T00:05", NM * 10 },
+      { "MN_TEST_03_NAV_Exit__T00:15__A500", NM * 20 },
+      { "MN_TEST_04_LANDING", NM * 30 },
+    })
+
+    setAbsTime(360)
+    assertEq(M:_GetInitialNavigatorWpIndexByTot(plan, 0), 2)
+  end)
+
+  it("uses computed ETA for waypoint without raw __T", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S180__A0", 0 },
+        { "MN_TEST_02_NAV_Checkpoint", NM * 15 },
+        { "MN_TEST_03_LANDING__T00:10", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(300)
+      setTime(300)
+      M:_TickNavigatorState(state)
+
+      assertEq(messages[1], "NAV: Set course for HOME PLATE WP03 LANDING. Steer 000M, height 0 feet, IAS 360 knots, ETA 5:00. We are on track.")
+      assertEq(state.currentWpIndex, 3)
+    end)
+  end)
+
+  it("pilot ROLEX in navigator shifts cached base plan without recomputing", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S180__A0", 0 },
+      { "MN_TEST_02_LANDING", NM * 15 },
+    })
+    local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+    local original = M._ComputePlan
+    local calls = 0
+    M.ComputedPlanCache = nil
+    M._ComputePlan = function(self, p, rolexSeconds)
+      calls = calls + 1
+      return original(self, p, rolexSeconds)
+    end
+
+    local ok, err = pcall(function()
+      local state = M:_GetNavigatorState(group, plan, 7 * 60, 5 * 60, 2 * 60)
+      local wp = M:_GetNavigatorComputedWaypoint(state, 1)
+      assertNear(wp.etaSec, 7 * 3600 + 7 * 60, 1)
+      state.rolexSeconds = 3 * 60
+      state.baseRolexSeconds = 5 * 60
+      state.pilotRolexSeconds = -2 * 60
+      wp = M:_GetNavigatorComputedWaypoint(state, 1)
+      assertNear(wp.etaSec, 7 * 3600 + 3 * 60, 1)
+    end)
+
+    M._ComputePlan = original
+    M.ComputedPlanCache = nil
+    if not ok then error(err) end
+    assertEq(calls, 1)
+  end)
+
+  it("manual waypoint change resets hold entry announcements", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:00__S200__A1500", 0 },
+        { "MN_TEST_02_HOLD_Orbit__T00:05", NM * 10 },
+        { "MN_TEST_03_NAV_Exit__T00:15__A500", NM * 20 },
+        { "MN_TEST_04_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 2
+
+      setAbsTime(300); setTime(300); M:_TickNavigatorState(state)
+      assertEq(messages[1], "NAV: Holding at HOLD WP02 Orbit. Remain in hold 7:00.")
+
+      M:_SetNavigatorWaypoint(state, 3, "manual WP")
+      M:_SetNavigatorWaypoint(state, 2, "manual WP")
+      setAbsTime(301); setTime(301); M:_TickNavigatorState(state)
+
+      assertEq(messages[#messages], "NAV: Holding at HOLD WP02 Orbit. Remain in hold 6:59.")
+    end)
   end)
 end)
 

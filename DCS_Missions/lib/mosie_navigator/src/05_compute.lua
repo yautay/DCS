@@ -1,5 +1,19 @@
 -- Resolves GS (kt) for each leg in a segment between two __T anchors (no HOLD).
 -- Returns table of gsKt per leg index (1-based within segment legs).
+function MosieNavigator:_ClampGroundSpeed(gsKt, altitudeFt, warnings, context)
+  if not gsKt then
+    return nil
+  end
+
+  local iasKt = self:_ConvertTasToIas(gsKt, altitudeFt or 0) or gsKt
+  local clampedIas, clamped = self:_ClampSpeed(iasKt, warnings, context)
+  if clamped then
+    return self:_ConvertIasToTas(clampedIas, altitudeFt or 0) or clampedIas, true
+  end
+
+  return gsKt, false
+end
+
 function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, segLabel)
   local n = #segLegs
 
@@ -70,7 +84,12 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
   local fixedTime = 0
   for _, i in ipairs(fixedIndices) do
     local leg = segLegs[i]
-    local gs  = self:_ConvertIasToTas(leg.speedKt, leg.altFt or 0) or leg.speedKt
+    local gs  = self:_ClampGroundSpeed(
+      leg.speedKt,
+      leg.altFt or 0,
+      warnings,
+      string.format("%s WP%02d __S", segLabel, leg.wpOrder)
+    ) or leg.speedKt
     local t   = leg.distNm / gs * 3600
     fixedTime = fixedTime + t
     result[i] = gs
@@ -131,8 +150,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
 
   -- Determine default plan speed. TAKE_OFF __S overrides the Mosquito default
   -- cruise speed of 228 mph, expressed internally in knots.
-  local defaultIasKt = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
-  local defaultGs = self:_ConvertIasToTas(defaultIasKt, takeoff.altitudeFt or 0) or defaultIasKt
+  local defaultGsRaw = takeoff.speedKt or aircraft.defaultCruiseSpeedKt
 
   -- ── Altitude cascade ─────────────────────────────────────────────────────
   local resolvedAlt = {}
@@ -184,9 +202,21 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   local function legSpeedFromDecl(k)
     local ld = legDescs[k]
     if ld and ld.speedKt then
-      return self:_ConvertIasToTas(ld.speedKt, ld.altFt or 0) or ld.speedKt, "explicit"
+      return self:_ClampGroundSpeed(
+        ld.speedKt,
+        ld.altFt or 0,
+        warnings,
+        string.format("WP%02d __S", ld.wpOrder)
+      ) or ld.speedKt, "explicit"
     end
-    return defaultGs, "default"
+    local altitudeFt = ld and ld.altFt or 0
+    local wpOrder = ld and ld.wpOrder or k
+    return self:_ClampGroundSpeed(
+      defaultGsRaw,
+      altitudeFt,
+      warnings,
+      string.format("WP%02d default __S", wpOrder)
+    ) or defaultGsRaw, "default"
   end
 
   local function setLegSpeedFromDecl(k)
@@ -299,7 +329,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   etaSec[1] = (takeoff.timeOnTargetSeconds + rolexSeconds) % 86400
 
   for k = 2, #wps do
-    local gs      = legGs[k] or defaultGs
+    local gs      = legGs[k] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[k] or 0, warnings, string.format("WP%02d default __S", wps[k].order)) or defaultGsRaw)
     local legTime = gs > 0 and ((legDescs[k] and legDescs[k].distNm or 0) / gs * 3600) or 0
 
     -- Propagated arrival = previous departure + leg time.
@@ -337,7 +367,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
         local downTot = (wps[downstream].timeOnTargetSeconds + rolexSeconds) % 86400
         local flightSec = 0
         for j = k + 1, downstream do
-          local jgs = legGs[j] or defaultGs
+          local jgs = legGs[j] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[j] or 0, warnings, string.format("WP%02d default __S", wps[j].order)) or defaultGsRaw)
           flightSec = flightSec + (legDescs[j] and legDescs[j].distNm or 0) / jgs * 3600
         end
         local dt = downTot - arrivalSec
@@ -401,7 +431,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       ow.holdDurationSec = nil
     elseif wp.type == "HOLD" then
       local ld      = legDescs[k]
-      local inGs    = legGs[k] or defaultGs
+      local inGs    = legGs[k] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[k] or 0, warnings, string.format("WP%02d default __S", wp.order)) or defaultGsRaw)
       local legDist = ld and ld.distNm or 0
       local legTime = inGs > 0 and (legDist / inGs) or 0
       local legTimeSec = legTime * 3600
@@ -438,7 +468,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       fuelCum = fuelCum + holdBurn
     else
       local ld      = legDescs[k]
-      local gs      = legGs[k] or defaultGs
+      local gs      = legGs[k] or (self:_ClampGroundSpeed(defaultGsRaw, resolvedAlt[k] or 0, warnings, string.format("WP%02d default __S", wp.order)) or defaultGsRaw)
       local legDist = ld and ld.distNm or 0
       local legTime = gs > 0 and (legDist / gs) or 0
       local legTimeSec = legTime * 3600
