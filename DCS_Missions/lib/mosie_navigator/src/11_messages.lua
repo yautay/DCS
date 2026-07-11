@@ -35,14 +35,14 @@ end
 
 function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
   if compact then
-    table.insert(lines, "ID TY ALT   IASMPH TASKN COG WHDG WTAS HDG(T) VAR  HDG(M) SOG DIST TIME ETA")
-    table.insert(lines, "-------------------------------------------------------------------------")
+    table.insert(lines, "ID TY ALT   IASMPH TASKN COG WHDG WTAS HDG(T) VAR  HDG(M) SOG DIST TIME ETA   GAS")
+    table.insert(lines, "-------------------------------------------------------------------------------")
   else
     table.insert(lines, string.format(
-      "%-2s %-10s %6s %8s %7s %3s %4s %4s %6s %6s %6s %5s %6s %4s %5s",
-      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "WHDG", "WTAS", "HDG(T)", "VAR", "HDG(M)", "SOG", "DIST", "TIME", "ETA"
+      "%-2s %-10s %6s %8s %7s %3s %4s %4s %6s %6s %6s %5s %6s %4s %5s %5s",
+      "ID", "TYPE", "ALT", "IAS(MPH)", "TAS(KN)", "COG", "WHDG", "WTAS", "HDG(T)", "VAR", "HDG(M)", "SOG", "DIST", "TIME", "ETA", "GAS"
     ))
-    table.insert(lines, string.rep("-", 103))
+    table.insert(lines, string.rep("-", 109))
   end
 
   for _, ow in ipairs(waypoints) do
@@ -61,10 +61,11 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
     local distStr = ow.legDistNm and string.format("%.1f", ow.legDistNm) or "---"
     local timeStr = self:_FormatDisplayLegTime(ow.legTimeSec)
     local etaStr = self:_FormatDisplayEta(ow.etaSec)
+    local gasStr = (ow.legDistNm and ow.legFuelImpGal) and string.format("%.1f", ow.legFuelImpGal) or "---"
 
     if compact then
       table.insert(lines, string.format(
-        "%02d %-2s %-5s %6s %5s %3s %4s %4s %6s %5s %6s %3s %4s %4s %5s",
+        "%02d %-2s %-5s %6s %5s %3s %4s %4s %6s %5s %6s %3s %4s %4s %5s %5s",
         ow.order,
         self:_FormatWaypointTypeShort(ow.type),
         altStr,
@@ -79,11 +80,12 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
         sogStr,
         distStr,
         timeStr,
-        etaStr
+        etaStr,
+        gasStr
       ))
     else
       table.insert(lines, string.format(
-        "%02d %-10s %6s %8s %7s %3s %4s %4s %6s %6s %6s %5s %6s %4s %5s",
+        "%02d %-10s %6s %8s %7s %3s %4s %4s %6s %6s %6s %5s %6s %4s %5s %5s",
         ow.order,
         self:_FitText(ow.type, 10),
         altStr,
@@ -98,7 +100,8 @@ function MosieNavigator:_AppendFlightPlanRows(lines, waypoints, compact)
         sogStr,
         distStr,
         timeStr,
-        etaStr
+        etaStr,
+        gasStr
       ))
     end
 

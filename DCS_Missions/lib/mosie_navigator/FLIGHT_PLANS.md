@@ -314,6 +314,7 @@ Column meanings in the text navlog:
 | DIST | Distance of the incoming leg in NM. |
 | TIME | Leg time in whole minutes. |
 | ETA | Computed arrival time (includes ROLEX), rounded to whole minutes. |
+| GAS | Fuel burned on the incoming leg in imperial gallons. TAKE_OFF shows `---`; HOLD orbit fuel is shown separately on the orbit sub-line. |
 
 **TAKE_OFF row:** Incoming-leg fields are `---` (no incoming leg).
 

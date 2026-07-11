@@ -1935,10 +1935,10 @@ suite("Build flight plan messages", function()
       { "MN_TEST_03_LANDING", NM * 40 },
     })
     local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP", 0)
-    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)%s+SOG%s+DIST%s+TIME%s+ETA")
-    assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:00")
-    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05")
-    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:11")
+    assertMatch(msg, "ID%s+TYPE%s+ALT%s+IAS%(MPH%)%s+TAS%(KN%)%s+COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)%s+SOG%s+DIST%s+TIME%s+ETA%s+GAS")
+    assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:00%s+%-%-%-")
+    assertMatch(msg, "02 NAV%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05%s+%d+%.%d")
+    assertMatch(msg, "03 LANDING%s+1500%*%s+253%*%s+225%s+000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:11%s+%d+%.%d")
   end)
 
   it("wind correction shifts HDG(T) from COG and updates TAS/IAS", function()
@@ -2007,7 +2007,20 @@ suite("Build flight plan messages", function()
     assertNotNil(header)
     assertNotNil(row)
     assertNotNil(string.find(header, "COG%s+WHDG%s+WTAS%s+HDG%(T%)%s+VAR%s+HDG%(M%)"))
-    assertNotNil(string.find(row, "000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05"))
+    assertNotNil(string.find(row, "000%s+%+00%s+%+00%s+000%s+%+0%.0%s+000%s+225%s+20%.0%s+5%s+07:05%s+%d+%.%d"))
+  end)
+
+  it("TXT navlog GAS column shows inbound leg fuel only", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_HOLD__T07:20", NM * 20 },
+      { "MN_TEST_03_LANDING__T07:40", NM * 40 },
+    })
+    local text = M:_BuildFlightPlanTable(plan, nil, 0)
+    assertMatch(text, "ID%s+TYPE%s+[^\n]+ETA%s+GAS")
+    assertMatch(text, "01 TAKE_OFF%s+1500%s+[^\n]*07:00%s+%-%-%-")
+    assertMatch(text, "02 HOLD%s+1500%*%s+[^\n]*07:20%s+%d+%.%d")
+    assertMatch(text, "orbit %d+ min @ 140 IAS: %d+%.%d gal")
   end)
 
   it("TXT navlog marks inherited ALT and IAS with star", function()

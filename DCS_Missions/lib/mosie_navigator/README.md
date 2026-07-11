@@ -103,6 +103,7 @@ The navlog is a single compact plain ASCII table with:
 - COG, WHDG/WTAS wind corrections, wind-corrected true heading, magnetic variation, and magnetic heading
 - leg distance and leg time
 - computed ETA, rounded to full minutes for display
+- `GAS`, fuel burned on the inbound leg in imperial gallons; TAKE_OFF shows `---`, HOLD orbit fuel remains on the orbit sub-line
 - DCS fuel recommendation for the Mosquito fuel slider and drop tanks
 
 Static FP/navlog headings use forecast wind sampled along each leg every 10 NM, with at least start/end samples. `WHDG` shows heading correction in degrees and `WTAS` shows TAS correction in knots. Magnetic variation is averaged over the same samples, so `HDG(T) + VAR = HDG(M)`. Once computed, static FP/navlog values are cached and reused by `Show FP`.
