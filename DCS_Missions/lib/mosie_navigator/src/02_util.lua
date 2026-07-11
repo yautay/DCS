@@ -136,6 +136,16 @@ function MosieNavigator:_FormatRolex(seconds)
   return string.format("+%02d:%02d:%02d", hours, minutes, clockSeconds)
 end
 
+function MosieNavigator:_FormatSignedRolex(seconds)
+  seconds = seconds or 0
+  if seconds >= 0 then
+    return self:_FormatRolex(seconds)
+  end
+
+  local text = self:_FormatRolex(-seconds)
+  return "-" .. string.sub(text, 2)
+end
+
 function MosieNavigator:_GetPlanColor(planIndex)
   return self.PlanColors[((planIndex - 1) % #self.PlanColors) + 1]
 end

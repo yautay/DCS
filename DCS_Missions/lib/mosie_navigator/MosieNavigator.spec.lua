@@ -440,6 +440,12 @@ suite("FormatRolex", function()
   it("+HH:MM:SS", function()
     assertEq(M:_FormatRolex(30), "+00:00:30")
   end)
+  it("signed negative HH:MM", function()
+    assertEq(M:_FormatSignedRolex(-5 * 60), "-00:05")
+  end)
+  it("signed positive HH:MM", function()
+    assertEq(M:_FormatSignedRolex(10 * 60), "+00:10")
+  end)
 end)
 
 suite("FormatDuration", function()
@@ -2038,6 +2044,281 @@ suite("Build flight plan messages", function()
     M.ComputedPlanCache = nil
     if not ok then error(err) end
     assertEq(calls, 2)
+  end)
+
+  it("group __R shifts ETA but is not displayed as pilot ROLEX", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP [MN:TEST]__R5", 5 * 60, 0)
+    assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:05")
+    assertTrue(not string.find(msg, "ROLEX", 1, true), "__R must be hidden from pilot ROLEX display")
+  end)
+
+  it("pilot ADVANCE displays negative ROLEX and shifts from __R baseline", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP [MN:TEST]__R5", 5 * 60, -2 * 60)
+    assertMatch(msg, "ROLEX : %-00:02")
+    assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:03")
+  end)
+
+  it("pilot RETARD displays positive ROLEX and shifts from __R baseline", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local msg = M:_BuildSimplifiedFlightPlanMessage(plan, "GRP [MN:TEST]__R5", 5 * 60, 3 * 60)
+    assertMatch(msg, "ROLEX : %+00:03")
+    assertMatch(msg, "01 TAKE_OFF%s+1500%s+[^\n]*07:08")
+  end)
+
+  it("pilot ROLEX shifts cached plan copy without recomputing base weather/variation", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local original = M._ComputePlan
+    local calls = 0
+    M.ComputedPlanCache = nil
+    M._ComputePlan = function(self, p, rolexSeconds)
+      calls = calls + 1
+      return original(self, p, rolexSeconds)
+    end
+
+    local ok, err = pcall(function()
+      local plus = M:_GetActiveComputedPlan(plan, 5 * 60, 2 * 60)
+      local minus = M:_GetActiveComputedPlan(plan, 5 * 60, -2 * 60)
+      assertNear(plus.waypoints[1].etaSec, 7 * 3600 + 7 * 60, 1)
+      assertNear(minus.waypoints[1].etaSec, 7 * 3600 + 3 * 60, 1)
+    end)
+
+    M._ComputePlan = original
+    M.ComputedPlanCache = nil
+    if not ok then error(err) end
+    assertEq(calls, 1)
+  end)
+
+  it("TXT navlog hides base __R and displays only pilot ROLEX", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local baseOnly = M:_BuildFlightPlanTable(plan, "GRP [MN:TEST]__R5", 5 * 60, 0)
+    assertTrue(not string.find(baseOnly, "ROLEX", 1, true), "base __R should not be labeled as ROLEX")
+
+    local pilot = M:_BuildFlightPlanTable(plan, "GRP [MN:TEST]__R5", 5 * 60, 10 * 60)
+    assertMatch(pilot, "ROLEX : %+00:10")
+  end)
+end)
+
+suite("Group runtime ROLEX state", function()
+  local function makeGroup(name)
+    return { GetName = function() return name end }
+  end
+
+  local function makeAssignment(plan, baseRolexSeconds)
+    return {
+      groupName = "MOSQUITO 1-1 [MN:TEST]__R5",
+      planName = "TEST",
+      plan = plan,
+      rolexSeconds = baseRolexSeconds or 0,
+    }
+  end
+
+  it("initial state separates base __R from pilot ROLEX", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local group = makeGroup("MOSQUITO 1-1 [MN:TEST]__R5")
+    M.GroupPlanStates = nil
+
+    local state = M:_GetGroupPlanState(group, makeAssignment(plan, 5 * 60))
+    assertEq(state.baseRolexSeconds, 5 * 60)
+    assertEq(state.pilotRolexSeconds, 0)
+    assertEq(M:_GetActiveRolexSeconds(state), 5 * 60)
+  end)
+
+  it("ADVANCE subtracts pilot ROLEX from base __R", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local group = makeGroup("MOSQUITO 1-1 [MN:TEST]__R5")
+    local assignment = makeAssignment(plan, 5 * 60)
+    local messages = {}
+    local originalSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, g, text) table.insert(messages, {group = g:GetName(), text = text}) end
+    M.GroupPlanStates = nil
+    M.NavigatorStates = nil
+
+    local ok, err = pcall(function()
+      M:_AdjustPilotRolex(group, assignment, -2 * 60)
+      local state = M:_GetGroupPlanState(group, assignment)
+      assertEq(state.pilotRolexSeconds, -2 * 60)
+      assertEq(M:_GetActiveRolexSeconds(state), 3 * 60)
+      assertEq(messages[#messages].text, "ROLEX -00:02")
+    end)
+
+    M._SendNavigatorMessage = originalSend
+    if not ok then error(err) end
+  end)
+
+  it("RETARD adds pilot ROLEX to base __R", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local group = makeGroup("MOSQUITO 1-1 [MN:TEST]__R5")
+    local assignment = makeAssignment(plan, 5 * 60)
+    local originalSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function() end
+    M.GroupPlanStates = nil
+    M.NavigatorStates = nil
+
+    local ok, err = pcall(function()
+      M:_AdjustPilotRolex(group, assignment, 10 * 60)
+      local state = M:_GetGroupPlanState(group, assignment)
+      assertEq(state.pilotRolexSeconds, 10 * 60)
+      assertEq(M:_GetActiveRolexSeconds(state), 15 * 60)
+    end)
+
+    M._SendNavigatorMessage = originalSend
+    if not ok then error(err) end
+  end)
+
+  it("RESET returns to mission-maker __R baseline, not zero active offset", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local group = makeGroup("MOSQUITO 1-1 [MN:TEST]__R5")
+    local assignment = makeAssignment(plan, 5 * 60)
+    local messages = {}
+    local originalSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.GroupPlanStates = nil
+    M.NavigatorStates = nil
+
+    local ok, err = pcall(function()
+      M:_AdjustPilotRolex(group, assignment, 10 * 60)
+      M:_SetPilotRolex(group, assignment, 0)
+      local state = M:_GetGroupPlanState(group, assignment)
+      assertEq(state.pilotRolexSeconds, 0)
+      assertEq(M:_GetActiveRolexSeconds(state), 5 * 60)
+      assertEq(messages[#messages], "ROLEX reset")
+    end)
+
+    M._SendNavigatorMessage = originalSend
+    if not ok then error(err) end
+  end)
+
+  it("ROLEX change refreshes existing navigator state to active offset", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_NAV__T07:30", NM * 20 },
+      { "MN_TEST_03_LANDING", NM * 40 },
+    })
+    local group = makeGroup("MOSQUITO 1-1 [MN:TEST]__R5")
+    local assignment = makeAssignment(plan, 5 * 60)
+    local originalSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function() end
+    M.GroupPlanStates = nil
+    M.NavigatorStates = {
+      [group:GetName()] = {
+        enabled = false,
+        group = group,
+        groupName = group:GetName(),
+        plan = plan,
+        rolexSeconds = 0,
+        currentWpIndex = 2,
+        callouts = {},
+      }
+    }
+
+    local ok, err = pcall(function()
+      M:_AdjustPilotRolex(group, assignment, -2 * 60)
+      local navState = M.NavigatorStates[group:GetName()]
+      assertEq(navState.rolexSeconds, 3 * 60)
+      assertEq(navState.currentWpIndex, 2)
+      assertEq(type(navState.callouts), "table")
+    end)
+
+    M._SendNavigatorMessage = originalSend
+    if not ok then error(err) end
+  end)
+end)
+
+suite("Group menu structure", function()
+  it("creates NAVIGATOR and ROLEX submenus with requested commands", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local group = { GetName = function() return "MOSQUITO 1-1 [MN:TEST]" end }
+    local assignment = {
+      groupName = group:GetName(),
+      group = group,
+      planName = "TEST",
+      plan = plan,
+      rolexSeconds = 0,
+    }
+
+    local originalDiscover = M._DiscoverGroupAssignments
+    local originalMenuGroup = MENU_GROUP
+    local originalMenuCommand = MENU_GROUP_COMMAND
+    local menus, commands = {}, {}
+    MENU_GROUP = {
+      New = function(_, _, label, parent)
+        local menu = {label = label, parent = parent}
+        table.insert(menus, menu)
+        return menu
+      end
+    }
+    MENU_GROUP_COMMAND = {
+      New = function(_, _, label, parent, callback, argument)
+        table.insert(commands, {label = label, parent = parent, callback = callback, argument = argument})
+        return {label = label, parent = parent}
+      end
+    }
+    M._DiscoverGroupAssignments = function() return {assignment} end
+    M.MenusCreated = {}
+    M.GroupPlanStates = nil
+
+    local ok, err = pcall(function()
+      M:_CreateGroupMenus({TEST = plan})
+      local menuLabels = {}
+      for _, menu in ipairs(menus) do menuLabels[menu.label] = true end
+      assertTrue(menuLabels["Mosie Navigator"])
+      assertTrue(menuLabels["NAVIGATOR"])
+      assertTrue(menuLabels["ROLEX"])
+      assertTrue(menuLabels["ADVANCE"])
+      assertTrue(menuLabels["RETARD"])
+
+      local commandLabels = {}
+      for _, command in ipairs(commands) do commandLabels[command.label] = true end
+      assertTrue(commandLabels["Automatic ON"])
+      assertTrue(commandLabels["Automatic OFF"])
+      assertTrue(commandLabels["Show FP"])
+      assertTrue(commandLabels["Status Now"])
+      assertTrue(commandLabels["Next WP"])
+      assertTrue(commandLabels["Prev WP"])
+      assertTrue(commandLabels["RESET"])
+      assertTrue(commandLabels["1 min"])
+      assertTrue(commandLabels["2 min"])
+      assertTrue(commandLabels["3 min"])
+      assertTrue(commandLabels["5 min"])
+      assertTrue(commandLabels["10 min"])
+    end)
+
+    M._DiscoverGroupAssignments = originalDiscover
+    MENU_GROUP = originalMenuGroup
+    MENU_GROUP_COMMAND = originalMenuCommand
+    if not ok then error(err) end
   end)
 end)
 

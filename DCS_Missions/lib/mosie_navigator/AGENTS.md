@@ -36,7 +36,7 @@ SPITFIRE 2-1 [MN:ESCORT]
 
 `PLAN` must match a plan identifier discovered from `MN_` trigger zones.
 
-`__R...` is an optional group ROLEX delay that shifts all displayed/exported TOT values for that group only. Accepted formats:
+`__R...` is an optional mission-maker ROLEX baseline that shifts all displayed/exported TOT values for that group only. It is treated as that group's original plan and is not shown to pilots as an active F10 ROLEX. Accepted formats:
 
 - `__R<M>` — plain minutes, any non-negative integer (e.g. `__R5`, `__R120`).
 - `__R<H:MM>` — hours and minutes, `MM` must be `00..59` (e.g. `__R0:05`, `__R2:30`).
@@ -129,7 +129,7 @@ The flight plan algorithm (`_ComputePlan`) runs when a static FP/navlog result i
 
 **ETA = TOT.** There is no distinction. `__T` is an ETA constraint, not a separate concept.
 
-**ROLEX.** Applied to all ETAs for that group (shifts T0 and all downstream times).
+**ROLEX.** The group-name `__R` baseline is applied to all ETAs for that group (shifts T0 and all downstream times) and is treated as the original plan. Pilot F10 ROLEX changes are additional per-group runtime offsets. `RESET` clears only the pilot offset and returns to the `__R` baseline. Pilot ROLEX must not resample static weather or magnetic variation; it shifts ETA values on top of the baseline computed plan.
 
 **Speed envelope.** Speeds are expressed and clamped in IAS (converted from GS using `__A`). The Mosquito envelope is defined in `MosieNavigator.Aircraft.envelope` (`minIasKt` / `maxIasKt`). Violations emit a warning and clamp to the nearest bound.
 

@@ -44,7 +44,7 @@ SPITFIRE 2-1 [MN:ESCORT]
 
 `PLAN` must match the plan identifier from trigger zones, for example `MN_JERICHO_01_TAKE_OFF_Tangmere` uses plan `JERICHO`.
 
-`__R...` is an optional group ROLEX offset. It shifts displayed TOT values for that group only. Examples:
+`__R...` is an optional mission-maker ROLEX baseline. It shifts displayed TOT values for that group only, but is treated as that group's original plan and is not shown to pilots as an active F10 ROLEX. Examples:
 
 - `__R5`: delay all TOT values by 5 minutes.
 - `__R0:05`: delay all TOT values by 5 minutes.
@@ -61,21 +61,24 @@ For independent player state later, prefer one client aircraft per DCS group.
 For every group assigned with `[MN:<PLAN>]`, it creates a group F10 menu:
 
 ```text
-F10 Other > Mosie Navigator > Show FP
+F10 Other > Mosie Navigator
+  NAVIGATOR
+    Automatic ON
+    Automatic OFF
+    Show FP
+    Status Now
+    Next WP
+    Prev WP
+    Report Interval > 30 sec / 60 sec / 120 sec / 300 sec
+  ROLEX
+    RESET
+    ADVANCE > 1 min / 2 min / 3 min / 5 min / 10 min
+    RETARD > 1 min / 2 min / 3 min / 5 min / 10 min
 ```
 
-`Show FP` displays a simplified flight plan for that group.
+`NAVIGATOR > Show FP` displays a simplified flight plan for that group. `NAVIGATOR > Automatic ON/OFF` controls the active text navigator.
 
-The same menu also provides an active text navigator:
-
-```text
-Navigator On
-Navigator Off
-Status Now
-Next WP
-Prev WP
-Report Interval > 30 sec / 60 sec / 120 sec / 300 sec
-```
+`ROLEX` lets the pilot temporarily advance or retard that group's plan. `RESET` returns to the group's original plan, including any mission-maker `__R` baseline from the group name.
 
 When enabled, the navigator sends compact text reports to the group. The regular report interval is selectable from the menu and defaults to 120 seconds. Regardless of the selected interval, the navigator always reports at 60 seconds and 30 seconds before the active waypoint TOT, and when it switches guidance to the next waypoint.
 
@@ -104,7 +107,7 @@ The navlog is a single compact plain ASCII table with:
 
 Static FP/navlog headings use forecast wind sampled along each leg every 10 NM, with at least start/end samples. `WHDG` shows heading correction in degrees and `WTAS` shows TAS correction in knots. Magnetic variation is averaged over the same samples, so `HDG(T) + VAR = HDG(M)`. Once computed, static FP/navlog values are cached and reused by `Show FP`.
 
-For assigned groups with `__R...`, `Show FP` and the generated group navlog show ROLEX-adjusted TOT values.
+For assigned groups with `__R...`, `Show FP` and the generated group navlog show baseline-adjusted TOT values without labeling that baseline as active ROLEX. If the pilot changes ROLEX from F10, only that pilot offset is shown as `ROLEX` and the static forecast weather/magnetic variation from the baseline plan is reused.
 
 The script also writes one Mission Editor route declaration CSV per plan and a single mission-wide beacons CSV:
 

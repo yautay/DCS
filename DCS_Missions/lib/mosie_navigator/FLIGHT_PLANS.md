@@ -241,6 +241,12 @@ waypoint. The navlog shows `ETA` for all waypoints uniformly.
 A group's `__R` value shifts the T0 (TAKE_OFF `__T`) and all downstream ETAs by the same
 amount. It does not affect speed calculations — the whole plan is shifted uniformly.
 
+At runtime, pilots can use the F10 `ROLEX` submenu to `ADVANCE`, `RETARD`, or `RESET` their
+own group's active plan. `RESET` returns to the mission-maker baseline, including any `__R`
+token in the group name. The `__R` baseline is not displayed to pilots as active ROLEX; only
+pilot changes from F10 are labeled as `ROLEX`. Pilot ROLEX shifts ETA values on top of the
+baseline computed plan and does not resample forecast wind or magnetic variation.
+
 ### 5.7 Speed envelope and clamping
 
 All speed calculations are converted to IAS (knots) at the leg altitude and checked against
