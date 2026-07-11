@@ -254,6 +254,9 @@ These belong in the future navigator script or builder integration, not in the p
 ## Source Layout & Build
 
 `MosieNavigator.lua` is a **generated bundle**. Do not edit it directly.
+It may only change as the output of `python3 build.py`; never patch or hand-edit
+it. Any behavioral change must be made in `src/*.lua` first, then propagated to
+the bundle by the build script.
 
 - Edit source modules under `src/*.lua`. Load order follows the numeric prefix
   (`01_config.lua` → `13_main.lua`); `13_main.lua` must remain last because it
