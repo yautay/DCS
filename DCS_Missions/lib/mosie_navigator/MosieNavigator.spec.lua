@@ -1362,6 +1362,41 @@ suite("ComputePlan — Plan 2 MID_TOT (constraint derived speed)", function()
   end)
 end)
 
+suite("ComputePlan — low-speed timing advisory", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__S200__A500", 0 },
+    { "MN_TEST_02_NAV",                          NM*10 },
+    { "MN_TEST_03_TARGET__T12:30",               NM*20 },
+    { "MN_TEST_04_LANDING",                      NM*40 },
+  })
+
+  it("uses minimum cruise speed and arrives before the loose __T", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertTrue(r.waypoints[3].etaSec < 12*3600 + 30*60,
+      "expected early arrival before target __T")
+    assertNear(r.waypoints[2].legIasKt, M.Aircraft.envelope.minIasKt, 0.5)
+    assertNear(r.waypoints[3].legIasKt, M.Aircraft.envelope.minIasKt, 0.5)
+  end)
+
+  it("emits TIMING advisory instead of low-speed clamp warning", function()
+    local r = M:_ComputePlan(plan, 0)
+    local timingText = table.concat(r.timing or {}, "; ")
+    local warningText = table.concat(r.warnings or {}, "; ")
+    assertTrue(string.find(timingText, "orbit/delay required before WP03 TARGET") ~= nil,
+      "expected timing advisory, got: " .. timingText)
+    assertTrue(string.find(warningText, "below minimum") == nil,
+      "expected no low-speed warning, got: " .. warningText)
+  end)
+
+  it("renders TIMING section in flight plan output", function()
+    M.ComputedPlanCache = nil
+    local text = M:_BuildFlightPlanTable(plan)
+    assertTrue(string.find(text, "TIMING:") ~= nil, "expected TIMING section")
+    assertTrue(string.find(text, "before WP03 TARGET") ~= nil, "expected target timing text")
+  end)
+end)
+
 suite("ComputePlan — Plan 5 MIXED_S (FIXED honored, FREE averaged)", function()
   -- Segment [TAKE_OFF..TARGET] 50 NM in 15 min
   -- WP3 INGRESS: FIXED __S200 (dist 10 NM from prev)
@@ -3059,6 +3094,58 @@ end)
 suite("MosieAiPlanner", function()
   local AP = MosieAiPlanner
 
+  local function makeAiDumpState(groupCoordinateProvider)
+    local group = {
+      GetCoordinate = groupCoordinateProvider,
+      GetVelocityKNOTS = function() return 210 end,
+      GetAltitude = function() return 1234 end,
+    }
+    local wp1 = {
+      type = "TAKE_OFF",
+      order = 1,
+      name = "START",
+      zoneName = "MN_TEST_01_TAKE_OFF__T12:00",
+      zone = {GetRadius = function() return NM end},
+      coordinate = makeCoord({x = 0, z = -NM * 2}),
+    }
+    local wp2 = {
+      type = "NAV",
+      order = 2,
+      name = "CHECK",
+      zoneName = "MN_TEST_02_NAV_CHECK",
+      zone = {GetRadius = function() return NM end},
+      coordinate = makeCoord({x = 0, z = 0}),
+    }
+    return {
+      assignment = {
+        group = group,
+        groupName = "AI TEST [MN:TEST]",
+        planName = "TEST",
+        plan = {name = "TEST", waypoints = {wp1, wp2}},
+      }
+    }, {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, etaSec = 0},
+        {type = "NAV", order = 2, etaSec = 100},
+      }
+    }
+  end
+
+  local function withAiZoneDumpCapture(testMode, fn)
+    local originalTestMode = TEST_MODE
+    local originalAppend = AP._AppendAiZoneDump
+    local dumps = {}
+    TEST_MODE = testMode
+    AP._AppendAiZoneDump = function(_, text) table.insert(dumps, text) end
+
+    local ok, err = pcall(function() fn(dumps) end)
+
+    TEST_MODE = originalTestMode
+    AP._AppendAiZoneDump = originalAppend
+    if not ok then error(err, 2) end
+  end
+
   it("builds an AI route with current position and landing point", function()
     local group = {
       GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
@@ -3078,6 +3165,45 @@ suite("MosieAiPlanner", function()
     assertEq(route[2].type, "Turning Point")
     assertEq(route[3].type, "Land")
     assertEq(route[3].action, "Landing")
+  end)
+
+  it("does not write AI zone dump outside TEST_MODE", function()
+    withAiZoneDumpCapture(false, function(dumps)
+      local state, computed = makeAiDumpState(function() return makeCoord({x = 0, z = 0}) end)
+      AP:_TickZoneDump(state, computed)
+      assertEq(#dumps, 0)
+    end)
+  end)
+
+  it("writes AI zone dump only on zone entry and permits re-entry", function()
+    withAiZoneDumpCapture(true, function(dumps)
+      local position = makeCoord({x = 0, z = NM * 2})
+      local state, computed = makeAiDumpState(function() return position end)
+      setAbsTime(110)
+
+      AP:_TickZoneDump(state, computed)
+      assertEq(#dumps, 0)
+
+      position = makeCoord({x = 0, z = 0})
+      AP:_TickZoneDump(state, computed)
+      assertEq(#dumps, 1)
+      assertTrue(string.find(dumps[1], "AI_ZONE_ENTRY") ~= nil, dumps[1])
+      assertTrue(string.find(dumps[1], "AI TEST %[MN:TEST%]") ~= nil, dumps[1])
+      assertTrue(string.find(dumps[1], "wp=WP02") ~= nil, dumps[1])
+      assertTrue(string.find(dumps[1], "zone=\"MN_TEST_02_NAV_CHECK\"") ~= nil, dumps[1])
+      assertTrue(string.find(dumps[1], "delta_sec=%+10") ~= nil, dumps[1])
+
+      AP:_TickZoneDump(state, computed)
+      assertEq(#dumps, 1)
+
+      position = makeCoord({x = 0, z = NM * 2})
+      AP:_TickZoneDump(state, computed)
+      assertEq(#dumps, 1)
+
+      position = makeCoord({x = 0, z = 0})
+      AP:_TickZoneDump(state, computed)
+      assertEq(#dumps, 2)
+    end)
   end)
 
   it("sends StartUncontrolled inside the takeoff lead window", function()
@@ -3159,15 +3285,16 @@ suite("MosieAiPlanner", function()
     if not ok then error(err) end
   end)
 
-  it("commands timing orbit when AI is early and cannot slow enough", function()
+  it("commands timing orbit at current position when AI is early and cannot slow enough", function()
     local taskSet, routes = 0, 0
+    local orbitVec2 = nil
     local group = {
       IsAlive = function() return true end,
       IsAirborne = function() return true end,
       GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
       GetAltitude = function() return 0 end,
       GetVelocityKNOTS = function() return 240 end,
-      TaskOrbitCircleAtVec2 = function() return {id = "Orbit"} end,
+      TaskOrbitCircleAtVec2 = function(_, vec2) orbitVec2 = vec2; return {id = "Orbit"} end,
       SetTask = function() taskSet = taskSet + 1 end,
       Route = function() routes = routes + 1 end,
     }
@@ -3189,6 +3316,8 @@ suite("MosieAiPlanner", function()
       assertEq(taskSet, 1)
       assertEq(routes, 0)
       assertEq(state.timingOrbit, true)
+      assertNear(orbitVec2.x, 0, 0.001)
+      assertNear(orbitVec2.y, 0, 0.001)
     end)
 
     AP._GetComputedPlan = originalGetComputed

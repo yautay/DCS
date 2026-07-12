@@ -5,7 +5,7 @@
 
 -- ==== 01_config.lua ====
 
-TEST_MODE = false
+TEST_MODE = true
 
 SECONDS_PER_DAY = 86400
 SECONDS_PER_HALF_DAY = 43200
@@ -789,7 +789,38 @@ function MosieNavigator:_ClampGroundSpeed(gsKt, altitudeFt, warnings, context)
   return gsKt, false
 end
 
-function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, segLabel)
+function MosieNavigator:_AddLowSpeedTimingAdvisory(timing, segLabel, segLegs, requiredIasKt)
+  if not timing then
+    return
+  end
+
+  local targetLeg = segLegs[#segLegs]
+  if not targetLeg then
+    return
+  end
+
+  local targetType = targetLeg.wpType or "WP"
+  table.insert(timing, string.format(
+    "%s: required %.0f IAS below minimum %.0f IAS; arrive early at min cruise; orbit/delay required before WP%02d %s",
+    segLabel,
+    requiredIasKt or 0,
+    self.Aircraft.envelope.minIasKt,
+    targetLeg.wpOrder,
+    targetType
+  ))
+end
+
+function MosieNavigator:_ClampDerivedSegmentSpeed(requiredIasKt, warnings, timing, segLabel, segLegs)
+  local env = self.Aircraft.envelope
+  if requiredIasKt < env.minIasKt then
+    self:_AddLowSpeedTimingAdvisory(timing, segLabel, segLegs, requiredIasKt)
+    return env.minIasKt, true
+  end
+
+  return self:_ClampSpeed(requiredIasKt, warnings, segLabel)
+end
+
+function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, timing, segLabel)
   local n = #segLegs
 
   -- Classify: FIXED = explicit __S on arriving WP, FREE = no explicit __S
@@ -819,7 +850,7 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     for _, leg in ipairs(segLegs) do avgAlt = avgAlt + (leg.altFt or 0) end
     avgAlt = avgAlt / n
     local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
-    derivedIas = self:_ClampSpeed(derivedIas, warnings, segLabel .. " all-FIXED override")
+    derivedIas = self:_ClampDerivedSegmentSpeed(derivedIas, warnings, timing, segLabel .. " all-FIXED override", segLegs)
     local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
     for i = 1, n do
       if segLegs[i].speedKt then
@@ -848,7 +879,7 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
     for _, leg in ipairs(segLegs) do avgAlt = avgAlt + (leg.altFt or 0) end
     avgAlt = avgAlt / n
     local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
-    derivedIas, _ = self:_ClampSpeed(derivedIas, warnings, segLabel .. " FREE uniform")
+    derivedIas, _ = self:_ClampDerivedSegmentSpeed(derivedIas, warnings, timing, segLabel .. " FREE uniform", segLegs)
     local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
     for i = 1, n do result[i] = clampedGs; sources[i] = "computed" end
     return result, sources
@@ -890,7 +921,7 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, s
   for _, i in ipairs(freeIndices) do avgAltFree = avgAltFree + (segLegs[i].altFt or 0) end
   avgAltFree = avgAltFree / #freeIndices
   local freeIas = self:_ConvertTasToIas(freeGs, avgAltFree) or freeGs
-  freeIas, _    = self:_ClampSpeed(freeIas, warnings, segLabel .. " FREE averaged")
+  freeIas, _    = self:_ClampDerivedSegmentSpeed(freeIas, warnings, timing, segLabel .. " FREE averaged", segLegs)
   local clampedFreeGs = self:_ConvertIasToTas(freeIas, avgAltFree) or freeIas
   for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs; sources[i] = "computed" end
 
@@ -902,6 +933,7 @@ end
 function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   rolexSeconds = rolexSeconds or 0
   local warnings = {}
+  local timing = {}
   local aircraft  = self.Aircraft
 
   -- ── Validation ──────────────────────────────────────────────────────────
@@ -1041,11 +1073,12 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
             altFt   = legDescs[k].altFt,
             speedKt = legDescs[k].speedKt,
             wpOrder = legDescs[k].wpOrder,
+            wpType  = legDescs[k].wpType,
           })
         end
 
         local segSpeeds, segSources = self:_ResolveSegmentSpeeds(
-          segLegs, dt, warnings,
+          segLegs, dt, warnings, timing,
           string.format("segment [WP%02d..WP%02d]", wps[segStart].order, wps[segEnd].order)
         )
 
@@ -1312,6 +1345,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       dcs             = dcsFuel,
     },
     warnings = warnings,
+    timing = timing,
   }
 end
 
@@ -2732,6 +2766,13 @@ function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, baseR
   table.insert(lines, "")
   self:_AppendFuelSummary(lines, f)
 
+  if #(computed.timing or {}) > 0 then
+    table.insert(lines, "TIMING:")
+    for _, t in ipairs(computed.timing) do
+      table.insert(lines, "  " .. t)
+    end
+  end
+
   if #computed.warnings > 0 then
     table.insert(lines, "WARNINGS:")
     for _, w in ipairs(computed.warnings) do
@@ -3023,6 +3064,14 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, baseRolexSeconds,
   table.insert(lines, string.format("TOTAL_DIST: %.1f NM", totalDist))
   table.insert(lines, "")
   self:_AppendFuelSummary(lines, f)
+
+  if #(computed.timing or {}) > 0 then
+    table.insert(lines, "")
+    table.insert(lines, "TIMING:")
+    for _, t in ipairs(computed.timing) do
+      table.insert(lines, "  - " .. t)
+    end
+  end
 
   if #computed.warnings > 0 then
     table.insert(lines, "")

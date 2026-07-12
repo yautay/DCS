@@ -24,6 +24,10 @@ function MosieAiPlanner:_Log(message)
   env.info("MOSIE_AI_PLANNER: " .. tostring(message))
 end
 
+function MosieAiPlanner:_IsTestMode()
+  return TEST_MODE == true
+end
+
 function MosieAiPlanner:_GetNavigator()
   return MosieNavigator
 end
@@ -96,6 +100,80 @@ function MosieAiPlanner:_LogStateOnce(state, key, message)
 
   state.logged[key] = true
   self:_Log(message)
+end
+
+function MosieAiPlanner:_FormatClock(seconds)
+  local navigator = self:_GetNavigator()
+  if navigator and type(navigator._FormatClock) == "function" then
+    return navigator:_FormatClock(seconds or 0)
+  end
+
+  seconds = math.floor((seconds or 0) % 86400)
+  local h = math.floor(seconds / 3600)
+  local m = math.floor((seconds % 3600) / 60)
+  local s = seconds % 60
+  return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+function MosieAiPlanner:_GetOutputDirectory()
+  local navigator = self:_GetNavigator()
+  if navigator and type(navigator._GetOutputDirectory) == "function" then
+    return navigator:_GetOutputDirectory()
+  end
+
+  if lfs and lfs.writedir then
+    return lfs.writedir() .. "Logs/"
+  end
+
+  return "./"
+end
+
+function MosieAiPlanner:_GetAiZoneDumpPath()
+  return self:_GetOutputDirectory() .. "AI_ZONE_DUMP.log"
+end
+
+function MosieAiPlanner:_ResetAiZoneDumpFile()
+  if not self:_IsTestMode() then
+    return
+  end
+
+  if not io then
+    self:_Log("cannot reset AI zone dump file: io is not available")
+    return
+  end
+
+  local path = self:_GetAiZoneDumpPath()
+  local file = io.open(path, "w")
+  if not file then
+    self:_Log("cannot reset AI zone dump file: " .. path)
+    return
+  end
+
+  file:write(string.format("AI_ZONE_DUMP reset at mission time %s\n", self:_FormatClock(timer and timer.getAbsTime and timer.getAbsTime() or 0)))
+  file:close()
+  self:_Log("reset AI zone dump file: " .. path)
+end
+
+function MosieAiPlanner:_AppendAiZoneDump(text)
+  if not self:_IsTestMode() then
+    return
+  end
+
+  if not io then
+    self:_Log("cannot write AI zone dump file: io is not available")
+    return
+  end
+
+  local path = self:_GetAiZoneDumpPath()
+  local file = io.open(path, "a")
+  if not file then
+    self:_Log("cannot write AI zone dump file: " .. path)
+    return
+  end
+
+  file:write(tostring(text or ""))
+  file:write("\n---\n")
+  file:close()
 end
 
 function MosieAiPlanner:_GetMissionRolexSeconds()
@@ -216,6 +294,105 @@ function MosieAiPlanner:_GetDistanceNm(fromCoordinate, toCoordinate)
   end
 
   return self:_MetersToNm(fromCoordinate:Get2DDistance(toCoordinate))
+end
+
+function MosieAiPlanner:_IsCoordinateInWaypointZone(coordinate, waypoint)
+  if not coordinate or not waypoint or not waypoint.zone then
+    return false, nil, nil
+  end
+
+  local zone = waypoint.zone
+  local ok, inside = false, false
+  if type(zone.IsCoordinateInZone) == "function" then
+    ok, inside = pcall(function() return zone:IsCoordinateInZone(coordinate) end)
+    if ok and inside ~= nil then
+      return inside == true, self:_GetDistanceNm(coordinate, waypoint.coordinate), zone.GetRadius and self:_MetersToNm(zone:GetRadius()) or nil
+    end
+  end
+
+  if type(zone.IsVec2InZone) == "function" then
+    local vec2 = self:_CoordinateToVec2(coordinate)
+    if vec2 then
+      ok, inside = pcall(function() return zone:IsVec2InZone(vec2) end)
+      if ok and inside ~= nil then
+        return inside == true, self:_GetDistanceNm(coordinate, waypoint.coordinate), zone.GetRadius and self:_MetersToNm(zone:GetRadius()) or nil
+      end
+    end
+  end
+
+  if type(zone.GetRadius) ~= "function" or not waypoint.coordinate then
+    return false, self:_GetDistanceNm(coordinate, waypoint.coordinate), nil
+  end
+
+  local radiusMeters = zone:GetRadius()
+  local distanceMeters = coordinate.Get2DDistance and coordinate:Get2DDistance(waypoint.coordinate) or nil
+  if not distanceMeters or not radiusMeters then
+    return false, nil, radiusMeters and self:_MetersToNm(radiusMeters) or nil
+  end
+
+  return distanceMeters <= radiusMeters, self:_MetersToNm(distanceMeters), self:_MetersToNm(radiusMeters)
+end
+
+function MosieAiPlanner:_FormatAiZoneDumpEntry(state, waypoint, computedWaypoint, distanceNm, radiusNm)
+  local group = state.assignment.group
+  local groupCoordinate = self:_GetGroupCoordinate(group)
+  local vec2 = self:_CoordinateToVec2(groupCoordinate) or {}
+  local now = timer and timer.getAbsTime and timer.getAbsTime() or 0
+  local etaSec = computedWaypoint and computedWaypoint.etaSec or nil
+  local deltaSec = nil
+  if etaSec then
+    local secondsToEta = self:_GetSecondsToClockSeconds(etaSec)
+    if secondsToEta then
+      deltaSec = -secondsToEta
+    end
+  end
+
+  local speedKt = group.GetVelocityKNOTS and group:GetVelocityKNOTS() or nil
+  local altitude = group.GetAltitude and group:GetAltitude() or nil
+
+  return string.format(
+    "[%s] AI_ZONE_ENTRY group=\"%s\" plan=\"%s\" wp=WP%02d type=%s name=\"%s\" zone=\"%s\" dist_nm=%s radius_nm=%s eta=%s delta_sec=%s speed_kt=%s alt_m=%s pos_x=%s pos_y=%s",
+    self:_FormatClock(now),
+    tostring(state.assignment.groupName or "---"),
+    tostring(state.assignment.planName or "---"),
+    waypoint.order or 0,
+    tostring(waypoint.type or "---"),
+    tostring(waypoint.name or "---"),
+    tostring(waypoint.zoneName or "---"),
+    distanceNm and string.format("%.3f", distanceNm) or "---",
+    radiusNm and string.format("%.3f", radiusNm) or "---",
+    etaSec and self:_FormatClock(etaSec) or "---",
+    deltaSec and string.format("%+.0f", deltaSec) or "---",
+    speedKt and string.format("%.0f", speedKt) or "---",
+    altitude and string.format("%.0f", altitude) or "---",
+    vec2.x and string.format("%.1f", vec2.x) or "---",
+    vec2.y and string.format("%.1f", vec2.y) or "---"
+  )
+end
+
+function MosieAiPlanner:_TickZoneDump(state, computed)
+  if not self:_IsTestMode() or not state or not state.assignment or not state.assignment.plan then
+    return
+  end
+
+  local groupCoordinate = self:_GetGroupCoordinate(state.assignment.group)
+  if not groupCoordinate then
+    return
+  end
+
+  state.zoneDumpInside = state.zoneDumpInside or {}
+
+  for index, waypoint in ipairs(state.assignment.plan.waypoints or {}) do
+    if waypoint.zone then
+      local inside, distanceNm, radiusNm = self:_IsCoordinateInWaypointZone(groupCoordinate, waypoint)
+      local key = tostring(waypoint.zoneName or waypoint.order or index)
+      if inside and not state.zoneDumpInside[key] then
+        local computedWaypoint = computed and computed.waypoints and computed.waypoints[index] or nil
+        self:_AppendAiZoneDump(self:_FormatAiZoneDumpEntry(state, waypoint, computedWaypoint, distanceNm, radiusNm))
+      end
+      state.zoneDumpInside[key] = inside == true or nil
+    end
+  end
 end
 
 function MosieAiPlanner:_GetWaypointSpeedKt(computedWaypoint)
@@ -425,9 +602,11 @@ function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed)
   state.timingOrbit = true
   state.timingOrbitWaypointIndex = state.currentWpIndex
   state.lastRetaskTime = nil
+  local source = waypoint and (waypoint.source or waypoint) or nil
   self:_Log(string.format(
-    "timing orbit sent to %s: required %.0f kt below AI minimum %.0f kt",
+    "timing orbit sent to %s at current position before WP%02d: required %.0f kt below AI minimum %.0f kt",
     state.assignment.groupName,
+    source and source.order or 0,
     rawRequiredSpeed or 0,
     self.Config.minSpeedKt
   ))
@@ -471,6 +650,8 @@ function MosieAiPlanner:_TickAssignment(state)
   if not computed or not computed.valid or not computed.waypoints then
     return
   end
+
+  self:_TickZoneDump(state, computed)
 
   state.currentWpIndex = state.currentWpIndex or 2
   self:_MaybeStartUncontrolled(state, computed)
@@ -539,6 +720,7 @@ function MosieAiPlanner:Start()
   end
 
   self.States = self.States or {}
+  self:_ResetAiZoneDumpFile()
   self.Scheduler = SCHEDULER:New(nil, function()
     MosieAiPlanner:Tick()
   end, {}, 1, self.Config.tickInterval)

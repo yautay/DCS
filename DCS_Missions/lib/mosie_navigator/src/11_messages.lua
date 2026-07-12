@@ -189,6 +189,13 @@ function MosieNavigator:_BuildSimplifiedFlightPlanMessage(plan, groupName, baseR
   table.insert(lines, "")
   self:_AppendFuelSummary(lines, f)
 
+  if #(computed.timing or {}) > 0 then
+    table.insert(lines, "TIMING:")
+    for _, t in ipairs(computed.timing) do
+      table.insert(lines, "  " .. t)
+    end
+  end
+
   if #computed.warnings > 0 then
     table.insert(lines, "WARNINGS:")
     for _, w in ipairs(computed.warnings) do
@@ -480,6 +487,14 @@ function MosieNavigator:_BuildFlightPlanTable(plan, groupName, baseRolexSeconds,
   table.insert(lines, string.format("TOTAL_DIST: %.1f NM", totalDist))
   table.insert(lines, "")
   self:_AppendFuelSummary(lines, f)
+
+  if #(computed.timing or {}) > 0 then
+    table.insert(lines, "")
+    table.insert(lines, "TIMING:")
+    for _, t in ipairs(computed.timing) do
+      table.insert(lines, "  - " .. t)
+    end
+  end
 
   if #computed.warnings > 0 then
     table.insert(lines, "")
