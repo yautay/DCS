@@ -6,7 +6,7 @@ local MosieAiPlannerConfigDefaults = {
   tickInterval = 30,
   retaskCooldownSeconds = 30,
   etaToleranceSeconds = 15,
-  startLeadSeconds = 8 * 60,
+  startLeadSeconds = 3 * 60,
   waypointArrivalRadiusNm = 1.0,
   minSpeedKt = 140,
   maxSpeedKt = 300,
@@ -78,6 +78,24 @@ function MosieAiPlanner:_Clamp(value, minValue, maxValue)
   if value < minValue then return minValue end
   if value > maxValue then return maxValue end
   return value
+end
+
+function MosieAiPlanner:_IsGroupAirborne(group)
+  if group and type(group.IsAirborne) == "function" then
+    return group:IsAirborne()
+  end
+
+  return false
+end
+
+function MosieAiPlanner:_LogStateOnce(state, key, message)
+  state.logged = state.logged or {}
+  if state.logged[key] then
+    return
+  end
+
+  state.logged[key] = true
+  self:_Log(message)
 end
 
 function MosieAiPlanner:_GetMissionRolexSeconds()
@@ -289,7 +307,16 @@ function MosieAiPlanner:_RetaskRoute(state, reason, firstLegSpeedKt)
 end
 
 function MosieAiPlanner:_MaybeStartUncontrolled(state, computed)
+  local airborne = self:_IsGroupAirborne(state.assignment.group)
   if state.startCommanded then
+    if not airborne then
+      local elapsed = state.startCommandTime and ((timer and timer.getTime and timer.getTime() or 0) - state.startCommandTime) or 0
+      self:_Log(string.format("%s waiting for airborne after StartUncontrolled, elapsed %ds", state.assignment.groupName, math.max(0, math.floor(elapsed + 0.5))))
+    end
+    return
+  end
+
+  if airborne then
     return
   end
 
@@ -299,11 +326,23 @@ function MosieAiPlanner:_MaybeStartUncontrolled(state, computed)
   end
 
   local secondsToTakeoff = self:_GetSecondsToClockSeconds(takeoff.etaSec)
+  if secondsToTakeoff then
+    self:_Log(string.format(
+      "%s wake window: takeoff in %ds, lead %ds",
+      state.assignment.groupName,
+      math.floor(secondsToTakeoff + 0.5),
+      self.Config.startLeadSeconds
+    ))
+  end
+
   if secondsToTakeoff and secondsToTakeoff <= self.Config.startLeadSeconds then
     if type(state.assignment.group.StartUncontrolled) == "function" then
       state.assignment.group:StartUncontrolled()
       state.startCommanded = true
-      self:_Log(string.format("start command sent to %s", state.assignment.groupName))
+      state.startCommandTime = timer and timer.getTime and timer.getTime() or 0
+      self:_Log(string.format("StartUncontrolled sent to %s", state.assignment.groupName))
+    else
+      self:_LogStateOnce(state, "start-unsupported", string.format("%s has no StartUncontrolled method; DCS/ME takeoff control required", state.assignment.groupName))
     end
   end
 end
@@ -393,6 +432,11 @@ function MosieAiPlanner:_TickAssignment(state)
   state.currentWpIndex = state.currentWpIndex or 2
   self:_MaybeStartUncontrolled(state, computed)
 
+  if not self:_IsGroupAirborne(state.assignment.group) then
+    self:_LogStateOnce(state, "route-skip-not-airborne", string.format("%s route skipped: not airborne; use DCS/ME route for taxi/takeoff", state.assignment.groupName))
+    return
+  end
+
   local waypoint = computed.waypoints[state.currentWpIndex]
   if not waypoint then
     return
@@ -411,7 +455,7 @@ function MosieAiPlanner:_TickAssignment(state)
   local requiredSpeed, etaErrorSeconds = self:_RequiredSpeedToWaypointKt(state, waypoint)
   if requiredSpeed and etaErrorSeconds and math.abs(etaErrorSeconds) > self.Config.etaToleranceSeconds then
     self:_RetaskRoute(state, string.format("ETA %+ds", math.floor(etaErrorSeconds + 0.5)), requiredSpeed)
-  elseif not state.lastRetaskTime and state.assignment.group.IsAirborne and state.assignment.group:IsAirborne() then
+  elseif not state.lastRetaskTime then
     self:_RetaskRoute(state, "initial airborne route")
   end
 end

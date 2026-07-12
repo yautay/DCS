@@ -39,6 +39,9 @@ function MosieNavigator:Start()
   self.GroupPlanStates = {}
   self.MissionRolexSeconds = self.MissionRolexSeconds or 0
   self:_Log("starting debug discovery")
+  if self:_IsTestMode() then
+    self:_ResetNavigatorDumpFile()
+  end
   self:DrawDebug()
   self:_StartMenuRefreshScheduler()
   self:_StartNavigatorScheduler()

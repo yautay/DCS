@@ -7,6 +7,7 @@ function MosieNavigator:_SendNavigatorMessage(group, text, duration)
     self:_Log(string.format('TEST_MESSAGE_DUMP_BEGIN group="%s"', groupName))
     self:_Log(messageText)
     self:_Log(string.format('TEST_MESSAGE_DUMP_END group="%s"', groupName))
+    self:_AppendNavigatorDump(groupName, messageText)
     MESSAGE:New(string.format("[%s]\n%s", groupName, messageText), messageDuration, "Mosie Navigator"):ToAll()
     return
   end
@@ -202,6 +203,71 @@ function MosieNavigator:_FormatCountdown(seconds)
   return string.format("%s%d:%02d", prefix, minutes, remainingSeconds)
 end
 
+function MosieNavigator:_GetNavigatorCurrentGroundSpeedKt(group)
+  if group and type(group.GetVelocityKNOTS) == "function" then
+    local speed = group:GetVelocityKNOTS()
+    if speed and speed > 1 then
+      return speed
+    end
+  end
+
+  return nil
+end
+
+function MosieNavigator:_GetActualSecondsToWaypoint(distanceNm, currentGroundSpeedKt)
+  if not distanceNm or not currentGroundSpeedKt or currentGroundSpeedKt <= 1 then
+    return nil
+  end
+
+  return distanceNm / currentGroundSpeedKt * 3600
+end
+
+function MosieNavigator:_IsNavigatorRequiredSpeedAchievable(requiredIas)
+  if not requiredIas then
+    return false
+  end
+
+  local envelope = self.Aircraft and self.Aircraft.envelope
+  if not envelope or not envelope.maxIasKt then
+    return true
+  end
+
+  return requiredIas <= envelope.maxIasKt
+end
+
+function MosieNavigator:_FormatNavigatorRequiredIas(requiredIas)
+  if not requiredIas then
+    return "---"
+  end
+
+  if not self:_IsNavigatorRequiredSpeedAchievable(requiredIas) then
+    return "UNACHIEVABLE"
+  end
+
+  return self:_FormatSpeed(requiredIas) .. " kt"
+end
+
+function MosieNavigator:_FormatNavigatorSpeedCorrection(currentIas, requiredIas)
+  if not currentIas or not requiredIas then
+    return "---"
+  end
+
+  if not self:_IsNavigatorRequiredSpeedAchievable(requiredIas) then
+    return "UNACHIEVABLE"
+  end
+
+  local delta = requiredIas - currentIas
+  if math.abs(delta) <= 5 then
+    return "on speed"
+  end
+
+  if delta > 0 then
+    return string.format("+%.0f kt", delta)
+  end
+
+  return string.format("%.0f kt", delta)
+end
+
 function MosieNavigator:_FormatTimedCalloutReason(seconds)
   if seconds and seconds >= 60 and seconds % 60 == 0 then
     return string.format("%d min", seconds / 60)
@@ -338,10 +404,14 @@ end
 
 function MosieNavigator:_BuildNavigatorTakeoffMessage(state, reason)
   local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
+  if secondsToTakeoff and secondsToTakeoff <= 0 then
+    return string.format("NAV: Awaiting takeoff. Planned brake release T+%s.", self:_FormatCountdown(-secondsToTakeoff))
+  end
+
   return string.format("NAV: Brake release in %s. Stand by.", self:_FormatCountdown(secondsToTakeoff))
 end
 
-function MosieNavigator:_BuildNavigatorWaypointCalloutMessage(state, reason)
+function MosieNavigator:_BuildNavigatorWaypointGuidanceMessage(state, prefix)
   local group = state.group
   local waypoint = state.plan.waypoints[state.currentWpIndex]
 
@@ -350,47 +420,48 @@ function MosieNavigator:_BuildNavigatorWaypointCalloutMessage(state, reason)
   end
 
   local groupCoordinate = group:GetCoordinate()
-  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+  local distanceNm = UTILS.MetersToNM(groupCoordinate:Get2DDistance(waypoint.coordinate))
+  local secondsToPlanEta = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+  local currentGroundSpeedKt = self:_GetNavigatorCurrentGroundSpeedKt(group)
+  local actualSecondsToWaypoint = self:_GetActualSecondsToWaypoint(distanceNm, currentGroundSpeedKt)
   local currentAltitudeFt = UTILS.MetersToFeet(group:GetAltitude(false) or 0)
-  local headingTrue, _, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, currentAltitudeFt)
+  local headingTrue, _, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToPlanEta, currentAltitudeFt)
   local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
   local plannedAltitudeFt = self:_GetNavigatorWaypointAltitudeFt(state.plan, state.currentWpIndex)
+  local currentIas = currentGroundSpeedKt and self:_ConvertTasToIas(currentGroundSpeedKt, currentAltitudeFt) or nil
 
   return string.format(
-    "NAV: %s in %s. Steer %sM, height %s feet, IAS %s knots. %s",
-    self:_GetNavigatorWaypointLabel(waypoint),
-    self:_FormatCountdown(secondsToTot),
+    "%s, DIST %.1f NM, PLAN ETA %s, ACT ETA %s, REQ IAS %s, SPD CORR %s. Steer %sM, height %s feet. %s",
+    prefix,
+    distanceNm,
+    self:_FormatCountdown(secondsToPlanEta),
+    self:_FormatCountdown(actualSecondsToWaypoint),
+    self:_FormatNavigatorRequiredIas(requiredIas),
+    self:_FormatNavigatorSpeedCorrection(currentIas, requiredIas),
     headingMagnetic,
     self:_FormatOptional(plannedAltitudeFt, "%.0f"),
-    self:_FormatSpeed(requiredIas),
     self:_BuildNavigatorXtePhrase(state, waypoint, groupCoordinate)
   )
 end
 
-function MosieNavigator:_BuildNavigatorCourseChangeMessage(state)
-  local group = state.group
+function MosieNavigator:_BuildNavigatorWaypointCalloutMessage(state, reason)
   local waypoint = state.plan.waypoints[state.currentWpIndex]
 
   if not waypoint then
     return "NAV: no active waypoint"
   end
 
-  local groupCoordinate = group:GetCoordinate()
-  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
-  local currentAltitudeFt = UTILS.MetersToFeet(group:GetAltitude(false) or 0)
-  local headingTrue, _, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, currentAltitudeFt)
-  local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
-  local plannedAltitudeFt = self:_GetNavigatorWaypointAltitudeFt(state.plan, state.currentWpIndex)
+  return self:_BuildNavigatorWaypointGuidanceMessage(state, "NAV: " .. self:_GetNavigatorWaypointLabel(waypoint))
+end
 
-  return string.format(
-    "NAV: Set course for %s. Steer %sM, height %s feet, IAS %s knots, ETA %s. %s",
-    self:_GetNavigatorWaypointLabel(waypoint),
-    headingMagnetic,
-    self:_FormatOptional(plannedAltitudeFt),
-    self:_FormatSpeed(requiredIas),
-    self:_FormatCountdown(secondsToTot),
-    self:_BuildNavigatorXtePhrase(state, waypoint, groupCoordinate)
-  )
+function MosieNavigator:_BuildNavigatorCourseChangeMessage(state)
+  local waypoint = state.plan.waypoints[state.currentWpIndex]
+
+  if not waypoint then
+    return "NAV: no active waypoint"
+  end
+
+  return self:_BuildNavigatorWaypointGuidanceMessage(state, "NAV: Set course for " .. self:_GetNavigatorWaypointLabel(waypoint))
 end
 
 function MosieNavigator:_BuildNavigatorHoldEntryMessage(state, holdRemainingSeconds)
@@ -463,7 +534,6 @@ function MosieNavigator:_TickNavigatorHold(state, waypoint, now)
 end
 
 function MosieNavigator:_BuildNavigatorStatusMessage(state, reason)
-  local group = state.group
   local plan = state.plan
   local waypoint = plan.waypoints[state.currentWpIndex]
 
@@ -471,49 +541,8 @@ function MosieNavigator:_BuildNavigatorStatusMessage(state, reason)
     return "NAV: no active waypoint"
   end
 
-  local groupCoordinate = group:GetCoordinate()
-  local distanceNm = UTILS.MetersToNM(groupCoordinate:Get2DDistance(waypoint.coordinate))
-  local trueCourse = groupCoordinate:HeadingTo(waypoint.coordinate)
-  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
-  local altitudeFt = UTILS.MetersToFeet(group:GetAltitude(false) or 0)
-  local headingTrue, requiredTas, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToTot, altitudeFt)
-  local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
-  local currentIas = self:_ConvertTasToIas(group:GetVelocityKNOTS(), altitudeFt)
-  local speedText = "spd ---"
-  local previousWaypoint = state.plan.waypoints[state.currentWpIndex - 1]
-  local xteNm, xteSide = self:_CalculateXte(previousWaypoint, waypoint, groupCoordinate)
-  local xteText = "XTE ---"
-
-  if requiredIas and currentIas then
-    local delta = currentIas - requiredIas
-    if math.abs(delta) <= 5 then
-      speedText = "on speed"
-    elseif delta > 0 then
-      speedText = string.format("fast %.0f", delta)
-    else
-      speedText = string.format("slow %.0f", -delta)
-    end
-  end
-
-  if xteNm and xteNm >= self.Config.navigatorXteStepNm then
-    xteText = string.format("XTE %.0f %s", math.floor(xteNm + 0.5), xteSide)
-  end
-
   local prefix = reason and ("NAV " .. reason .. ": ") or "NAV: "
-  return string.format(
-    "%sWP%02d %s, T-%s, TRK %sT, HDG %sM, TAS %s kt, IAS %s kt, %s, %s, DIST %.1f NM",
-    prefix,
-    waypoint.order,
-    waypoint.name,
-    self:_FormatDuration(secondsToTot),
-    self:_FormatHeading(trueCourse),
-    headingMagnetic,
-    self:_FormatSpeed(requiredTas),
-    self:_FormatSpeed(requiredIas),
-    speedText,
-    xteText,
-    distanceNm
-  )
+  return self:_BuildNavigatorWaypointGuidanceMessage(state, prefix .. self:_GetNavigatorWaypointLabel(waypoint))
 end
 
 function MosieNavigator:_ResetNavigatorCallouts(state)
@@ -628,7 +657,8 @@ function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled,
     self:_ResetNavigatorCallouts(state)
     local takeoff = self:_GetTakeoffWaypoint(plan)
     local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
-    if takeoff and secondsToTakeoff and secondsToTakeoff > 0 and not self:_IsNavigatorGroupAirborne(group) then
+    if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(group) then
+      state.currentWpIndex = 1
       self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "on"))
     else
       self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "on"))
@@ -648,7 +678,7 @@ function MosieNavigator:_NavigatorStatusNow(group, plan, rolexSeconds, baseRolex
   local state = self:_GetNavigatorState(group, plan, rolexSeconds, baseRolexSeconds, pilotRolexSeconds)
   local takeoff = self:_GetTakeoffWaypoint(plan)
   local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
-  if takeoff and secondsToTakeoff and secondsToTakeoff > 0 and not self:_IsNavigatorGroupAirborne(group) then
+  if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(group) then
     self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "status"))
   else
     self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "status"))
@@ -671,9 +701,9 @@ function MosieNavigator:_TickNavigatorState(state)
   local takeoff = self:_GetTakeoffWaypoint(state.plan)
   local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
   if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(state.group) then
-    if self:_TickNavigatorTakeoff(state, takeoff, secondsToTakeoff, now) then
-      return
-    end
+    state.currentWpIndex = 1
+    self:_TickNavigatorTakeoff(state, takeoff, secondsToTakeoff, now)
+    return
   end
 
   if secondsToTot then

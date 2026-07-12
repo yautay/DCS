@@ -2353,6 +2353,27 @@ suite("Navigator takeoff callouts", function()
     end)
   end)
 
+  it("does not advance to airborne waypoint guidance while still on the ground", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV__T00:02", NM * 20 },
+        { "MN_TEST_03_LANDING", NM * 40 },
+      })
+      local group = makeNavGroup("MOSQUITO 1-1 [MN:TEST]")
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.reportInterval = 10
+
+      setAbsTime(60); setTime(60); M:_TickNavigatorState(state)
+      setAbsTime(180); setTime(180); M:_TickNavigatorState(state)
+
+      assertEq(#messages, 1)
+      assertEq(messages[1], "NAV: Brakes! Brakes! Brakes! Commence take-off!")
+      assertEq(state.currentWpIndex, 1)
+    end)
+  end)
+
   it("Status Now before takeoff does not consume automatic threshold callouts", function()
     withCapturedNavigatorMessages(function(messages)
       local plan = makePlan({
@@ -2416,9 +2437,9 @@ suite("Navigator waypoint callouts", function()
       setAbsTime(240); setTime(240); M:_TickNavigatorState(state)
 
       assertEq(#messages, 3)
-      assertEq(messages[1], "NAV: WP02 Checkpoint in 5:00. Steer 000M, height 1500 feet, IAS 180 knots. We are on track.")
-      assertEq(messages[2], "NAV: WP02 Checkpoint in 2:00. Steer 000M, height 1500 feet, IAS 450 knots. We are on track.")
-      assertEq(messages[3], "NAV: WP02 Checkpoint in 1:00. Steer 000M, height 1500 feet, IAS 900 knots. We are on track.")
+      assertEq(messages[1], "NAV: WP02 Checkpoint, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 1500 feet. We are on track.")
+      assertEq(messages[2], "NAV: WP02 Checkpoint, DIST 15.0 NM, PLAN ETA 2:00, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 1500 feet. We are on track.")
+      assertEq(messages[3], "NAV: WP02 Checkpoint, DIST 15.0 NM, PLAN ETA 1:00, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 1500 feet. We are on track.")
     end)
   end)
 
@@ -2463,7 +2484,7 @@ suite("Navigator waypoint callouts", function()
       M:_TickNavigatorState(state)
 
       assertEq(#messages, 1)
-      assertEq(messages[1], "NAV: Set course for WP03 IP. Steer 000M, height 500 feet, IAS 360 knots, ETA 5:00. We are on track.")
+      assertEq(messages[1], "NAV: Set course for WP03 IP, DIST 30.0 NM, PLAN ETA 5:00, ACT ETA 15:00, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 500 feet. We are on track.")
       assertEq(state.currentWpIndex, 3)
     end)
   end)
@@ -2486,7 +2507,7 @@ suite("Navigator waypoint callouts", function()
       setAbsTime(301); setTime(301); M:_TickNavigatorState(state)
 
       assertEq(#messages, 2)
-      assertEq(messages[2], "NAV: WP03 IP in 4:59. Steer 000M, height 500 feet, IAS 361 knots. We are on track.")
+      assertEq(messages[2], "NAV: WP03 IP, DIST 30.0 NM, PLAN ETA 4:59, ACT ETA 15:00, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 500 feet. We are on track.")
     end)
   end)
 
@@ -2513,15 +2534,15 @@ suite("Navigator waypoint callouts", function()
       setAbsTime(290); setTime(290); M:_TickNavigatorState(state)
 
       assertEq(#messages, 9)
-      assertEq(messages[1], "NAV: TARGET WP02 Prison in 5:00. Steer 000M, height 50 feet, IAS 180 knots. We are on track.")
-      assertEq(messages[2], "NAV: TARGET WP02 Prison in 4:00. Steer 000M, height 50 feet, IAS 225 knots. We are on track.")
-      assertEq(messages[3], "NAV: TARGET WP02 Prison in 3:00. Steer 000M, height 50 feet, IAS 300 knots. We are on track.")
-      assertEq(messages[4], "NAV: TARGET WP02 Prison in 2:00. Steer 000M, height 50 feet, IAS 450 knots. We are on track.")
-      assertEq(messages[5], "NAV: TARGET WP02 Prison in 1:00. Steer 000M, height 50 feet, IAS 900 knots. We are on track.")
-      assertEq(messages[6], "NAV: TARGET WP02 Prison in 0:45. Steer 000M, height 50 feet, IAS 1200 knots. We are on track.")
-      assertEq(messages[7], "NAV: TARGET WP02 Prison in 0:30. Steer 000M, height 50 feet, IAS 1800 knots. We are on track.")
-      assertEq(messages[8], "NAV: TARGET WP02 Prison in 0:15. Steer 000M, height 50 feet, IAS 3600 knots. We are on track.")
-      assertEq(messages[9], "NAV: TARGET WP02 Prison in 0:10. Steer 000M, height 50 feet, IAS 5400 knots. We are on track.")
+      assertEq(messages[1], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[2], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 4:00, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[3], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 3:00, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[4], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 2:00, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[5], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 1:00, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[6], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 0:45, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[7], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 0:30, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[8], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 0:15, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[9], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 0:10, ACT ETA 7:30, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
     end)
   end)
 
@@ -2565,7 +2586,7 @@ suite("Navigator waypoint callouts", function()
       setTime(300)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: Set course for TARGET WP03 Prison. Steer 000M, height 50 feet, IAS 360 knots, ETA 5:00. We are on track.")
+      assertEq(messages[1], "NAV: Set course for TARGET WP03 Prison, DIST 30.0 NM, PLAN ETA 5:00, ACT ETA 15:00, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 50 feet. We are on track.")
     end)
   end)
 
@@ -2584,7 +2605,7 @@ suite("Navigator waypoint callouts", function()
       setTime(0)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: HOME PLATE WP02 Tangmere in 5:00. Steer 000M, height 500 feet, IAS 180 knots. We are on track.")
+      assertEq(messages[1], "NAV: HOME PLATE WP02 Tangmere, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 500 feet. We are on track.")
     end)
   end)
 
@@ -2604,7 +2625,7 @@ suite("Navigator waypoint callouts", function()
       setTime(0)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: WP02 Checkpoint in 5:00. Steer 356M, height 1500 feet, IAS 180 knots. We are approx. 1 NM starboard of track.")
+      assertEq(messages[1], "NAV: WP02 Checkpoint, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:31, REQ IAS 180 kt, SPD CORR +60 kt. Steer 356M, height 1500 feet. We are approx. 1 NM starboard of track.")
     end)
   end)
 
@@ -2624,7 +2645,7 @@ suite("Navigator waypoint callouts", function()
       setTime(0)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: WP02 Checkpoint in 5:00. Steer 004M, height 1500 feet, IAS 180 knots. We are approx. 1 NM port of track.")
+      assertEq(messages[1], "NAV: WP02 Checkpoint, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:31, REQ IAS 180 kt, SPD CORR +60 kt. Steer 004M, height 1500 feet. We are approx. 1 NM port of track.")
     end)
   end)
 
@@ -2646,8 +2667,8 @@ suite("Navigator waypoint callouts", function()
       M:_TickNavigatorState(state)
 
       assertEq(#messages, 2)
-      assertEq(messages[1], "NAV: TARGET WP02 Prison in 5:00. Steer 000M, height 50 feet, IAS 180 knots. We are on track.")
-      assertEq(messages[2], "NAV: TARGET WP02 Prison in 5:00. Steer 000M, height 50 feet, IAS 180 knots. We are on track.")
+      assertEq(messages[1], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[2], "NAV: TARGET WP02 Prison, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 50 feet. We are on track.")
     end)
   end)
 
@@ -2663,7 +2684,7 @@ suite("Navigator waypoint callouts", function()
       setTime(0)
       M:_SetNavigatorEnabled(group, plan, 0, true)
 
-      assertEq(messages[1], "NAV: HOME PLATE WP02 Tangmere in 5:00. Steer 000M, height 500 feet, IAS 180 knots. We are on track.")
+      assertEq(messages[1], "NAV: HOME PLATE WP02 Tangmere, DIST 15.0 NM, PLAN ETA 5:00, ACT ETA 7:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 500 feet. We are on track.")
     end)
   end)
 
@@ -2691,7 +2712,7 @@ suite("Navigator waypoint callouts", function()
 
       setAbsTime(725); setTime(725); M:_TickNavigatorState(state)
 
-      assertEq(messages[#messages], "NAV: Leaving hold. Set course for WP03 Exit. Steer 000M, height 500 feet, IAS 411 knots, ETA 2:55. We are on track.")
+      assertEq(messages[#messages], "NAV: Leaving hold. Set course for WP03 Exit, DIST 20.0 NM, PLAN ETA 2:55, ACT ETA 10:00, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 500 feet. We are on track.")
       assertEq(state.currentWpIndex, 3)
     end)
   end)
@@ -2724,7 +2745,7 @@ suite("Navigator waypoint callouts", function()
       setTime(300)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: Set course for HOME PLATE WP03 LANDING. Steer 000M, height 0 feet, IAS 360 knots, ETA 5:00. We are on track.")
+      assertEq(messages[1], "NAV: Set course for HOME PLATE WP03 LANDING, DIST 30.0 NM, PLAN ETA 5:00, ACT ETA 15:00, REQ IAS UNACHIEVABLE, SPD CORR UNACHIEVABLE. Steer 000M, height 0 feet. We are on track.")
       assertEq(state.currentWpIndex, 3)
     end)
   end)
@@ -2928,11 +2949,13 @@ suite("Navigator TEST_MODE messaging", function()
     local originalTestMode = TEST_MODE
     local originalMessage = MESSAGE
     local originalLog = M._Log
-    local logs, sent = {}, {}
+    local originalAppendDump = M._AppendNavigatorDump
+    local logs, sent, dumps = {}, {}, {}
     local group = { GetName = function() return "AI TEST [MN:TEST]" end }
 
     TEST_MODE = true
     M._Log = function(_, message) table.insert(logs, message) end
+    M._AppendNavigatorDump = function(_, groupName, text) table.insert(dumps, {groupName = groupName, text = text}) end
     MESSAGE = {
       New = function(_, text, duration, title)
         return {
@@ -2954,11 +2977,15 @@ suite("Navigator TEST_MODE messaging", function()
       assertEq(logs[1], 'TEST_MESSAGE_DUMP_BEGIN group="AI TEST [MN:TEST]"')
       assertEq(logs[2], "LINE 1\nLINE 2")
       assertEq(logs[3], 'TEST_MESSAGE_DUMP_END group="AI TEST [MN:TEST]"')
+      assertEq(#dumps, 1)
+      assertEq(dumps[1].groupName, "AI TEST [MN:TEST]")
+      assertEq(dumps[1].text, "LINE 1\nLINE 2")
     end)
 
     TEST_MODE = originalTestMode
     MESSAGE = originalMessage
     M._Log = originalLog
+    M._AppendNavigatorDump = originalAppendDump
     if not ok then error(err) end
   end)
 end)
@@ -3001,7 +3028,7 @@ suite("MosieAiPlanner", function()
     local started = false
     local group = { StartUncontrolled = function() started = true end }
     local state = {assignment = {group = group, groupName = "AI [MN:TEST]"}}
-    local computed = {valid = true, waypoints = {{type = "TAKE_OFF", etaSec = 480}}}
+    local computed = {valid = true, waypoints = {{type = "TAKE_OFF", etaSec = 180}}}
 
     setAbsTime(0)
     AP:_MaybeStartUncontrolled(state, computed)
@@ -3044,10 +3071,43 @@ suite("MosieAiPlanner", function()
     if not ok then error(err) end
   end)
 
+  it("does not route a non-airborne AI group after wake command", function()
+    local started, routes = false, 0
+    local group = {
+      IsAlive = function() return true end,
+      IsAirborne = function() return false end,
+      StartUncontrolled = function() started = true end,
+      GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
+      GetAltitude = function() return 0 end,
+      Route = function() routes = routes + 1 end,
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 180, resolvedAltFt = 0},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 300, resolvedAltFt = 1500, legGsKt = 180},
+        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 600, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+    local originalGetComputed = AP._GetComputedPlan
+    AP._GetComputedPlan = function() return computed end
+    setAbsTime(0); setTime(0)
+
+    local ok, err = pcall(function()
+      AP:_TickAssignment({assignment = {group = group, groupName = "AI [MN:TEST]"}, currentWpIndex = 2})
+      assertTrue(started)
+      assertEq(routes, 0)
+    end)
+
+    AP._GetComputedPlan = originalGetComputed
+    if not ok then error(err) end
+  end)
+
   it("uses orbit for HOLD and resumes route after hold exit", function()
     local taskSet, routes = 0, 0
     local group = {
       IsAlive = function() return true end,
+      IsAirborne = function() return true end,
       GetCoordinate = function() return makeCoord({x = 0, z = NM * 10}) end,
       GetAltitude = function() return 0 end,
       TaskOrbitCircleAtVec2 = function() return {id = "Orbit"} end,

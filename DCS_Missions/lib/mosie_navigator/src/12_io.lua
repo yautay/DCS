@@ -102,3 +102,43 @@ function MosieNavigator:_WriteFlightPlanFiles(plans)
     end
   end
 end
+
+function MosieNavigator:_GetNavigatorDumpPath()
+  return self:_GetOutputDirectory() .. "NAVDUMP.log"
+end
+
+function MosieNavigator:_ResetNavigatorDumpFile()
+  if not io then
+    self:_Log("cannot reset navigator dump file: io is not available")
+    return
+  end
+
+  local path = self:_GetNavigatorDumpPath()
+  local file = io.open(path, "w")
+  if not file then
+    self:_Log("cannot reset navigator dump file: " .. path)
+    return
+  end
+
+  file:write(string.format("NAVDUMP reset at mission time %s\n", self:_FormatClock(timer and timer.getAbsTime and timer.getAbsTime() or 0)))
+  file:close()
+  self:_Log("reset navigator dump file: " .. path)
+end
+
+function MosieNavigator:_AppendNavigatorDump(groupName, text)
+  if not io then
+    self:_Log("cannot write navigator dump file: io is not available")
+    return
+  end
+
+  local path = self:_GetNavigatorDumpPath()
+  local file = io.open(path, "a")
+  if not file then
+    self:_Log("cannot write navigator dump file: " .. path)
+    return
+  end
+
+  local timestamp = timer and timer.getAbsTime and self:_FormatClock(timer.getAbsTime()) or "--"
+  file:write(string.format("[%s] group=\"%s\"\n%s\n---\n", timestamp, tostring(groupName or "---"), tostring(text or "")))
+  file:close()
+end
