@@ -98,7 +98,7 @@ function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinat
   local currentZ = currentVec.z - startVec.z
   local cross = legX * currentZ - legZ * currentX
   local xteNm = UTILS.MetersToNM(math.abs(cross / legLength))
-  local side = cross > 0 and "port" or "stbd"
+  local side = cross > 0 and "stbd" or "port"
 
   return xteNm, side
 end

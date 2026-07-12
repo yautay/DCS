@@ -29,19 +29,20 @@ local MosieNavigatorConfigDefaults = {
   flightPlanOutputDirectory = nil,
   groupPlanTagPattern = "%[MN:([%w%-]+)%]",
   menuName = "Mosie Navigator",
-  flightPlanMessageDuration = 30,
+  flightPlanMessageDuration = 60,
   menuRefreshDelay = 5,
   menuRefreshInterval = 15,
   navigatorTickInterval = 5,
-  navigatorReportIntervalDefault = 120,
+  navigatorReportIntervalDefault = 60,
   navigatorReportIntervals = {30, 60, 120, 300},
-  navigatorMessageDuration = 20,
+  navigatorMessageDuration = 30,
   navigatorCalloutSeconds = {60, 30},
   navigatorTakeoffCalloutSeconds = {30, 20, 10, 5},
   navigatorWaypointCalloutSeconds = {300, 120, 60},
   navigatorTargetCalloutSeconds = {300, 240, 180, 120, 60, 45, 30, 15, 10},
   navigatorHoldExitCalloutSeconds = {300, 240, 180, 120, 60, 30},
   navigatorXteStepNm = 1,
+  navigatorRequiredMaxIasKt = 350 * 0.8689762419,
 }
 
 MosieNavigator.Config = MosieNavigator.Config or {}
@@ -1758,7 +1759,7 @@ function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinat
   local currentZ = currentVec.z - startVec.z
   local cross = legX * currentZ - legZ * currentX
   local xteNm = UTILS.MetersToNM(math.abs(cross / legLength))
-  local side = cross > 0 and "port" or "stbd"
+  local side = cross > 0 and "stbd" or "port"
 
   return xteNm, side
 end
@@ -1994,12 +1995,12 @@ function MosieNavigator:_IsNavigatorRequiredSpeedAchievable(requiredIas)
     return false
   end
 
-  local envelope = self.Aircraft and self.Aircraft.envelope
-  if not envelope or not envelope.maxIasKt then
+  local maxIasKt = self.Config.navigatorRequiredMaxIasKt
+  if not maxIasKt then
     return true
   end
 
-  return requiredIas <= envelope.maxIasKt
+  return requiredIas <= maxIasKt
 end
 
 function MosieNavigator:_FormatNavigatorRequiredIas(requiredIas)
@@ -2008,7 +2009,7 @@ function MosieNavigator:_FormatNavigatorRequiredIas(requiredIas)
   end
 
   if not self:_IsNavigatorRequiredSpeedAchievable(requiredIas) then
-    return "UNACHIEVABLE"
+    return self:_FormatSpeed(requiredIas) .. " kt >MAX"
   end
 
   return self:_FormatSpeed(requiredIas) .. " kt"
@@ -2019,20 +2020,27 @@ function MosieNavigator:_FormatNavigatorSpeedCorrection(currentIas, requiredIas)
     return "---"
   end
 
-  if not self:_IsNavigatorRequiredSpeedAchievable(requiredIas) then
-    return "UNACHIEVABLE"
-  end
-
   local delta = requiredIas - currentIas
   if math.abs(delta) <= 5 then
     return "on speed"
   end
 
-  if delta > 0 then
-    return string.format("+%.0f kt", delta)
+  local suffix = ""
+  if delta > 0 and not self:_IsNavigatorRequiredSpeedAchievable(requiredIas) then
+    suffix = " UNACH"
+  elseif delta < 0 and self.Aircraft and self.Aircraft.envelope and self.Aircraft.envelope.minIasKt and requiredIas < self.Aircraft.envelope.minIasKt then
+    suffix = " / ORBIT"
   end
 
-  return string.format("%.0f kt", delta)
+  if delta > 0 then
+    return string.format("+%.0f kt%s", delta, suffix)
+  end
+
+  return string.format("%.0f kt%s", delta, suffix)
+end
+
+function MosieNavigator:_BuildNavigatorCalloutMessage(calloutSeconds, message)
+  return string.format("%s CALLOUT: %s", self:_FormatCountdown(calloutSeconds), message)
 end
 
 function MosieNavigator:_FormatTimedCalloutReason(seconds)
@@ -2333,10 +2341,12 @@ function MosieNavigator:_RunTimedCallouts(state, eventKey, secondsToEvent, thres
     state.timedCallouts[eventKey] = eventCallouts
   end
 
-  for _, calloutSeconds in ipairs(thresholds or {}) do
+  local thresholdList = thresholds or {}
+  for i = #thresholdList, 1, -1 do
+    local calloutSeconds = thresholdList[i]
     if secondsToEvent <= calloutSeconds and not eventCallouts[calloutSeconds] then
       eventCallouts[calloutSeconds] = true
-      self:_SendNavigatorMessage(state.group, buildMessage(calloutSeconds))
+      self:_SendNavigatorMessage(state.group, self:_BuildNavigatorCalloutMessage(calloutSeconds, buildMessage(calloutSeconds)))
       return true
     end
   end

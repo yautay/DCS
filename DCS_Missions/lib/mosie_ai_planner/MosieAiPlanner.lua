@@ -402,6 +402,49 @@ function MosieAiPlanner:_TickHold(state, computed, waypoint)
   return true
 end
 
+function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed)
+  if state.timingOrbit then
+    return true
+  end
+
+  local group = state.assignment.group
+  if type(group.TaskOrbitCircleAtVec2) ~= "function" or type(group.SetTask) ~= "function" then
+    self:_LogStateOnce(state, "timing-orbit-unsupported", string.format("%s timing orbit skipped: orbit task unsupported", state.assignment.groupName))
+    return false
+  end
+
+  local groupCoordinate = self:_GetGroupCoordinate(group)
+  local vec2 = self:_CoordinateToVec2(groupCoordinate)
+  if not vec2 then
+    return false
+  end
+
+  local altitudeMeters = group.GetAltitude and group:GetAltitude() or self:_FeetToMeters((waypoint and waypoint.resolvedAltFt) or 0)
+  local task = group:TaskOrbitCircleAtVec2(vec2, altitudeMeters, self:_KnotsToMps(self.Config.holdSpeedKt))
+  group:SetTask(task, 1)
+  state.timingOrbit = true
+  state.timingOrbitWaypointIndex = state.currentWpIndex
+  state.lastRetaskTime = nil
+  self:_Log(string.format(
+    "timing orbit sent to %s: required %.0f kt below AI minimum %.0f kt",
+    state.assignment.groupName,
+    rawRequiredSpeed or 0,
+    self.Config.minSpeedKt
+  ))
+  return true
+end
+
+function MosieAiPlanner:_StopTimingOrbit(state, requiredSpeed)
+  if not state.timingOrbit then
+    return false
+  end
+
+  state.timingOrbit = false
+  state.timingOrbitWaypointIndex = nil
+  state.lastRetaskTime = nil
+  return self:_RetaskRoute(state, "timing orbit exit", requiredSpeed)
+end
+
 function MosieAiPlanner:_RequiredSpeedToWaypointKt(state, waypoint)
   local groupCoordinate = self:_GetGroupCoordinate(state.assignment.group)
   local source = waypoint.source or waypoint
@@ -416,7 +459,7 @@ function MosieAiPlanner:_RequiredSpeedToWaypointKt(state, waypoint)
   local currentSpeed = state.assignment.group.GetVelocityKNOTS and state.assignment.group:GetVelocityKNOTS() or self:_GetWaypointSpeedKt(waypoint) or requiredSpeed
   local predictedSeconds = currentSpeed > 1 and distNm / currentSpeed * 3600 or secondsToEta
   local etaErrorSeconds = predictedSeconds - secondsToEta
-  return self:_Clamp(requiredSpeed, self.Config.minSpeedKt, self.Config.maxSpeedKt), etaErrorSeconds
+  return self:_Clamp(requiredSpeed, self.Config.minSpeedKt, self.Config.maxSpeedKt), etaErrorSeconds, requiredSpeed, currentSpeed, secondsToEta
 end
 
 function MosieAiPlanner:_TickAssignment(state)
@@ -452,7 +495,17 @@ function MosieAiPlanner:_TickAssignment(state)
     return
   end
 
-  local requiredSpeed, etaErrorSeconds = self:_RequiredSpeedToWaypointKt(state, waypoint)
+  local requiredSpeed, etaErrorSeconds, rawRequiredSpeed = self:_RequiredSpeedToWaypointKt(state, waypoint)
+  if requiredSpeed and etaErrorSeconds and etaErrorSeconds < -self.Config.etaToleranceSeconds and rawRequiredSpeed and rawRequiredSpeed < self.Config.minSpeedKt then
+    if self:_StartTimingOrbit(state, waypoint, rawRequiredSpeed) then
+      return
+    end
+  elseif state.timingOrbit and requiredSpeed then
+    if self:_StopTimingOrbit(state, requiredSpeed) then
+      return
+    end
+  end
+
   if requiredSpeed and etaErrorSeconds and math.abs(etaErrorSeconds) > self.Config.etaToleranceSeconds then
     self:_RetaskRoute(state, string.format("ETA %+ds", math.floor(etaErrorSeconds + 0.5)), requiredSpeed)
   elseif not state.lastRetaskTime then
