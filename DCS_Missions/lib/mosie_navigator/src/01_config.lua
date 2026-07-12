@@ -22,19 +22,20 @@ local MosieNavigatorConfigDefaults = {
   flightPlanOutputDirectory = nil,
   groupPlanTagPattern = "%[MN:([%w%-]+)%]",
   menuName = "Mosie Navigator",
-  flightPlanMessageDuration = 30,
+  flightPlanMessageDuration = 60,
   menuRefreshDelay = 5,
   menuRefreshInterval = 15,
   navigatorTickInterval = 5,
-  navigatorReportIntervalDefault = 120,
+  navigatorReportIntervalDefault = 60,
   navigatorReportIntervals = {30, 60, 120, 300},
-  navigatorMessageDuration = 20,
+  navigatorMessageDuration = 30,
   navigatorCalloutSeconds = {60, 30},
   navigatorTakeoffCalloutSeconds = {30, 20, 10, 5},
   navigatorWaypointCalloutSeconds = {300, 120, 60},
   navigatorTargetCalloutSeconds = {300, 240, 180, 120, 60, 45, 30, 15, 10},
   navigatorHoldExitCalloutSeconds = {300, 240, 180, 120, 60, 30},
   navigatorXteStepNm = 1,
+  navigatorRequiredMaxIasKt = 350 * 0.8689762419,
 }
 
 MosieNavigator.Config = MosieNavigator.Config or {}
