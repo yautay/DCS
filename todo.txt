@@ -1,0 +1,17 @@
+TODO / przemyślenia
+
+1. Dodać deterministyczne wracanie na track (XTE), jeśli WP jest dalej niż 10 NM.
+   - Cel: AI/player guidance powinien przewidywalnie korygować odchyłkę od trasy, zamiast tylko kierować prosto na kolejny WP.
+   - Do sprawdzenia: czy korekta ma być wyliczana jako intercept course do linii poprzedni WP -> aktywny WP, czy jako punkt powrotu na track ograniczony maksymalnym kątem przechwycenia.
+   - Warunek 10 NM ma chronić końcówkę dolotu do WP przed agresywnym manewrowaniem tuż przed punktem.
+   - Proponowany tryb AI: DIRECT_WP dla normalnego lotu, TRACK_INTERCEPT gdy dist_to_wp > 10 NM i XTE przekracza ustalony próg.
+   - TRACK_INTERCEPT powinien wybierać punkt na planowanym tracku przed aktywnym WP, a nie sam WP, żeby uniknąć skracania trasy.
+   - Limitować kąt przechwycenia, np. 20-30 stopni od kursu tracku, żeby AI nie wykonywało nienaturalnych zwrotów.
+   - Po powrocie poniżej progu XTE wrócić do DIRECT_WP.
+   - Dodać debug log decyzji autopilota: DIRECT_WP vs TRACK_INTERCEPT, XTE, strona odchyłki, punkt przechwycenia, powód retasku.
+
+2. Weryfikować AI navigation i ETA z AI_ZONE_DUMP.log.
+   - Używać AI_FLIGHT_SAMPLE do porównania plan_eta, act_eta, eta_delta_sec, req_speed_kt i speed_kt.
+   - Osobno analizować AI_ZONE_ENTRY jako rzeczywisty czas przecięcia trigger zone waypointu.
+   - Przy timing orbit sprawdzać, czy eta_delta_sec zbliża się do zera przed opuszczeniem orbity.
+   - Przy przyszłym TRACK_INTERCEPT sprawdzać, czy xte_nm maleje deterministycznie bez pogorszenia ETA.

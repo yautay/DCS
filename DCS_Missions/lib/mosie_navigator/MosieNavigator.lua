@@ -2005,6 +2005,14 @@ function MosieNavigator:_FormatCountdown(seconds)
   return string.format("%s%d:%02d", prefix, minutes, remainingSeconds)
 end
 
+function MosieNavigator:_FormatNavigatorEtaClock(secondsToEta)
+  if secondsToEta == nil or not timer or type(timer.getAbsTime) ~= "function" then
+    return "--"
+  end
+
+  return self:_FormatClock(math.floor((timer.getAbsTime() + secondsToEta) % SECONDS_PER_DAY + 0.5))
+end
+
 function MosieNavigator:_GetNavigatorCurrentGroundSpeedKt(group)
   if group and type(group.GetVelocityKNOTS) == "function" then
     local speed = group:GetVelocityKNOTS()
@@ -2243,8 +2251,8 @@ function MosieNavigator:_BuildNavigatorWaypointGuidanceMessage(state, prefix)
     "%s, DIST %.1f NM, PLAN ETA %s, ACT ETA %s, REQ IAS %s, SPD CORR %s. Steer %sM, height %s feet. %s",
     prefix,
     distanceNm,
-    self:_FormatCountdown(secondsToPlanEta),
-    self:_FormatCountdown(actualSecondsToWaypoint),
+    self:_FormatNavigatorEtaClock(secondsToPlanEta),
+    self:_FormatNavigatorEtaClock(actualSecondsToWaypoint),
     self:_FormatNavigatorRequiredIas(requiredIas),
     self:_FormatNavigatorSpeedCorrection(currentIas, requiredIas),
     headingMagnetic,
