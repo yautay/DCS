@@ -218,6 +218,8 @@ local _src_modules = {
   "src/13_main.lua",
 }
 for _, name in ipairs(_src_modules) do dofile(name) end
+MOSIE_AI_PLANNER_AUTO_START = false
+dofile("../mosie_ai_planner/MosieAiPlanner.lua")
 
 ------------------------------------------------------------
 -- Section 5: Test helpers
@@ -1011,6 +1013,56 @@ suite("DiscoverZones (fake SET_ZONE)", function()
       assertNotNil(plans["JERICHO"]); assertNotNil(plans["ESCORT"])
       assertEq(#plans["JERICHO"].waypoints, 1)
       assertEq(#plans["ESCORT"].waypoints, 2)
+    end)
+  end)
+end)
+
+suite("DiscoverGroupAssignments", function()
+  local function withFakeGroups(groups, testMode, fn)
+    local originalSetGroup = SET_GROUP
+    local originalTestMode = TEST_MODE
+    local fakeSet = {
+      FilterStart = function(self) return self end,
+      ForEachGroup = function(self, cb)
+        for _, group in ipairs(groups) do cb(group) end
+        return self
+      end,
+    }
+    SET_GROUP = { New = function() return fakeSet end }
+    TEST_MODE = testMode
+
+    local ok, err = pcall(fn)
+
+    SET_GROUP = originalSetGroup
+    TEST_MODE = originalTestMode
+    if not ok then error(err, 2) end
+  end
+
+  local function fakeGroup(name, skill)
+    return {
+      GetName = function() return name end,
+      GetSkill = function() return skill end,
+      IsAlive = function() return true end,
+    }
+  end
+
+  it("uses client groups and ignores AI outside TEST_MODE", function()
+    withFakeGroups({
+      fakeGroup("CLIENT [MN:TEST]", "Client"),
+      fakeGroup("AI [MN:TEST]", "High"),
+    }, false, function()
+      local assignments = M:_DiscoverGroupAssignments({TEST = {name = "TEST", waypoints = {}}})
+      assertEq(#assignments, 1)
+      assertEq(assignments[1].groupName, "CLIENT [MN:TEST]")
+    end)
+  end)
+
+  it("uses AI groups in TEST_MODE", function()
+    withFakeGroups({fakeGroup("AI [MN:TEST]", "High")}, true, function()
+      local assignments = M:_DiscoverGroupAssignments({TEST = {name = "TEST", waypoints = {}}})
+      assertEq(#assignments, 1)
+      assertEq(assignments[1].groupName, "AI [MN:TEST]")
+      assertEq(assignments[1].navigatorAutoDefault, true)
     end)
   end)
 end)
@@ -2871,6 +2923,184 @@ suite("Group runtime ROLEX state", function()
   end)
 end)
 
+suite("Navigator TEST_MODE messaging", function()
+  it("sends ToAll with group prefix and writes full dump to log", function()
+    local originalTestMode = TEST_MODE
+    local originalMessage = MESSAGE
+    local originalLog = M._Log
+    local logs, sent = {}, {}
+    local group = { GetName = function() return "AI TEST [MN:TEST]" end }
+
+    TEST_MODE = true
+    M._Log = function(_, message) table.insert(logs, message) end
+    MESSAGE = {
+      New = function(_, text, duration, title)
+        return {
+          ToAll = function()
+            table.insert(sent, {scope = "all", text = text, duration = duration, title = title})
+          end,
+          ToGroup = function()
+            table.insert(sent, {scope = "group", text = text, duration = duration, title = title})
+          end,
+        }
+      end
+    }
+
+    local ok, err = pcall(function()
+      M:_SendNavigatorMessage(group, "LINE 1\nLINE 2", 12)
+      assertEq(#sent, 1)
+      assertEq(sent[1].scope, "all")
+      assertEq(sent[1].text, "[AI TEST [MN:TEST]]\nLINE 1\nLINE 2")
+      assertEq(logs[1], 'TEST_MESSAGE_DUMP_BEGIN group="AI TEST [MN:TEST]"')
+      assertEq(logs[2], "LINE 1\nLINE 2")
+      assertEq(logs[3], 'TEST_MESSAGE_DUMP_END group="AI TEST [MN:TEST]"')
+    end)
+
+    TEST_MODE = originalTestMode
+    MESSAGE = originalMessage
+    M._Log = originalLog
+    if not ok then error(err) end
+  end)
+end)
+
+suite("Mission ROLEX", function()
+  it("contributes to active group ROLEX", function()
+    local originalMissionRolex = M.MissionRolexSeconds
+    M.MissionRolexSeconds = 3 * 60
+    local active = M:_GetActiveRolexSeconds({baseRolexSeconds = 5 * 60, pilotRolexSeconds = -2 * 60})
+    M.MissionRolexSeconds = originalMissionRolex
+    assertEq(active, 6 * 60)
+  end)
+end)
+
+suite("MosieAiPlanner", function()
+  local AP = MosieAiPlanner
+
+  it("builds an AI route with current position and landing point", function()
+    local group = {
+      GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
+      GetAltitude = function() return 100 end,
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 0, resolvedAltFt = 0},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 300, resolvedAltFt = 1500, legGsKt = 180},
+        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 600, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+
+    local route = AP:_BuildRoute(group, computed, 2, 190)
+    assertEq(#route, 3)
+    assertEq(route[2].type, "Turning Point")
+    assertEq(route[3].type, "Land")
+    assertEq(route[3].action, "Landing")
+  end)
+
+  it("sends StartUncontrolled inside the takeoff lead window", function()
+    local started = false
+    local group = { StartUncontrolled = function() started = true end }
+    local state = {assignment = {group = group, groupName = "AI [MN:TEST]"}}
+    local computed = {valid = true, waypoints = {{type = "TAKE_OFF", etaSec = 480}}}
+
+    setAbsTime(0)
+    AP:_MaybeStartUncontrolled(state, computed)
+
+    assertTrue(started)
+    assertEq(state.startCommanded, true)
+  end)
+
+  it("retasks when ETA error exceeds tolerance", function()
+    local routes = {}
+    local group = {
+      GetName = function() return "AI [MN:TEST]" end,
+      IsAlive = function() return true end,
+      IsAirborne = function() return true end,
+      GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
+      GetAltitude = function() return 0 end,
+      GetVelocityKNOTS = function() return 100 end,
+      Route = function(_, route) table.insert(routes, route) end,
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 0, resolvedAltFt = 0},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 100, resolvedAltFt = 1500, legGsKt = 180},
+        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 600, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+    local originalGetComputed = AP._GetComputedPlan
+    AP._GetComputedPlan = function() return computed end
+    setAbsTime(0)
+    setTime(0)
+
+    local ok, err = pcall(function()
+      AP:_TickAssignment({assignment = {group = group, groupName = "AI [MN:TEST]"}, currentWpIndex = 2})
+      assertEq(#routes, 1)
+      assertNear(routes[1][1].speed, AP:_KnotsToMps(AP.Config.maxSpeedKt), 0.001)
+    end)
+
+    AP._GetComputedPlan = originalGetComputed
+    if not ok then error(err) end
+  end)
+
+  it("uses orbit for HOLD and resumes route after hold exit", function()
+    local taskSet, routes = 0, 0
+    local group = {
+      IsAlive = function() return true end,
+      GetCoordinate = function() return makeCoord({x = 0, z = NM * 10}) end,
+      GetAltitude = function() return 0 end,
+      TaskOrbitCircleAtVec2 = function() return {id = "Orbit"} end,
+      SetTask = function() taskSet = taskSet + 1 end,
+      Route = function() routes = routes + 1 end,
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 0, resolvedAltFt = 0},
+        {type = "HOLD", order = 2, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 100, holdDurationSec = 60, resolvedAltFt = 1500},
+        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 300, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+    local state = {assignment = {group = group, groupName = "AI [MN:TEST]"}, currentWpIndex = 2}
+    local originalGetComputed = AP._GetComputedPlan
+    AP._GetComputedPlan = function() return computed end
+
+    local ok, err = pcall(function()
+      setAbsTime(120); setTime(120); AP:_TickAssignment(state)
+      assertEq(taskSet, 1)
+      assertEq(state.holdStarted, true)
+
+      setAbsTime(161); setTime(161); AP:_TickAssignment(state)
+      assertEq(state.currentWpIndex, 3)
+      assertEq(routes, 1)
+    end)
+
+    AP._GetComputedPlan = originalGetComputed
+    if not ok then error(err) end
+  end)
+
+  it("passes mission ROLEX into navigator computed plan", function()
+    local originalMissionRolex = M.MissionRolexSeconds
+    local originalGetActive = M._GetActiveComputedPlan
+    local seenPilotRolex = nil
+    M.MissionRolexSeconds = 7 * 60
+    M._GetActiveComputedPlan = function(_, _, _, pilotRolexSeconds)
+      seenPilotRolex = pilotRolexSeconds
+      return {valid = true, waypoints = {}}
+    end
+
+    local ok, err = pcall(function()
+      AP:_GetComputedPlan({plan = {name = "TEST"}, rolexSeconds = 2 * 60})
+      assertEq(seenPilotRolex, 7 * 60)
+    end)
+
+    M.MissionRolexSeconds = originalMissionRolex
+    M._GetActiveComputedPlan = originalGetActive
+    if not ok then error(err) end
+  end)
+end)
+
 suite("Group menu structure", function()
   it("creates NAVIGATOR and ROLEX submenus with requested commands", function()
     local plan = makePlan({
@@ -2912,6 +3142,8 @@ suite("Group menu structure", function()
       local menuLabels = {}
       for _, menu in ipairs(menus) do menuLabels[menu.label] = true end
       assertTrue(menuLabels["Mosie Navigator"])
+      assertTrue(menuLabels["MISSION"])
+      assertTrue(menuLabels["GLOBAL TOT ROLEX"])
       assertTrue(menuLabels["NAVIGATOR"])
       assertTrue(menuLabels["ROLEX"])
       assertTrue(menuLabels["ADVANCE"])
@@ -2936,6 +3168,64 @@ suite("Group menu structure", function()
     M._DiscoverGroupAssignments = originalDiscover
     MENU_GROUP = originalMenuGroup
     MENU_GROUP_COMMAND = originalMenuCommand
+    if not ok then error(err) end
+  end)
+
+  it("enables automatic navigator by default and preserves manual OFF", function()
+    local plan = makePlan({
+      { "MN_TEST_01_TAKE_OFF__T07:00__S220__A1500", 0 },
+      { "MN_TEST_02_LANDING", NM * 20 },
+    })
+    local group = { GetName = function() return "MOSQUITO 1-1 [MN:TEST]" end }
+    local assignment = {
+      groupName = group:GetName(),
+      group = group,
+      planName = "TEST",
+      plan = plan,
+      rolexSeconds = 0,
+      navigatorAutoDefault = true,
+    }
+
+    local originalDiscover = M._DiscoverGroupAssignments
+    local originalSetEnabled = M._SetNavigatorEnabled
+    local originalMenuGroup = MENU_GROUP
+    local originalMenuCommand = MENU_GROUP_COMMAND
+    local enabledCalls, commands = {}, {}
+
+    MENU_GROUP = { New = function(_, _, label, parent) return {label = label, parent = parent} end }
+    MENU_GROUP_COMMAND = {
+      New = function(_, _, label, parent, callback, argument)
+        table.insert(commands, {label = label, callback = callback, argument = argument})
+        return {label = label, parent = parent}
+      end
+    }
+    M._DiscoverGroupAssignments = function() return {assignment} end
+    M._SetNavigatorEnabled = function(_, _, _, _, enabled)
+      table.insert(enabledCalls, enabled)
+    end
+    M.MenusCreated = {}
+    M.GroupPlanStates = nil
+
+    local ok, err = pcall(function()
+      M:_CreateGroupMenus({TEST = plan})
+      assertEq(#enabledCalls, 1)
+      assertEq(enabledCalls[1], true)
+
+      for _, command in ipairs(commands) do
+        if command.label == "Automatic OFF" then command.callback() end
+      end
+      assertEq(enabledCalls[#enabledCalls], false)
+
+      M:_CreateGroupMenus({TEST = plan})
+      assertEq(#enabledCalls, 2, "manual OFF should not be overwritten by refresh")
+    end)
+
+    M._DiscoverGroupAssignments = originalDiscover
+    M._SetNavigatorEnabled = originalSetEnabled
+    MENU_GROUP = originalMenuGroup
+    MENU_GROUP_COMMAND = originalMenuCommand
+    M.MenusCreated = nil
+    M.GroupPlanStates = nil
     if not ok then error(err) end
   end)
 end)

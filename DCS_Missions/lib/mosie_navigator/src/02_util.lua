@@ -2,6 +2,10 @@ function MosieNavigator:_Log(message)
   env.info("MOSIE_NAVIGATOR: " .. tostring(message))
 end
 
+function MosieNavigator:_IsTestMode()
+  return TEST_MODE == true
+end
+
 function MosieNavigator:_Split(value, separator)
   local result = {}
   local pattern = string.format("([^%s]+)", separator)

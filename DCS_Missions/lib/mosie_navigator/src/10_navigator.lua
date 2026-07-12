@@ -1,5 +1,17 @@
 function MosieNavigator:_SendNavigatorMessage(group, text, duration)
-  MESSAGE:New(text, duration or self.Config.navigatorMessageDuration, "Mosie Navigator"):ToGroup(group)
+  local messageText = text or ""
+  local messageDuration = duration or self.Config.navigatorMessageDuration
+
+  if self:_IsTestMode() then
+    local groupName = group and type(group.GetName) == "function" and group:GetName() or "---"
+    self:_Log(string.format('TEST_MESSAGE_DUMP_BEGIN group="%s"', groupName))
+    self:_Log(messageText)
+    self:_Log(string.format('TEST_MESSAGE_DUMP_END group="%s"', groupName))
+    MESSAGE:New(string.format("[%s]\n%s", groupName, messageText), messageDuration, "Mosie Navigator"):ToAll()
+    return
+  end
+
+  MESSAGE:New(messageText, messageDuration, "Mosie Navigator"):ToGroup(group)
 end
 
 function MosieNavigator:_GetGroupKey(group)
@@ -68,6 +80,7 @@ function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds, baseRolexS
       plan = plan,
       rolexSeconds = rolexSeconds or 0,
       baseRolexSeconds = baseRolexSeconds or rolexSeconds or 0,
+      missionRolexSeconds = self.MissionRolexSeconds or 0,
       pilotRolexSeconds = pilotRolexSeconds or 0,
       currentWpIndex = self:_GetInitialNavigatorWpIndex(plan),
       reportInterval = self.Config.navigatorReportIntervalDefault,
@@ -82,6 +95,7 @@ function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds, baseRolexS
   state.plan = plan
   state.rolexSeconds = rolexSeconds or 0
   state.baseRolexSeconds = baseRolexSeconds or state.baseRolexSeconds or state.rolexSeconds
+  state.missionRolexSeconds = self.MissionRolexSeconds or 0
   state.pilotRolexSeconds = pilotRolexSeconds or state.pilotRolexSeconds or 0
   return state
 end
@@ -238,7 +252,11 @@ function MosieNavigator:_GetNavigatorComputedWaypoint(state, index)
 
   local computed = nil
   if type(self._GetActiveComputedPlan) == "function" then
-    computed = self:_GetActiveComputedPlan(state.plan, state.baseRolexSeconds or state.rolexSeconds or 0, state.pilotRolexSeconds or 0)
+    computed = self:_GetActiveComputedPlan(
+      state.plan,
+      state.baseRolexSeconds or state.rolexSeconds or 0,
+      (state.missionRolexSeconds or 0) + (state.pilotRolexSeconds or 0)
+    )
   else
     computed = self:_GetComputedPlan(state.plan, state.rolexSeconds)
   end
@@ -600,7 +618,11 @@ function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled,
   if enabled then
     local computed = nil
     if type(self._GetActiveComputedPlan) == "function" then
-      computed = self:_GetActiveComputedPlan(plan, state.baseRolexSeconds or rolexSeconds or 0, state.pilotRolexSeconds or 0)
+      computed = self:_GetActiveComputedPlan(
+        plan,
+        state.baseRolexSeconds or rolexSeconds or 0,
+        (state.missionRolexSeconds or 0) + (state.pilotRolexSeconds or 0)
+      )
     end
     state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds, computed)
     self:_ResetNavigatorCallouts(state)

@@ -21,6 +21,27 @@ function MosieNavigator:_ExtractRolexFromGroupName(groupName)
   return rolexSeconds
 end
 
+function MosieNavigator:_GetGroupSkill(group)
+  if group and type(group.GetSkill) == "function" then
+    return group:GetSkill()
+  end
+
+  return nil
+end
+
+function MosieNavigator:_IsClientGroup(group)
+  local skill = self:_GetGroupSkill(group)
+  return skill == "Client" or skill == "Player"
+end
+
+function MosieNavigator:_ShouldUseGroupAssignment(group)
+  if self:_IsClientGroup(group) then
+    return true
+  end
+
+  return self:_IsTestMode()
+end
+
 function MosieNavigator:_DiscoverGroupAssignments(plans)
   local assignments = {}
   self.InactiveGroupLogs = self.InactiveGroupLogs or {}
@@ -34,15 +55,17 @@ function MosieNavigator:_DiscoverGroupAssignments(plans)
 
     if planName then
       if plans[planName] then
-        if group:IsAlive() then
+        if group:IsAlive() and self:_ShouldUseGroupAssignment(group) then
           table.insert(assignments, {
             groupName = groupName,
             group = group,
             planName = planName,
             plan = plans[planName],
             rolexSeconds = rolexSeconds,
+            skill = self:_GetGroupSkill(group),
+            navigatorAutoDefault = true,
           })
-        else
+        elseif not group:IsAlive() then
           if not self.InactiveGroupLogs[groupName] then
             self:_Log(string.format("group %s references plan %s but is not active yet", groupName, planName))
             self.InactiveGroupLogs[groupName] = true

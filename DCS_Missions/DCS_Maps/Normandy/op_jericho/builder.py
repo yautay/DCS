@@ -18,6 +18,7 @@ frameworks_order = {
     "\n--2 - MOOSE\n": PATH_LIB_MOOSE,
     "\n--3 - STTS\n": PATH_LIB_STTS,
     "\n--4 - MOSIE NAVIGATOR\n": PATH_LIB_MOSIE_NAVIGATOR,
+    "\n--5 - MOSIE AI PLANNER\n": PATH_LIB_MOSIE_AI_PLANNER,
 }
 
 scripts_order = {

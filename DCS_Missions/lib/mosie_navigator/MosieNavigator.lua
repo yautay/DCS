@@ -5,6 +5,8 @@
 
 -- ==== 01_config.lua ====
 
+TEST_MODE = false
+
 SECONDS_PER_DAY = 86400
 SECONDS_PER_HALF_DAY = 43200
 
@@ -190,6 +192,10 @@ MosieNavigator.Aircraft = MosieNavigator.Aircraft or {
 
 function MosieNavigator:_Log(message)
   env.info("MOSIE_NAVIGATOR: " .. tostring(message))
+end
+
+function MosieNavigator:_IsTestMode()
+  return TEST_MODE == true
 end
 
 function MosieNavigator:_Split(value, separator)
@@ -1443,6 +1449,27 @@ function MosieNavigator:_ExtractRolexFromGroupName(groupName)
   return rolexSeconds
 end
 
+function MosieNavigator:_GetGroupSkill(group)
+  if group and type(group.GetSkill) == "function" then
+    return group:GetSkill()
+  end
+
+  return nil
+end
+
+function MosieNavigator:_IsClientGroup(group)
+  local skill = self:_GetGroupSkill(group)
+  return skill == "Client" or skill == "Player"
+end
+
+function MosieNavigator:_ShouldUseGroupAssignment(group)
+  if self:_IsClientGroup(group) then
+    return true
+  end
+
+  return self:_IsTestMode()
+end
+
 function MosieNavigator:_DiscoverGroupAssignments(plans)
   local assignments = {}
   self.InactiveGroupLogs = self.InactiveGroupLogs or {}
@@ -1456,15 +1483,17 @@ function MosieNavigator:_DiscoverGroupAssignments(plans)
 
     if planName then
       if plans[planName] then
-        if group:IsAlive() then
+        if group:IsAlive() and self:_ShouldUseGroupAssignment(group) then
           table.insert(assignments, {
             groupName = groupName,
             group = group,
             planName = planName,
             plan = plans[planName],
             rolexSeconds = rolexSeconds,
+            skill = self:_GetGroupSkill(group),
+            navigatorAutoDefault = true,
           })
-        else
+        elseif not group:IsAlive() then
           if not self.InactiveGroupLogs[groupName] then
             self:_Log(string.format("group %s references plan %s but is not active yet", groupName, planName))
             self.InactiveGroupLogs[groupName] = true
@@ -1737,7 +1766,19 @@ end
 -- ==== 10_navigator.lua ====
 
 function MosieNavigator:_SendNavigatorMessage(group, text, duration)
-  MESSAGE:New(text, duration or self.Config.navigatorMessageDuration, "Mosie Navigator"):ToGroup(group)
+  local messageText = text or ""
+  local messageDuration = duration or self.Config.navigatorMessageDuration
+
+  if self:_IsTestMode() then
+    local groupName = group and type(group.GetName) == "function" and group:GetName() or "---"
+    self:_Log(string.format('TEST_MESSAGE_DUMP_BEGIN group="%s"', groupName))
+    self:_Log(messageText)
+    self:_Log(string.format('TEST_MESSAGE_DUMP_END group="%s"', groupName))
+    MESSAGE:New(string.format("[%s]\n%s", groupName, messageText), messageDuration, "Mosie Navigator"):ToAll()
+    return
+  end
+
+  MESSAGE:New(messageText, messageDuration, "Mosie Navigator"):ToGroup(group)
 end
 
 function MosieNavigator:_GetGroupKey(group)
@@ -1806,6 +1847,7 @@ function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds, baseRolexS
       plan = plan,
       rolexSeconds = rolexSeconds or 0,
       baseRolexSeconds = baseRolexSeconds or rolexSeconds or 0,
+      missionRolexSeconds = self.MissionRolexSeconds or 0,
       pilotRolexSeconds = pilotRolexSeconds or 0,
       currentWpIndex = self:_GetInitialNavigatorWpIndex(plan),
       reportInterval = self.Config.navigatorReportIntervalDefault,
@@ -1820,6 +1862,7 @@ function MosieNavigator:_GetNavigatorState(group, plan, rolexSeconds, baseRolexS
   state.plan = plan
   state.rolexSeconds = rolexSeconds or 0
   state.baseRolexSeconds = baseRolexSeconds or state.baseRolexSeconds or state.rolexSeconds
+  state.missionRolexSeconds = self.MissionRolexSeconds or 0
   state.pilotRolexSeconds = pilotRolexSeconds or state.pilotRolexSeconds or 0
   return state
 end
@@ -1976,7 +2019,11 @@ function MosieNavigator:_GetNavigatorComputedWaypoint(state, index)
 
   local computed = nil
   if type(self._GetActiveComputedPlan) == "function" then
-    computed = self:_GetActiveComputedPlan(state.plan, state.baseRolexSeconds or state.rolexSeconds or 0, state.pilotRolexSeconds or 0)
+    computed = self:_GetActiveComputedPlan(
+      state.plan,
+      state.baseRolexSeconds or state.rolexSeconds or 0,
+      (state.missionRolexSeconds or 0) + (state.pilotRolexSeconds or 0)
+    )
   else
     computed = self:_GetComputedPlan(state.plan, state.rolexSeconds)
   end
@@ -2338,7 +2385,11 @@ function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled,
   if enabled then
     local computed = nil
     if type(self._GetActiveComputedPlan) == "function" then
-      computed = self:_GetActiveComputedPlan(plan, state.baseRolexSeconds or rolexSeconds or 0, state.pilotRolexSeconds or 0)
+      computed = self:_GetActiveComputedPlan(
+        plan,
+        state.baseRolexSeconds or rolexSeconds or 0,
+        (state.missionRolexSeconds or 0) + (state.pilotRolexSeconds or 0)
+      )
     end
     state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds, computed)
     self:_ResetNavigatorCallouts(state)
@@ -2656,8 +2707,13 @@ function MosieNavigator:_ShowFlightPlanForGroup(group, plan, baseRolexSeconds, p
     return
   end
 
-  local text = self:_BuildSimplifiedFlightPlanMessage(plan, group:GetName(), baseRolexSeconds, pilotRolexSeconds)
-  MESSAGE:New(text, self.Config.flightPlanMessageDuration, "Mosie Navigator"):ToGroup(group)
+  local text = self:_BuildSimplifiedFlightPlanMessage(
+    plan,
+    group:GetName(),
+    baseRolexSeconds,
+    (pilotRolexSeconds or 0) + (self.MissionRolexSeconds or 0)
+  )
+  self:_SendNavigatorMessage(group, text, self.Config.flightPlanMessageDuration)
 end
 
 function MosieNavigator:_GetGroupPlanState(group, assignment)
@@ -2680,7 +2736,9 @@ function MosieNavigator:_GetGroupPlanState(group, assignment)
 end
 
 function MosieNavigator:_GetActiveRolexSeconds(groupPlanState)
-  return (groupPlanState.baseRolexSeconds or 0) + (groupPlanState.pilotRolexSeconds or 0)
+  return (groupPlanState.baseRolexSeconds or 0)
+    + (self.MissionRolexSeconds or 0)
+    + (groupPlanState.pilotRolexSeconds or 0)
 end
 
 function MosieNavigator:_RefreshNavigatorRolex(groupPlanState, reason)
@@ -2697,8 +2755,9 @@ function MosieNavigator:_RefreshNavigatorRolex(groupPlanState, reason)
   state.plan = groupPlanState.plan
   state.rolexSeconds = self:_GetActiveRolexSeconds(groupPlanState)
   state.baseRolexSeconds = groupPlanState.baseRolexSeconds or 0
+  state.missionRolexSeconds = self.MissionRolexSeconds or 0
   state.pilotRolexSeconds = groupPlanState.pilotRolexSeconds or 0
-  local computed = self:_GetActiveComputedPlan(state.plan, state.baseRolexSeconds, state.pilotRolexSeconds)
+  local computed = self:_GetActiveComputedPlan(state.plan, state.baseRolexSeconds, state.missionRolexSeconds + state.pilotRolexSeconds)
   state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(state.plan, state.rolexSeconds, computed)
   self:_ResetNavigatorCallouts(state)
 
@@ -2724,6 +2783,50 @@ function MosieNavigator:_AdjustPilotRolex(group, assignment, deltaSeconds)
   self:_SetPilotRolex(group, assignment, (state.pilotRolexSeconds or 0) + (deltaSeconds or 0))
 end
 
+function MosieNavigator:_FormatMissionRolexStatus()
+  local missionRolex = self.MissionRolexSeconds or 0
+  if missionRolex == 0 then
+    return "GLOBAL TOT ROLEX reset"
+  end
+
+  return "GLOBAL TOT ROLEX " .. self:_FormatSignedRolex(missionRolex)
+end
+
+function MosieNavigator:_RefreshAllNavigatorRolex(reason)
+  if not self.GroupPlanStates then
+    return
+  end
+
+  for _, groupPlanState in pairs(self.GroupPlanStates) do
+    self:_RefreshNavigatorRolex(groupPlanState, reason or "GLOBAL ROLEX")
+  end
+end
+
+function MosieNavigator:_SetMissionRolex(seconds)
+  self.MissionRolexSeconds = seconds or 0
+  self:_RefreshAllNavigatorRolex("GLOBAL ROLEX")
+end
+
+function MosieNavigator:_AdjustMissionRolex(deltaSeconds)
+  self:_SetMissionRolex((self.MissionRolexSeconds or 0) + (deltaSeconds or 0))
+end
+
+function MosieNavigator:_EnableNavigatorByDefault(group, assignment, groupPlanState)
+  if not assignment.navigatorAutoDefault or groupPlanState.autoNavigatorDisabled or groupPlanState.autoNavigatorInitialized then
+    return
+  end
+
+  groupPlanState.autoNavigatorInitialized = true
+  self:_SetNavigatorEnabled(
+    group,
+    groupPlanState.plan,
+    self:_GetActiveRolexSeconds(groupPlanState),
+    true,
+    groupPlanState.baseRolexSeconds,
+    groupPlanState.pilotRolexSeconds
+  )
+end
+
 function MosieNavigator:_CreateGroupMenus(plans)
   self.MenusCreated = self.MenusCreated or {}
 
@@ -2733,17 +2836,41 @@ function MosieNavigator:_CreateGroupMenus(plans)
   for _, assignment in ipairs(assignments) do
     local group = assignment.group
     local menuKey = assignment.groupName .. "::" .. assignment.planName
-    self:_GetGroupPlanState(group, assignment)
+    local groupPlanState = self:_GetGroupPlanState(group, assignment)
+    self:_EnableNavigatorByDefault(group, assignment, groupPlanState)
 
     if not self.MenusCreated[menuKey] then
       local rootMenu = MENU_GROUP:New(group, self.Config.menuName)
+      local missionMenu = MENU_GROUP:New(group, "MISSION", rootMenu)
+      local globalRolexMenu = MENU_GROUP:New(group, "GLOBAL TOT ROLEX", missionMenu)
+      MENU_GROUP_COMMAND:New(group, "RESET", globalRolexMenu, function()
+        MosieNavigator:_SetMissionRolex(0)
+        MosieNavigator:_SendNavigatorMessage(group, MosieNavigator:_FormatMissionRolexStatus())
+      end)
+      local globalAdvanceMenu = MENU_GROUP:New(group, "ADVANCE", globalRolexMenu)
+      local globalRetardMenu = MENU_GROUP:New(group, "RETARD", globalRolexMenu)
+      for _, minutes in ipairs({1, 2, 3, 5, 10}) do
+        MENU_GROUP_COMMAND:New(group, string.format("%d min", minutes), globalAdvanceMenu, function(value)
+          MosieNavigator:_AdjustMissionRolex(-value * 60)
+          MosieNavigator:_SendNavigatorMessage(group, MosieNavigator:_FormatMissionRolexStatus())
+        end, minutes)
+        MENU_GROUP_COMMAND:New(group, string.format("%d min", minutes), globalRetardMenu, function(value)
+          MosieNavigator:_AdjustMissionRolex(value * 60)
+          MosieNavigator:_SendNavigatorMessage(group, MosieNavigator:_FormatMissionRolexStatus())
+        end, minutes)
+      end
+
       local navigatorMenu = MENU_GROUP:New(group, "NAVIGATOR", rootMenu)
       MENU_GROUP_COMMAND:New(group, "Automatic ON", navigatorMenu, function()
         local state = MosieNavigator:_GetGroupPlanState(group, assignment)
+        state.autoNavigatorDisabled = false
+        state.autoNavigatorInitialized = true
         MosieNavigator:_SetNavigatorEnabled(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), true, state.baseRolexSeconds, state.pilotRolexSeconds)
       end)
       MENU_GROUP_COMMAND:New(group, "Automatic OFF", navigatorMenu, function()
         local state = MosieNavigator:_GetGroupPlanState(group, assignment)
+        state.autoNavigatorDisabled = true
+        state.autoNavigatorInitialized = true
         MosieNavigator:_SetNavigatorEnabled(group, state.plan, MosieNavigator:_GetActiveRolexSeconds(state), false, state.baseRolexSeconds, state.pilotRolexSeconds)
       end)
       MENU_GROUP_COMMAND:New(group, "Show FP", navigatorMenu, function()
@@ -3016,6 +3143,7 @@ function MosieNavigator:Start()
   self.InactiveGroupLogs = {}
   self.NavigatorStates = {}
   self.GroupPlanStates = {}
+  self.MissionRolexSeconds = self.MissionRolexSeconds or 0
   self:_Log("starting debug discovery")
   self:DrawDebug()
   self:_StartMenuRefreshScheduler()
