@@ -1370,20 +1370,21 @@ suite("ComputePlan — low-speed timing advisory", function()
     { "MN_TEST_04_LANDING",                      NM*40 },
   })
 
-  it("uses minimum cruise speed and arrives before the loose __T", function()
+  it("uses minimum cruise speed but keeps the timed waypoint fixed", function()
     local r = M:_ComputePlan(plan, 0)
     assertTrue(r.valid, r.error or "")
-    assertTrue(r.waypoints[3].etaSec < 12*3600 + 30*60,
-      "expected early arrival before target __T")
+    assertNear(r.waypoints[3].etaSec, 12*3600 + 30*60, 1)
     assertNear(r.waypoints[2].legIasKt, M.Aircraft.envelope.minIasKt, 0.5)
     assertNear(r.waypoints[3].legIasKt, M.Aircraft.envelope.minIasKt, 0.5)
+    assertTrue((r.waypoints[3].timingDelayBeforeSec or 0) > 0,
+      "expected delay before timed target")
   end)
 
   it("emits TIMING advisory instead of low-speed clamp warning", function()
     local r = M:_ComputePlan(plan, 0)
     local timingText = table.concat(r.timing or {}, "; ")
     local warningText = table.concat(r.warnings or {}, "; ")
-    assertTrue(string.find(timingText, "orbit/delay required before WP03 TARGET") ~= nil,
+    assertTrue(string.find(timingText, "orbit/delay at WP02 before WP03 TARGET") ~= nil,
       "expected timing advisory, got: " .. timingText)
     assertTrue(string.find(warningText, "below minimum") == nil,
       "expected no low-speed warning, got: " .. warningText)
@@ -1393,7 +1394,51 @@ suite("ComputePlan — low-speed timing advisory", function()
     M.ComputedPlanCache = nil
     local text = M:_BuildFlightPlanTable(plan)
     assertTrue(string.find(text, "TIMING:") ~= nil, "expected TIMING section")
-    assertTrue(string.find(text, "before WP03 TARGET") ~= nil, "expected target timing text")
+    assertTrue(string.find(text, "at WP02 before WP03 TARGET") ~= nil, "expected target timing text")
+  end)
+
+  it("keeps TEST-C style TARGET __T and shifts it with base ROLEX", function()
+    local testC = makePlan({
+      { "MN_TEST_01_TAKE_OFF__A1250__T7:04", 0 },
+      { "MN_TEST_02_TARGET__T7:25",          NM * 44.95 },
+      { "MN_TEST_03_LANDING",                NM * 89.91 },
+    })
+
+    local base = M:_ComputePlan(testC, 0)
+    local rolex = M:_ComputePlan(testC, 5 * 60)
+
+    assertTrue(base.valid, base.error or "")
+    assertTrue(rolex.valid, rolex.error or "")
+    assertNear(base.waypoints[2].etaSec, 7*3600 + 25*60, 1)
+    assertNear(rolex.waypoints[2].etaSec, 7*3600 + 30*60, 1)
+    assertTrue((base.waypoints[2].timingDelayBeforeSec or 0) > 0,
+      "expected delay before TEST-C target")
+  end)
+end)
+
+suite("ComputePlan — impossible fast TOT", function()
+  local plan = makePlan({
+    { "MN_TEST_01_TAKE_OFF__T12:00__A500", 0 },
+    { "MN_TEST_02_TARGET__T12:05",         NM * 100 },
+    { "MN_TEST_03_LANDING",               NM * 110 },
+  })
+
+  it("drifts ETA late when the aircraft cannot make the timed waypoint", function()
+    local r = M:_ComputePlan(plan, 0)
+    assertTrue(r.valid, r.error or "")
+    assertTrue(r.waypoints[2].etaSec > 12*3600 + 5*60,
+      "expected target ETA to drift late")
+    assertTrue((r.waypoints[2].lateTotWarningSec or 0) > 0,
+      "expected late TOT metadata")
+  end)
+
+  it("warns clearly that the timed waypoint is unreachable", function()
+    local r = M:_ComputePlan(plan, 0)
+    local warningText = table.concat(r.warnings or {}, "; ")
+    assertTrue(string.find(warningText, "unable to meet TOT 12:05") ~= nil,
+      "expected unable TOT warning, got: " .. warningText)
+    assertTrue(string.find(warningText, "late by") ~= nil,
+      "expected late-by warning, got: " .. warningText)
   end)
 end)
 
@@ -3364,7 +3409,7 @@ suite("MosieAiPlanner", function()
     if not ok then error(err) end
   end)
 
-  it("commands timing orbit at current position when AI is early and cannot slow enough", function()
+  it("commands timing orbit at the previous waypoint when AI is early for a timed waypoint", function()
     local taskSet, routes = 0, 0
     local orbitVec2 = nil
     local group = {
@@ -3381,11 +3426,12 @@ suite("MosieAiPlanner", function()
       valid = true,
       waypoints = {
         {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 0, resolvedAltFt = 0},
-        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 600, resolvedAltFt = 1500, legGsKt = 180},
-        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 1200, resolvedAltFt = 0, legGsKt = 160},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = NM * 2, z = 0}), etaSec = 300, resolvedAltFt = 1500, legGsKt = 180},
+        {type = "TARGET", order = 3, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 600, resolvedAltFt = 1500, legGsKt = 180},
+        {type = "LANDING", order = 4, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 1200, resolvedAltFt = 0, legGsKt = 160},
       }
     }
-    local state = {assignment = {group = group, groupName = "AI [MN:TEST]"}, currentWpIndex = 2}
+    local state = {assignment = {group = group, groupName = "AI [MN:TEST]"}, currentWpIndex = 3}
     local originalGetComputed = AP._GetComputedPlan
     AP._GetComputedPlan = function() return computed end
     setAbsTime(0); setTime(0)
@@ -3395,7 +3441,7 @@ suite("MosieAiPlanner", function()
       assertEq(taskSet, 1)
       assertEq(routes, 0)
       assertEq(state.timingOrbit, true)
-      assertNear(orbitVec2.x, 0, 0.001)
+      assertNear(orbitVec2.x, NM * 2, 0.001)
       assertNear(orbitVec2.y, 0, 0.001)
     end)
 

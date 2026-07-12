@@ -773,7 +773,7 @@ function MosieAiPlanner:_TickHold(state, computed, waypoint)
   return true
 end
 
-function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed)
+function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed, orbitWaypoint)
   if state.timingOrbit then
     return true
   end
@@ -784,8 +784,10 @@ function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed)
     return false
   end
 
+  local orbitSource = orbitWaypoint and (orbitWaypoint.source or orbitWaypoint) or nil
   local groupCoordinate = self:_GetGroupCoordinate(group)
-  local vec2 = self:_CoordinateToVec2(groupCoordinate)
+  local orbitCoordinate = orbitSource and orbitSource.coordinate or groupCoordinate
+  local vec2 = self:_CoordinateToVec2(orbitCoordinate)
   if not vec2 then
     return false
   end
@@ -799,7 +801,8 @@ function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed)
   self:_SetAiMode(state, "TIMING_ORBIT", "early_min_speed", string.format("raw_required_speed=%.0f", rawRequiredSpeed or 0))
   local source = waypoint and (waypoint.source or waypoint) or nil
   self:_AppendAiCommandDump(state, "SET_TASK_TIMING_ORBIT", string.format(
-    "before=WP%02d raw_required_speed_kt=%.0f speed_kt=%.0f alt_m=%.0f pos_x=%.1f pos_y=%.1f",
+    "at=WP%02d before=WP%02d raw_required_speed_kt=%.0f speed_kt=%.0f alt_m=%.0f pos_x=%.1f pos_y=%.1f",
+    orbitSource and orbitSource.order or 0,
     source and source.order or 0,
     rawRequiredSpeed or 0,
     self.Config.holdSpeedKt,
@@ -808,8 +811,9 @@ function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed)
     vec2.y or 0
   ))
   self:_Log(string.format(
-    "timing orbit sent to %s at current position before WP%02d: required %.0f kt below AI minimum %.0f kt",
+    "timing orbit sent to %s at WP%02d before WP%02d: required %.0f kt below AI minimum %.0f kt",
     state.assignment.groupName,
+    orbitSource and orbitSource.order or 0,
     source and source.order or 0,
     rawRequiredSpeed or 0,
     self.Config.minSpeedKt
@@ -888,7 +892,7 @@ function MosieAiPlanner:_TickAssignment(state)
 
   local requiredSpeed, etaErrorSeconds, rawRequiredSpeed = self:_RequiredSpeedToWaypointKt(state, waypoint)
   if requiredSpeed and etaErrorSeconds and etaErrorSeconds < -self.Config.etaToleranceSeconds and rawRequiredSpeed and rawRequiredSpeed < self.Config.minSpeedKt then
-    if self:_StartTimingOrbit(state, waypoint, rawRequiredSpeed) then
+    if self:_StartTimingOrbit(state, waypoint, rawRequiredSpeed, computed.waypoints[(state.currentWpIndex or 2) - 1]) then
       self:_TickFlightSampleDump(state, computed)
       return
     end

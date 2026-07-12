@@ -800,11 +800,13 @@ function MosieNavigator:_AddLowSpeedTimingAdvisory(timing, segLabel, segLegs, re
   end
 
   local targetType = targetLeg.wpType or "WP"
+  local delayAtOrder = targetLeg.fromWpOrder or math.max(1, (targetLeg.wpOrder or 1) - 1)
   table.insert(timing, string.format(
-    "%s: required %.0f IAS below minimum %.0f IAS; arrive early at min cruise; orbit/delay required before WP%02d %s",
+    "%s: required %.0f IAS below minimum %.0f IAS; hold TOT and orbit/delay at WP%02d before WP%02d %s",
     segLabel,
     requiredIasKt or 0,
     self.Aircraft.envelope.minIasKt,
+    delayAtOrder,
     targetLeg.wpOrder,
     targetType
   ))
@@ -814,7 +816,10 @@ function MosieNavigator:_ClampDerivedSegmentSpeed(requiredIasKt, warnings, timin
   local env = self.Aircraft.envelope
   if requiredIasKt < env.minIasKt then
     self:_AddLowSpeedTimingAdvisory(timing, segLabel, segLegs, requiredIasKt)
-    return env.minIasKt, true
+    return env.minIasKt, "low"
+  elseif requiredIasKt > env.maxIasKt then
+    local clampedIas = self:_ClampSpeed(requiredIasKt, warnings, segLabel)
+    return clampedIas, "high"
   end
 
   return self:_ClampSpeed(requiredIasKt, warnings, segLabel)
@@ -850,7 +855,8 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, t
     for _, leg in ipairs(segLegs) do avgAlt = avgAlt + (leg.altFt or 0) end
     avgAlt = avgAlt / n
     local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
-    derivedIas = self:_ClampDerivedSegmentSpeed(derivedIas, warnings, timing, segLabel .. " all-FIXED override", segLegs)
+    local clampKind
+    derivedIas, clampKind = self:_ClampDerivedSegmentSpeed(derivedIas, warnings, timing, segLabel .. " all-FIXED override", segLegs)
     local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
     for i = 1, n do
       if segLegs[i].speedKt then
@@ -862,7 +868,11 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, t
       result[i] = clampedGs
       sources[i] = "computed"
     end
-    return result, sources
+    local overrunSec = nil
+    if clampKind == "high" then
+      overrunSec = math.max(0, (totalDist / clampedGs * 3600) - totalTimeSec)
+    end
+    return result, sources, overrunSec
   end
 
   if #fixedIndices == 0 then
@@ -879,10 +889,15 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, t
     for _, leg in ipairs(segLegs) do avgAlt = avgAlt + (leg.altFt or 0) end
     avgAlt = avgAlt / n
     local derivedIas = self:_ConvertTasToIas(derivedGs, avgAlt) or derivedGs
-    derivedIas, _ = self:_ClampDerivedSegmentSpeed(derivedIas, warnings, timing, segLabel .. " FREE uniform", segLegs)
+    local clampKind
+    derivedIas, clampKind = self:_ClampDerivedSegmentSpeed(derivedIas, warnings, timing, segLabel .. " FREE uniform", segLegs)
     local clampedGs = self:_ConvertIasToTas(derivedIas, avgAlt) or derivedIas
     for i = 1, n do result[i] = clampedGs; sources[i] = "computed" end
-    return result, sources
+    local overrunSec = nil
+    if clampKind == "high" then
+      overrunSec = math.max(0, (totalDist / clampedGs * 3600) - totalTimeSec)
+    end
+    return result, sources, overrunSec
   end
 
   -- Mixed: FIXED honored, FREE get averaged remainder
@@ -921,11 +936,16 @@ function MosieNavigator:_ResolveSegmentSpeeds(segLegs, totalTimeSec, warnings, t
   for _, i in ipairs(freeIndices) do avgAltFree = avgAltFree + (segLegs[i].altFt or 0) end
   avgAltFree = avgAltFree / #freeIndices
   local freeIas = self:_ConvertTasToIas(freeGs, avgAltFree) or freeGs
-  freeIas, _    = self:_ClampDerivedSegmentSpeed(freeIas, warnings, timing, segLabel .. " FREE averaged", segLegs)
+  local clampKind
+  freeIas, clampKind = self:_ClampDerivedSegmentSpeed(freeIas, warnings, timing, segLabel .. " FREE averaged", segLegs)
   local clampedFreeGs = self:_ConvertIasToTas(freeIas, avgAltFree) or freeIas
   for _, i in ipairs(freeIndices) do result[i] = clampedFreeGs; sources[i] = "computed" end
 
-  return result, sources
+  local overrunSec = nil
+  if clampKind == "high" then
+    overrunSec = math.max(0, fixedTime + (freeDist / clampedFreeGs * 3600) - totalTimeSec)
+  end
+  return result, sources, overrunSec
 end
 
 -- Computes full flight plan: ETA, speeds, IAS, profiles, fuel, warnings.
@@ -1005,6 +1025,7 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   -- ── Resolve GS per leg ───────────────────────────────────────────────────
   local legGs = {}  -- legGs[i] = GS kt for leg arriving at WPi
   local legSpeedSource = {}
+  local impossibleAnchorOverrunSec = {}
 
   local function legSpeedFromDecl(k)
     local ld = legDescs[k]
@@ -1072,15 +1093,20 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
             distNm  = legDescs[k].distNm,
             altFt   = legDescs[k].altFt,
             speedKt = legDescs[k].speedKt,
+            fromWpOrder = wps[k-1].order,
             wpOrder = legDescs[k].wpOrder,
             wpType  = legDescs[k].wpType,
           })
         end
 
-        local segSpeeds, segSources = self:_ResolveSegmentSpeeds(
+        local segSpeeds, segSources, overrunSec = self:_ResolveSegmentSpeeds(
           segLegs, dt, warnings, timing,
           string.format("segment [WP%02d..WP%02d]", wps[segStart].order, wps[segEnd].order)
         )
+
+        if overrunSec and overrunSec > 0 then
+          impossibleAnchorOverrunSec[segEnd] = overrunSec
+        end
 
         for idx = 1, #segRange do
           legGs[segRange[idx]] = segSpeeds[idx]
@@ -1133,6 +1159,8 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
   -- against its true arrival — not a stale first-pass value.
   local etaSec = {}
   local holdDurations = {}
+  local timingDelayBefore = {}
+  local lateTotWarnings = {}
 
   etaSec[1] = (takeoff.timeOnTargetSeconds + rolexSeconds) % 86400
 
@@ -1191,7 +1219,46 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
         holdDurations[k] = dur
       end
     else
-      etaSec[k] = propagatedArrival
+      if wps[k].timeOnTargetSeconds then
+        local anchorSec = (wps[k].timeOnTargetSeconds + rolexSeconds) % 86400
+        local anchorTimeline = anchorSec
+        while anchorTimeline < prevDep do
+          anchorTimeline = anchorTimeline + SECONDS_PER_DAY
+        end
+
+        local deltaToAnchor = anchorTimeline - propagatedArrival
+        if impossibleAnchorOverrunSec[k] and impossibleAnchorOverrunSec[k] > 0 then
+          local plannedLateArrival = anchorTimeline + impossibleAnchorOverrunSec[k]
+          etaSec[k] = math.max(propagatedArrival, plannedLateArrival)
+          local lateBy = etaSec[k] - anchorTimeline
+          lateTotWarnings[k] = lateBy
+          table.insert(warnings, string.format(
+            "WP%02d %s: unable to meet TOT %s; late by %s",
+            wps[k].order,
+            wps[k].type,
+            self:_FormatDisplayEta(anchorSec),
+            self:_FormatDuration(lateBy)
+          ))
+        elseif deltaToAnchor >= -1 then
+          etaSec[k] = anchorTimeline
+          if deltaToAnchor > 1 then
+            timingDelayBefore[k] = deltaToAnchor
+          end
+        else
+          etaSec[k] = propagatedArrival
+          local lateBy = -deltaToAnchor
+          lateTotWarnings[k] = lateBy
+          table.insert(warnings, string.format(
+            "WP%02d %s: unable to meet TOT %s; late by %s",
+            wps[k].order,
+            wps[k].type,
+            self:_FormatDisplayEta(anchorSec),
+            self:_FormatDuration(lateBy)
+          ))
+        end
+      else
+        etaSec[k] = propagatedArrival
+      end
     end
   end
 
@@ -1220,6 +1287,8 @@ function MosieNavigator:_ComputePlan(plan, rolexSeconds)
       legSpeedInherited = legSpeedSource[k] == "default",
       rawTimeOnTarget    = wp.timeOnTarget,
       rawTimeOnTargetSec = wp.timeOnTargetSeconds,
+      timingDelayBeforeSec = timingDelayBefore[k],
+      lateTotWarningSec  = lateTotWarnings[k],
     }
 
     if k == 1 then
