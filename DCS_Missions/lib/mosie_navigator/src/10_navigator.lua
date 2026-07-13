@@ -158,6 +158,7 @@ function MosieNavigator:_FormatDuration(seconds)
     seconds = -seconds
   end
 
+  seconds = math.floor(seconds + 0.5)
   local minutes = math.floor(seconds / 60)
   local remainingSeconds = seconds % 60
   return string.format("%s%d:%02d", prefix, minutes, remainingSeconds)
@@ -174,7 +175,7 @@ function MosieNavigator:_FormatDurationHoursMinutes(seconds)
     seconds = -seconds
   end
 
-  local totalMinutes = math.ceil(seconds / 60)
+  local totalMinutes = math.ceil(math.floor(seconds + 0.5) / 60)
   local hours = math.floor(totalMinutes / 60)
   local minutes = totalMinutes % 60
   return string.format("%s%02d:%02d", prefix, hours, minutes)
