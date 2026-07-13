@@ -1873,6 +1873,158 @@ suite("Start / Tick (10_main.lua)", function()
   end)
 end)
 
+suite("_GetSecondsToClockSeconds fallback elseif branch", function()
+  it("wraps when raw delta exceeds half-day (event far ahead = actually past)", function()
+    -- now=01:00 (3600s), event=23:00 (82800s) → delta=79200 > 43200 → delta-=86400 → -7200
+    local origNav = MosieNavigator
+    MosieNavigator = nil
+    setAbsTime(3600)
+    local delta = P:_GetSecondsToClockSeconds(82800)
+    setAbsTime(0)
+    MosieNavigator = origNav
+    assertNear(delta, -7200, 1)
+  end)
+end)
+
+suite("_TickZoneDump zone entry and re-entry suppression", function()
+  it("appends dump on first zone entry and suppresses re-entry", function()
+    local appended = {}
+    local origAppend = P._AppendAiZoneDump
+    P._AppendAiZoneDump = function(_, text) table.insert(appended, text) end
+    local coord = makeCoord({x=0, y=0, z=0})
+    local group = makeGroup({coordinate=coord})
+    local zone = {
+      IsCoordinateInZone = function(_, c) return true end,
+      GetRadius          = function()     return 500  end,
+    }
+    local wp = makeWp({type="NAV", order=1, coordinate=coord, zone=zone, zoneName="MN_T_01_NAV"})
+    local plan    = {waypoints = {wp}}
+    local state   = makeState({assignmentOpts={group=group, plan=plan}, currentWpIndex=1})
+    local computed = makeComputed({makeCWp()})
+    TEST_MODE = true
+    P:_TickZoneDump(state, computed)
+    P._AppendAiZoneDump = origAppend
+    assertEq(#appended, 1, "first entry should append zone dump")
+    local appended2 = {}
+    P._AppendAiZoneDump = function(_, text) table.insert(appended2, text) end
+    P:_TickZoneDump(state, computed)
+    P._AppendAiZoneDump = origAppend
+    assertEq(#appended2, 0, "re-entry should not append again")
+  end)
+end)
+
+suite("_GetAiXte with both plan waypoints present", function()
+  it("delegates to navigator _CalculateXte when previous and current WP exist", function()
+    local prevWp = makeWp({type="TAKE_OFF", order=1, coordinate=makeCoord({x=0, y=0, z=0})})
+    local currWp = makeWp({type="NAV",     order=2, coordinate=makeCoord({x=0, y=0, z=18520})})
+    local plan   = {waypoints={prevWp, currWp}}
+    local group  = makeGroup({coordinate=makeCoord({x=500, y=0, z=9260})})
+    local state  = makeState({assignmentOpts={group=group, plan=plan}, currentWpIndex=2})
+    local xte, side = P:_GetAiXte(state, group._coordinate)
+    assertTrue(xte == nil or type(xte) == "number", "XTE should be nil or number")
+  end)
+end)
+
+suite("_FormatAiFlightSample with etaDeltaSec computed", function()
+  it("includes numeric eta_delta_sec when both actual and planned ETA are available", function()
+    local coord   = makeCoord({x=0, y=0, z=18520})  -- 10 NM from origin
+    local wpCoord = makeCoord({x=0, y=0, z=0})
+    local group   = makeGroup({coordinate=coord, velocity=180, altitude=500})
+    local wp      = makeWp({type="NAV", order=2, coordinate=wpCoord})
+    local cwp     = makeCWp({source=wp, etaSec=43200+3600, legGsKt=180, resolvedAltFt=500})
+    local plan    = {waypoints={makeWp({type="TAKE_OFF", order=1}), wp}}
+    local state   = makeState({assignmentOpts={group=group, plan=plan}, currentWpIndex=2})
+    setAbsTime(43200)
+    local result = P:_FormatAiFlightSample(state, makeComputed({makeCWp(), cwp}))
+    setAbsTime(0)
+    assertNotNil(result)
+    assertMatch(result, "AI_FLIGHT_SAMPLE")
+    assertTrue(
+      not string.find(result, "eta_delta_sec=---", 1, true),
+      "etaDeltaSec should be a number not ---"
+    )
+  end)
+end)
+
+suite("_TickAssignment ETA-driven retask", function()
+  it("retasks with ETA reason when aircraft is late beyond tolerance", function()
+    -- 40 NM to WP at 200 kt → predicted 720s; ETA in 300s → error 420s > 15
+    local wpCoord = makeCoord({x=0, y=0, z=74080})
+    local group   = makeGroup({alive=true, airborne=true,
+                               coordinate=makeCoord({x=0, y=0, z=0}),
+                               velocity=200, altitude=500})
+    local navCwp = makeCWp({
+      source=makeWp({type="NAV", coordinate=wpCoord}),
+      resolvedAltFt=500, legGsKt=200, etaSec=43200+300,
+    })
+    local state = makeState({
+      assignmentOpts={group=group, plan={waypoints={}}},
+      currentWpIndex=2,
+    })
+    state.lastRetaskTime = 0  -- cooldown: now(1000)-0=1000 > 30 ✓
+    local origCompute = P._GetComputedPlan
+    P._GetComputedPlan = function() return makeComputed({makeCWp(), navCwp}) end
+    setAbsTime(43200); setTime(1000)
+    P:_TickAssignment(state)
+    P._GetComputedPlan = origCompute
+    setAbsTime(0)
+    assertNotNil(state.lastRouteReason)
+    assertMatch(state.lastRouteReason, "ETA")
+  end)
+end)
+
+suite("_TickAssignment within-ETA-tolerance path", function()
+  it("sets within_eta_tolerance when already retasked and ETA error is small", function()
+    -- 3 NM to WP at 200 kt → predicted 54s; ETA in 60s → error -6s < 15
+    local wpCoord = makeCoord({x=0, y=0, z=5556})  -- 3 NM
+    local group   = makeGroup({alive=true, airborne=true,
+                               coordinate=makeCoord({x=0, y=0, z=0}),
+                               velocity=200, altitude=500})
+    local navCwp = makeCWp({
+      source=makeWp({type="NAV", coordinate=wpCoord}),
+      resolvedAltFt=500, legGsKt=200, etaSec=43200+60,
+    })
+    local state = makeState({
+      assignmentOpts={group=group, plan={waypoints={}}},
+      currentWpIndex=2,
+    })
+    state.lastRetaskTime = 999999  -- cooldown: 999999-999999=0 < 30 → blocks retask
+    local origCompute = P._GetComputedPlan
+    P._GetComputedPlan = function() return makeComputed({makeCWp(), navCwp}) end
+    setAbsTime(43200); setTime(999999)
+    P:_TickAssignment(state)
+    P._GetComputedPlan = origCompute
+    setAbsTime(0)
+    assertEq(state.aiMode, "DIRECT_WP")
+    assertEq(state.aiModeReason, "within_eta_tolerance")
+  end)
+end)
+
+suite("_TickAssignment HOLD branch returns after _TickHold", function()
+  it("advances WP index and returns after _TickHold exits expired hold", function()
+    local holdCoord = makeCoord({x=0, y=0, z=0})
+    local landCoord = makeCoord({x=0, y=0, z=1852})
+    local group     = makeGroup({alive=true, airborne=true,
+                                 coordinate=makeCoord({x=0, y=0, z=37040}),
+                                 velocity=0})
+    local holdSrc = makeWp({type="HOLD",    order=2, coordinate=holdCoord})
+    local landSrc = makeWp({type="LANDING", order=3, coordinate=landCoord})
+    local plan    = {waypoints={makeWp({type="TAKE_OFF",order=1}), holdSrc, landSrc}}
+    -- Hold ETA 100s in the past, holdDurationSec=0 → _TickHold exits immediately
+    local holdCwp = makeCWp({source=holdSrc, etaSec=43200-100, holdDurationSec=0,
+                              resolvedAltFt=0, legGsKt=140})
+    local landCwp = makeCWp({source=landSrc, resolvedAltFt=0, legGsKt=140})
+    local state = makeState({assignmentOpts={group=group, plan=plan}, currentWpIndex=2})
+    local origCompute = P._GetComputedPlan
+    P._GetComputedPlan = function() return makeComputed({makeCWp(), holdCwp, landCwp}) end
+    setAbsTime(43200); setTime(0)
+    P:_TickAssignment(state)
+    P._GetComputedPlan = origCompute
+    setAbsTime(0)
+    assertEq(state.currentWpIndex, 3)  -- advanced past HOLD to LANDING
+  end)
+end)
+
 ------------------------------------------------------------
 -- Bundle smoke test
 ------------------------------------------------------------

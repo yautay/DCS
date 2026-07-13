@@ -5642,6 +5642,152 @@ suite("HOLD interval report — approach phase", function()
   end)
 end)
 
+suite("_TickNavigatorState early-return guards", function()
+  local function makeTickGroup(opts)
+    opts = opts or {}
+    return {
+      GetName          = function() return opts.name or "G" end,
+      IsAlive          = function() return opts.alive ~= false end,
+      IsAirborne       = function() return opts.airborne or false end,
+      GetCoordinate    = opts.getCoord or function() return makeCoord({x=0, z=0}) end,
+      GetAltitude      = function() return 0 end,
+      GetVelocityKNOTS = function() return 0 end,
+    }
+  end
+
+  it("returns immediately when state.enabled is false", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, t) table.insert(messages, t) end
+    M.NavigatorStates = nil
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_LANDING", NM*10},
+    })
+    local group = makeTickGroup({airborne=true})
+    local state = M:_GetNavigatorState(group, plan, 0)
+    state.enabled = false; state.takeoffComplete = true
+    setAbsTime(0); setTime(0); M:_TickNavigatorState(state)
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+    assertEq(#messages, 0)
+  end)
+
+  it("returns immediately when group is not alive", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, t) table.insert(messages, t) end
+    M.NavigatorStates = nil
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_LANDING", NM*10},
+    })
+    local group = makeTickGroup({airborne=true, alive=false})
+    local state = M:_GetNavigatorState(group, plan, 0)
+    state.enabled = true; state.takeoffComplete = true
+    setAbsTime(0); setTime(0); M:_TickNavigatorState(state)
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+    assertEq(#messages, 0)
+  end)
+
+  it("returns when groupCoordinate is nil", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, t) table.insert(messages, t) end
+    M.NavigatorStates = nil
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A100", 0},
+      {"MN_T_02_NAV",                          NM*10},
+      {"MN_T_03_LANDING",                      NM*20},
+    })
+    local group = makeTickGroup({airborne=true, getCoord=function() return nil end})
+    local state = M:_GetNavigatorState(group, plan, 0)
+    state.enabled = true; state.takeoffComplete = true; state.currentWpIndex = 2
+    setAbsTime(60); setTime(60); M:_TickNavigatorState(state)
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+    assertEq(#messages, 0)
+  end)
+
+  it("fires interval report when NAV waypoint has no TOT and interval has elapsed", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, t) table.insert(messages, t) end
+    M.NavigatorStates = nil
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A100", 0},
+      {"MN_T_02_NAV",                          NM*100},
+      {"MN_T_03_LANDING",                      NM*200},
+    })
+    local fakeGroup = {
+      GetName          = function() return "G" end,
+      IsAlive          = function() return true end,
+      IsAirborne       = function() return true end,
+      GetCoordinate    = function() return makeCoord({x=0, z=0}) end,
+      GetAltitude      = function() return 0 end,
+      GetVelocityKNOTS = function() return 200 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.takeoffComplete = true; state.currentWpIndex = 2
+    state.reportInterval = 10; state.lastReportTime = 0
+    setAbsTime(100); setTime(100); M:_TickNavigatorState(state)
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "NAV")
+  end)
+end)
+
+suite("_BuildNavigatorTakeoffMessage awaiting-takeoff branch", function()
+  it("returns awaiting message when brake release time has already passed", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A100", 0},
+      {"MN_T_02_LANDING", NM*10},
+    })
+    local group = {
+      GetName   = function() return "G" end,
+      IsAlive   = function() return true end,
+      IsAirborne = function() return false end,
+    }
+    local state = M:_GetNavigatorState(group, plan, 0)
+    setAbsTime(60)  -- 60s after brake release → secondsToTakeoff = -60
+    local msg = M:_BuildNavigatorTakeoffMessage(state, "test")
+    setAbsTime(0)
+    M.NavigatorStates = nil
+    assertMatch(msg, "Awaiting takeoff")
+    assertMatch(msg, "T%+")
+  end)
+end)
+
+suite("_SetNavigatorWaypoint out-of-range guard", function()
+  it("does not change index when called with index < 1", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_LANDING", NM*10},
+    })
+    local group = {GetName=function() return "G" end, IsAlive=function() return true end}
+    local state = M:_GetNavigatorState(group, plan, 0)
+    M.NavigatorStates = nil
+    state.currentWpIndex = 1
+    M:_SetNavigatorWaypoint(state, 0, "test")
+    assertEq(state.currentWpIndex, 1)
+  end)
+
+  it("does not change index when called with index beyond plan length", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_LANDING", NM*10},
+    })
+    local group = {GetName=function() return "G" end, IsAlive=function() return true end}
+    local state = M:_GetNavigatorState(group, plan, 0)
+    M.NavigatorStates = nil
+    state.currentWpIndex = 1
+    M:_SetNavigatorWaypoint(state, 99, "test")
+    assertEq(state.currentWpIndex, 1)
+  end)
+end)
+
 ------------------------------------------------------------
 -- Bundle smoke test
 ------------------------------------------------------------
