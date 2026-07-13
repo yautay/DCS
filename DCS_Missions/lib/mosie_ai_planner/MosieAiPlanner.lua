@@ -62,6 +62,23 @@ function MosieAiPlanner:_IsAiGroup(group)
   return skill ~= "Client" and skill ~= "Player"
 end
 
+function MosieAiPlanner:_IsGroupExisting(group)
+  if not group then
+    return false
+  end
+  if type(group.GetDCSObject) == "function" then
+    local ok, dcsGroup = pcall(function() return group:GetDCSObject() end)
+    if ok and dcsGroup and type(dcsGroup.isExist) == "function" then
+      local existOk, exists = pcall(function() return dcsGroup:isExist() end)
+      return existOk and exists == true
+    end
+  end
+  if type(group.IsAlive) == "function" then
+    return group:IsAlive() == true
+  end
+  return false
+end
+
 function MosieAiPlanner:_KnotsToMps(knots)
   if UTILS and type(UTILS.KnotsToMps) == "function" then
     return UTILS.KnotsToMps(knots or 0)
@@ -277,7 +294,7 @@ function MosieAiPlanner:_DiscoverAssignments(plans)
   groupSet:ForEachGroup(function(group)
     local groupName = group:GetName()
     local planName = self:_ExtractPlanFromGroupName(groupName)
-    if planName and plans[planName] and group:IsAlive() and self:_IsAiGroup(group) then
+    if planName and plans[planName] and self:_IsGroupExisting(group) and self:_IsAiGroup(group) then
       table.insert(assignments, {
         group = group,
         groupName = groupName,
@@ -1084,7 +1101,7 @@ function MosieAiPlanner:_RequiredSpeedToWaypointKt(state, waypoint)
 end
 
 function MosieAiPlanner:_TickAssignment(state)
-  if not state.assignment.group:IsAlive() then
+  if not self:_IsGroupExisting(state.assignment.group) then
     return
   end
 

@@ -3453,6 +3453,44 @@ suite("MosieAiPlanner", function()
     end)
   end)
 
+  it("_IsGroupExisting returns true when DCS group exists", function()
+    local group = {
+      GetDCSObject = function() return {isExist = function() return true end} end,
+    }
+    assertTrue(AP:_IsGroupExisting(group))
+  end)
+
+  it("_IsGroupExisting returns false when DCS group does not exist", function()
+    local group = {
+      GetDCSObject = function() return {isExist = function() return false end} end,
+    }
+    assertTrue(not AP:_IsGroupExisting(group))
+  end)
+
+  it("_IsGroupExisting returns false when GetDCSObject returns nil (despawned group)", function()
+    local group = {
+      GetDCSObject = function() return nil end,
+    }
+    assertTrue(not AP:_IsGroupExisting(group))
+  end)
+
+  it("_IsGroupExisting returns true for uncontrolled group that exists but IsAlive would return nil", function()
+    local group = {
+      GetDCSObject = function()
+        return {isExist = function() return true end}
+      end,
+      IsAlive = function() return nil end,
+    }
+    assertTrue(AP:_IsGroupExisting(group))
+  end)
+
+  it("_IsGroupExisting falls back to IsAlive when no GetDCSObject", function()
+    local group = {IsAlive = function() return true end}
+    assertTrue(AP:_IsGroupExisting(group))
+    local deadGroup = {IsAlive = function() return false end}
+    assertTrue(not AP:_IsGroupExisting(deadGroup))
+  end)
+
   it("sends StartUncontrolled inside the takeoff lead window", function()
     local started = false
     local group = { StartUncontrolled = function() started = true end }
@@ -3464,6 +3502,38 @@ suite("MosieAiPlanner", function()
 
     assertTrue(started)
     assertEq(state.startCommanded, true)
+  end)
+
+  it("_TickAssignment wakes uncontrolled AI group that reports IsAlive=nil but exists in DCS", function()
+    local started = false
+    local group = {
+      GetDCSObject = function() return {isExist = function() return true end} end,
+      IsAlive = function() return nil end,
+      IsAirborne = function() return false end,
+      StartUncontrolled = function() started = true end,
+      GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
+      GetAltitude = function() return 0 end,
+      GetSkill = function() return "Excellent" end,
+      Route = function() end,
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 180, resolvedAltFt = 0},
+        {type = "LANDING", order = 2, coordinate = makeCoord({x = 0, z = NM * 20}), etaSec = 600, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+    local originalGetComputed = AP._GetComputedPlan
+    AP._GetComputedPlan = function() return computed end
+    setAbsTime(0); setTime(0)
+
+    local ok, err = pcall(function()
+      AP:_TickAssignment({assignment = {group = group, groupName = "AI [MN:TEST]"}, currentWpIndex = 2})
+      assertTrue(started, "expected StartUncontrolled to fire for uncontrolled group")
+    end)
+
+    AP._GetComputedPlan = originalGetComputed
+    if not ok then error(err) end
   end)
 
   it("retasks when ETA error exceeds tolerance", function()
