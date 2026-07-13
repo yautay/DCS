@@ -736,18 +736,18 @@ function MosieAiPlanner:_BuildRoutePoint(computedWaypoint, speedKt)
   }
 
   if waypoint.type == "LANDING" then
-    routePoint.type = "Land"
-    routePoint.action = "Landing"
-    routePoint.speed_locked = false
-
     local airbaseId = self:_GetAirbaseId(landingAirbase)
     if airbaseId then
+      routePoint.type = "Land"
+      routePoint.action = "Landing"
+      routePoint.speed_locked = false
       routePoint.airdromeId = airbaseId
-    end
-
-    local airbaseName = self:_GetAirbaseName(landingAirbase)
-    if airbaseName then
-      routePoint.name = airbaseName
+      local airbaseName = self:_GetAirbaseName(landingAirbase)
+      if airbaseName then
+        routePoint.name = airbaseName
+      end
+    else
+      self:_Log(string.format("LANDING waypoint has no nearby airdrome — routing as fly-over"))
     end
   end
 

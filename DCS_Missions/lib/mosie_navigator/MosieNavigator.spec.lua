@@ -3234,8 +3234,32 @@ suite("MosieAiPlanner", function()
     local route = AP:_BuildRoute(group, computed, 2, 190)
     assertEq(#route, 3)
     assertEq(route[2].type, "Turning Point")
-    assertEq(route[3].type, "Land")
-    assertEq(route[3].action, "Landing")
+    -- No airbase mock → degrades to fly-over
+    assertEq(route[3].type, "Turning Point")
+    assertEq(route[3].action, "Fly Over Point")
+  end)
+
+  it("LANDING without a nearby airdrome degrades to fly-over turning point", function()
+    local group = {
+      GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
+      GetAltitude = function() return 100 end,
+    }
+    local landingCoordinate = makeCoord({x = 0, z = NM * 20})
+    landingCoordinate.GetClosestAirbase = function() return nil, nil end
+
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 0, resolvedAltFt = 0},
+        {type = "LANDING", order = 2, coordinate = landingCoordinate, etaSec = 300, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+
+    local route = AP:_BuildRoute(group, computed, 2, 190)
+    assertEq(#route, 2)
+    assertEq(route[2].type, "Turning Point")
+    assertEq(route[2].action, "Fly Over Point")
+    assertTrue(route[2].airdromeId == nil)
   end)
 
   it("routes LANDING to the nearest airdrome under the LAND zone", function()
