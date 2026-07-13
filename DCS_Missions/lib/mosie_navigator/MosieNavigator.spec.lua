@@ -2768,6 +2768,28 @@ suite("Navigator waypoint callouts", function()
     end)
   end)
 
+  it("airborne navigator skips TAKE_OFF and reports the first airborne waypoint", function()
+    withCapturedNavigatorMessages(function(messages)
+      local plan = makePlan({
+        { "MN_TEST_01_TAKE_OFF__T00:01__S220__A1500", 0 },
+        { "MN_TEST_02_NAV_Checkpoint__T00:05", NM * 15 },
+        { "MN_TEST_03_LANDING", NM * 30 },
+      })
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      local state = M:_GetNavigatorState(group, plan, 0)
+      state.enabled = true
+      state.currentWpIndex = 1
+
+      setAbsTime(30)
+      setTime(30)
+      M:_TickNavigatorState(state)
+
+      assertEq(state.currentWpIndex, 2)
+      assertTrue(state.takeoffComplete)
+      assertEq(messages[1], "5:00 CALLOUT: NAV: WP02 Checkpoint, DIST 15.0 NM, PLAN ETA 00:05:08, ACT ETA 00:08, REQ IAS 194 kt, SPD CORR +74 kt. Steer 000M, height 1500 feet. We are on track.")
+    end)
+  end)
+
   it("holds active waypoint until computed hold exit and then gives next waypoint guidance", function()
     withCapturedNavigatorMessages(function(messages)
       local plan = makePlan({
@@ -3214,6 +3236,107 @@ suite("MosieAiPlanner", function()
     assertEq(route[2].type, "Turning Point")
     assertEq(route[3].type, "Land")
     assertEq(route[3].action, "Landing")
+  end)
+
+  it("routes LANDING to the nearest airdrome under the LAND zone", function()
+    local group = {
+      GetCoordinate = function() return makeCoord({x = 0, z = 0}) end,
+      GetAltitude = function() return 100 end,
+    }
+    local landingZoneCoordinate = makeCoord({x = 0, z = NM * 20})
+    local airbaseCoordinate = makeCoord({x = NM * 2, z = NM * 21})
+    local airbase = {
+      GetID = function() return 42 end,
+      GetName = function() return "Tangmere" end,
+      GetCoordinate = function() return airbaseCoordinate end,
+      GetAirbaseCategory = function() return Airbase.Category.AIRDROME end,
+    }
+    landingZoneCoordinate.GetClosestAirbase = function(_, category)
+      assertEq(category, Airbase.Category.AIRDROME)
+      return airbase, NM
+    end
+
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0}), etaSec = 0, resolvedAltFt = 0},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 10}), etaSec = 300, resolvedAltFt = 1500, legGsKt = 180},
+        {type = "LANDING", order = 3, coordinate = landingZoneCoordinate, etaSec = 600, resolvedAltFt = 0, legGsKt = 160},
+      }
+    }
+
+    local route = AP:_BuildRoute(group, computed, 2, 190)
+    assertEq(route[3].type, "Land")
+    assertEq(route[3].action, "Landing")
+    assertEq(route[3].airdromeId, 42)
+    assertEq(route[3].name, "Tangmere")
+    assertNear(route[3].x, NM * 2, 0.001)
+    assertNear(route[3].y, NM * 21, 0.001)
+  end)
+
+  it("adds a line-intercept point when AI is off track and more than 10 NM from the waypoint", function()
+    local group = {
+      GetCoordinate = function() return makeCoord({x = NM * 2, z = NM * 5}) end,
+      GetAltitude = function() return 100 end,
+    }
+    local plan = {
+      name = "TEST",
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0})},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 20})},
+        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 40})},
+      },
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = plan.waypoints[1].coordinate, etaSec = 0, resolvedAltFt = 0, source = plan.waypoints[1]},
+        {type = "NAV", order = 2, coordinate = plan.waypoints[2].coordinate, etaSec = 300, resolvedAltFt = 1500, legGsKt = 180, source = plan.waypoints[2]},
+        {type = "LANDING", order = 3, coordinate = plan.waypoints[3].coordinate, etaSec = 600, resolvedAltFt = 0, legGsKt = 160, source = plan.waypoints[3]},
+      }
+    }
+    local state = {assignment = {group = group, groupName = "AI [MN:TEST]", plan = plan}, currentWpIndex = 2}
+
+    local route, routeMode, routeDetails = AP:_BuildRoute(state, computed, 2, 190)
+
+    assertEq(routeMode, "INTERCEPT_LINE")
+    assertTrue(string.find(routeDetails, "intercept_xte_nm=2%.0") ~= nil, routeDetails)
+    assertEq(#route, 4)
+    assertNear(route[2].x, 0, 0.001)
+    assertNear(route[2].y, NM * 10, 0.001)
+    assertNear(route[3].x, 0, 0.001)
+    assertNear(route[3].y, NM * 20, 0.001)
+  end)
+
+  it("routes direct to waypoint when AI is within 10 NM", function()
+    local group = {
+      GetCoordinate = function() return makeCoord({x = NM * 2, z = NM * 12}) end,
+      GetAltitude = function() return 100 end,
+    }
+    local plan = {
+      name = "TEST",
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = makeCoord({x = 0, z = 0})},
+        {type = "NAV", order = 2, coordinate = makeCoord({x = 0, z = NM * 20})},
+        {type = "LANDING", order = 3, coordinate = makeCoord({x = 0, z = NM * 40})},
+      },
+    }
+    local computed = {
+      valid = true,
+      waypoints = {
+        {type = "TAKE_OFF", order = 1, coordinate = plan.waypoints[1].coordinate, etaSec = 0, resolvedAltFt = 0, source = plan.waypoints[1]},
+        {type = "NAV", order = 2, coordinate = plan.waypoints[2].coordinate, etaSec = 300, resolvedAltFt = 1500, legGsKt = 180, source = plan.waypoints[2]},
+        {type = "LANDING", order = 3, coordinate = plan.waypoints[3].coordinate, etaSec = 600, resolvedAltFt = 0, legGsKt = 160, source = plan.waypoints[3]},
+      }
+    }
+    local state = {assignment = {group = group, groupName = "AI [MN:TEST]", plan = plan}, currentWpIndex = 2}
+
+    local route, routeMode = AP:_BuildRoute(state, computed, 2, 190)
+
+    assertEq(routeMode, "DIRECT_WP")
+    assertEq(#route, 3)
+    assertNear(route[2].x, 0, 0.001)
+    assertNear(route[2].y, NM * 20, 0.001)
   end)
 
   it("does not write AI zone dump outside TEST_MODE", function()

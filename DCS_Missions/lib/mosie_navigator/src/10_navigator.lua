@@ -569,6 +569,14 @@ function MosieNavigator:_ResetNavigatorCallouts(state)
   end
 end
 
+function MosieNavigator:_MarkNavigatorTakeoffComplete(state)
+  state.takeoffComplete = true
+  state.timedCallouts = state.timedCallouts or {}
+  local eventCallouts = state.timedCallouts["TAKE_OFF:brake_release"] or {}
+  eventCallouts.brakeRelease = true
+  state.timedCallouts["TAKE_OFF:brake_release"] = eventCallouts
+end
+
 function MosieNavigator:_RunTimedCallouts(state, eventKey, secondsToEvent, thresholds, buildMessage)
   if not secondsToEvent or secondsToEvent <= 0 then
     return false
@@ -674,10 +682,16 @@ function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled,
     self:_ResetNavigatorCallouts(state)
     local takeoff = self:_GetTakeoffWaypoint(plan)
     local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
-    if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(group) then
+    if takeoff and secondsToTakeoff and not state.takeoffComplete and not self:_IsNavigatorGroupAirborne(group) then
       state.currentWpIndex = 1
       self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "on"))
     else
+      if takeoff and self:_IsNavigatorGroupAirborne(group) then
+        self:_MarkNavigatorTakeoffComplete(state)
+        if state.currentWpIndex == 1 then
+          state.currentWpIndex = self:_GetInitialNavigatorWpIndex(plan)
+        end
+      end
       self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "on"))
     end
   else
@@ -695,9 +709,15 @@ function MosieNavigator:_NavigatorStatusNow(group, plan, rolexSeconds, baseRolex
   local state = self:_GetNavigatorState(group, plan, rolexSeconds, baseRolexSeconds, pilotRolexSeconds)
   local takeoff = self:_GetTakeoffWaypoint(plan)
   local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
-  if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(group) then
+  if takeoff and secondsToTakeoff and not state.takeoffComplete and not self:_IsNavigatorGroupAirborne(group) then
     self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "status"))
   else
+    if takeoff and self:_IsNavigatorGroupAirborne(group) then
+      self:_MarkNavigatorTakeoffComplete(state)
+      if state.currentWpIndex == 1 then
+        state.currentWpIndex = self:_GetInitialNavigatorWpIndex(plan)
+      end
+    end
     self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "status"))
   end
 end
@@ -717,10 +737,23 @@ function MosieNavigator:_TickNavigatorState(state)
 
   local takeoff = self:_GetTakeoffWaypoint(state.plan)
   local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
-  if takeoff and secondsToTakeoff and not self:_IsNavigatorGroupAirborne(state.group) then
+  local airborne = self:_IsNavigatorGroupAirborne(state.group)
+  if takeoff and secondsToTakeoff and not state.takeoffComplete and not airborne then
     state.currentWpIndex = 1
     self:_TickNavigatorTakeoff(state, takeoff, secondsToTakeoff, now)
     return
+  end
+
+  if takeoff and airborne then
+    self:_MarkNavigatorTakeoffComplete(state)
+    if waypoint.type == "TAKE_OFF" then
+      state.currentWpIndex = self:_GetInitialNavigatorWpIndex(state.plan)
+      waypoint = state.plan.waypoints[state.currentWpIndex]
+      secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+      if not waypoint then
+        return
+      end
+    end
   end
 
   if secondsToTot then
