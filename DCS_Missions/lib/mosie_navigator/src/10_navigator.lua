@@ -418,6 +418,127 @@ function MosieNavigator:_GetSecondsToNavigatorHoldExit(state, index)
   return secondsToArrival + self:_GetNavigatorHoldDurationSeconds(state, index)
 end
 
+function MosieNavigator:_GetWaypointPassRadiusM(waypoint)
+  if waypoint and waypoint.radiusM then
+    return waypoint.radiusM
+  end
+  local t = waypoint and waypoint.type
+  if t == "TARGET"  then return self.Config.navigatorTargetPassRadiusM  end
+  if t == "HOLD"    then return self.Config.navigatorHoldEntryRadiusM   end
+  if t == "LANDING" then return self.Config.navigatorLandingPassRadiusM end
+  return self.Config.navigatorWaypointPassRadiusM
+end
+
+function MosieNavigator:_IsWaypointReachedFlyOver(waypoint, groupCoordinate)
+  local passRadius = self:_GetWaypointPassRadiusM(waypoint)
+  return groupCoordinate:Get2DDistance(waypoint.coordinate) <= passRadius
+end
+
+function MosieNavigator:_IsWaypointReachedFlyBy(previousWaypoint, waypoint, groupCoordinate)
+  if not previousWaypoint then return false end
+  local xteNm, _, alongTrackM, legLengthM = self:_CalculateXte(previousWaypoint, waypoint, groupCoordinate)
+  if not xteNm or not legLengthM or legLengthM <= 0 or not alongTrackM then return false end
+  if alongTrackM < legLengthM then return false end
+  local flyByRadius = self:_GetWaypointPassRadiusM(waypoint) * (self.Config.navigatorFlyByRadiusMultiplier or 2)
+  return UTILS.NMToMeters(xteNm) <= flyByRadius
+end
+
+function MosieNavigator:_IsWaypointReachedPositionally(state, waypoint, previousWaypoint, groupCoordinate)
+  local flyOverOnly = waypoint.type == "TARGET" or waypoint.type == "LANDING"
+  if flyOverOnly then
+    return self:_IsWaypointReachedFlyOver(waypoint, groupCoordinate)
+  end
+  return self:_IsWaypointReachedFlyOver(waypoint, groupCoordinate)
+    or self:_IsWaypointReachedFlyBy(previousWaypoint, waypoint, groupCoordinate)
+end
+
+function MosieNavigator:_ComputeHoldExitClockSec(state, index)
+  local computedWp = self:_GetNavigatorComputedWaypoint(state, index)
+  if computedWp and computedWp.etaSec ~= nil then
+    return (computedWp.etaSec + (computedWp.holdDurationSec or 0)) % SECONDS_PER_DAY
+  end
+  local waypoint = state.plan.waypoints[index]
+  if not waypoint then return nil end
+  local arrivalClockSec = self:_GetAdjustedTotSeconds(waypoint, state.rolexSeconds)
+  if not arrivalClockSec then return nil end
+  local holdDurationSec = self:_GetNavigatorHoldDurationSeconds(state, index)
+  return (arrivalClockSec + holdDurationSec) % SECONDS_PER_DAY
+end
+
+function MosieNavigator:_HandleEtaLateAlert(state, waypoint)
+  state.etaAlerts = state.etaAlerts or {}
+  if state.etaAlerts[state.currentWpIndex] then return end
+  state.etaAlerts[state.currentWpIndex] = true
+  self:_SendNavigatorMessage(state.group, string.format(
+    "NAV: %s ETA passed, waypoint not reached. Continue or advance manually.",
+    self:_GetNavigatorWaypointLabel(waypoint)
+  ))
+end
+
+function MosieNavigator:_HandleTargetDepartureAlert(state, waypoint, groupCoordinate)
+  state.targetApproach = state.targetApproach or {}
+  local approach = state.targetApproach[state.currentWpIndex] or {}
+  state.targetApproach[state.currentWpIndex] = approach
+
+  local dist = groupCoordinate:Get2DDistance(waypoint.coordinate)
+  if not approach.minDistM or dist < approach.minDistM then
+    approach.minDistM = dist
+  end
+
+  if approach.departureAlerted then return end
+
+  local passRadius = self:_GetWaypointPassRadiusM(waypoint)
+  if approach.minDistM and approach.minDistM < passRadius * 3 and dist > approach.minDistM * 1.1 then
+    approach.departureAlerted = true
+    self:_SendNavigatorMessage(state.group, string.format(
+      "NAV: Departing %s without confirmed pass. Use NEXT WP if attack complete.",
+      self:_GetNavigatorWaypointLabel(waypoint)
+    ))
+  end
+end
+
+function MosieNavigator:_HandleNavigatorLandingReached(state)
+  state.enabled = false
+  self:_SendNavigatorMessage(state.group, "NAV: Home plate reached. Welcome back. Navigator off.")
+end
+
+function MosieNavigator:_GetInitialNavigatorWpIndexByPosition(plan, group)
+  if not plan or not plan.waypoints then
+    return self:_GetInitialNavigatorWpIndex(plan)
+  end
+  if not group or type(group.GetCoordinate) ~= "function" then
+    return self:_GetInitialNavigatorWpIndex(plan)
+  end
+  local groupCoordinate = group:GetCoordinate()
+  if not groupCoordinate then
+    return self:_GetInitialNavigatorWpIndex(plan)
+  end
+
+  local waypoints = plan.waypoints
+  local minDist = math.huge
+  local nearestIndex = nil
+
+  for index, wp in ipairs(waypoints) do
+    if wp.type ~= "TAKE_OFF" then
+      local dist = groupCoordinate:Get2DDistance(wp.coordinate)
+      if dist < minDist then
+        minDist = dist
+        nearestIndex = index
+      end
+      local prevWp = waypoints[index - 1]
+      if not prevWp then
+        return index
+      end
+      local _, _, alongTrackM, legLengthM = self:_CalculateXte(prevWp, wp, groupCoordinate)
+      if not alongTrackM or not legLengthM or legLengthM <= 0 or alongTrackM < legLengthM then
+        return index
+      end
+    end
+  end
+
+  return nearestIndex or self:_GetInitialNavigatorWpIndex(plan)
+end
+
 function MosieNavigator:_BuildNavigatorTakeoffMessage(state, reason)
   local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
   if secondsToTakeoff and secondsToTakeoff <= 0 then
@@ -503,27 +624,61 @@ function MosieNavigator:_BuildNavigatorHoldExitMessage(state)
   return string.gsub(message, "^NAV: Set course", "NAV: Leaving hold. Set course")
 end
 
-function MosieNavigator:_TickNavigatorHold(state, waypoint, now)
-  local holdRemainingSeconds = self:_GetSecondsToNavigatorHoldExit(state, state.currentWpIndex)
+function MosieNavigator:_TickNavigatorHold(state, waypoint, now, groupCoordinate)
+  state.holdEntries = state.holdEntries or {}
+  local hEntry = state.holdEntries[state.currentWpIndex] or {}
+  state.holdEntries[state.currentWpIndex] = hEntry
+
+  if not hEntry.entered then
+    if self:_IsWaypointReachedFlyOver(waypoint, groupCoordinate) then
+      hEntry.entered = true
+      local holdExitClockSec = self:_ComputeHoldExitClockSec(state, state.currentWpIndex)
+      hEntry.holdExitClockSec = holdExitClockSec
+      local holdRemainingSeconds = holdExitClockSec and self:_GetSecondsToClockSeconds(holdExitClockSec)
+
+      if not holdRemainingSeconds or holdRemainingSeconds <= 0 then
+        self:_SendNavigatorMessage(state.group, string.format(
+          "NAV: Hold at %s skipped — arrived past planned exit. Advancing.",
+          self:_GetNavigatorWaypointLabel(waypoint)
+        ))
+        if state.currentWpIndex < #state.plan.waypoints then
+          self:_SetNavigatorWaypoint(state, state.currentWpIndex + 1, "hold exit")
+        end
+        return
+      end
+
+      state.lastReportTime = now
+      self:_SendNavigatorMessage(state.group, self:_BuildNavigatorHoldEntryMessage(state, holdRemainingSeconds))
+      return
+    end
+
+    local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+    if secondsToTot then
+      local thresholds = self.Config.navigatorWaypointCalloutSeconds
+      local eventKey = string.format("WP:%d", state.currentWpIndex)
+      local sentCallout = self:_RunTimedCallouts(state, eventKey, secondsToTot, thresholds, function(calloutSeconds)
+        return self:_BuildNavigatorWaypointCalloutMessage(state, self:_FormatTimedCalloutReason(calloutSeconds))
+      end)
+      if sentCallout then return end
+
+      local suppressIntervalSeconds = thresholds and thresholds[1]
+      if suppressIntervalSeconds and secondsToTot <= suppressIntervalSeconds then return end
+    end
+
+    if not state.lastReportTime or now - state.lastReportTime >= state.reportInterval then
+      state.lastReportTime = now
+      self:_SendNavigatorMessage(state.group, self:_BuildNavigatorStatusMessage(state, "report"))
+    end
+    return
+  end
+
+  local holdRemainingSeconds = hEntry.holdExitClockSec and self:_GetSecondsToClockSeconds(hEntry.holdExitClockSec)
 
   if not holdRemainingSeconds or holdRemainingSeconds <= 0 then
     if state.currentWpIndex < #state.plan.waypoints then
       self:_SetNavigatorWaypoint(state, state.currentWpIndex + 1, "hold exit")
-      return true
     end
-
-    return false
-  end
-
-  state.holdEntries = state.holdEntries or {}
-  local holdState = state.holdEntries[state.currentWpIndex] or {}
-  state.holdEntries[state.currentWpIndex] = holdState
-
-  if not holdState.entryAnnounced then
-    holdState.entryAnnounced = true
-    state.lastReportTime = now
-    self:_SendNavigatorMessage(state.group, self:_BuildNavigatorHoldEntryMessage(state, holdRemainingSeconds))
-    return true
+    return
   end
 
   local eventKey = string.format("HOLD_EXIT:%d", state.currentWpIndex)
@@ -531,22 +686,15 @@ function MosieNavigator:_TickNavigatorHold(state, waypoint, now)
     return self:_BuildNavigatorHoldRemainingMessage(state, self:_FormatTimedCalloutReason(calloutSeconds), holdRemainingSeconds)
   end)
 
-  if sentCallout then
-    return true
-  end
+  if sentCallout then return end
 
   local suppressIntervalSeconds = self.Config.navigatorHoldExitCalloutSeconds and self.Config.navigatorHoldExitCalloutSeconds[1]
-  if suppressIntervalSeconds and holdRemainingSeconds <= suppressIntervalSeconds then
-    return true
-  end
+  if suppressIntervalSeconds and holdRemainingSeconds <= suppressIntervalSeconds then return end
 
   if not state.lastReportTime or now - state.lastReportTime >= state.reportInterval then
     state.lastReportTime = now
     self:_SendNavigatorMessage(state.group, self:_BuildNavigatorHoldRemainingMessage(state, "report", holdRemainingSeconds))
-    return true
   end
-
-  return true
 end
 
 function MosieNavigator:_BuildNavigatorStatusMessage(state, reason)
@@ -565,6 +713,8 @@ function MosieNavigator:_ResetNavigatorCallouts(state)
   state.callouts = {}
   state.timedCallouts = {}
   state.holdEntries = {}
+  state.etaAlerts = {}
+  state.targetApproach = {}
   for _, calloutSeconds in ipairs(self.Config.navigatorCalloutSeconds) do
     state.callouts[calloutSeconds] = false
   end
@@ -671,29 +821,30 @@ function MosieNavigator:_SetNavigatorEnabled(group, plan, rolexSeconds, enabled,
   state.enabled = enabled
 
   if enabled then
-    local computed = nil
-    if type(self._GetActiveComputedPlan) == "function" then
-      computed = self:_GetActiveComputedPlan(
-        plan,
-        state.baseRolexSeconds or rolexSeconds or 0,
-        (state.missionRolexSeconds or 0) + (state.pilotRolexSeconds or 0)
-      )
-    end
-    state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds, computed)
-    self:_ResetNavigatorCallouts(state)
-    local takeoff = self:_GetTakeoffWaypoint(plan)
-    local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
-    if takeoff and secondsToTakeoff and not state.takeoffComplete and not self:_IsNavigatorGroupAirborne(group) then
-      state.currentWpIndex = 1
-      self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "on"))
-    else
-      if takeoff and self:_IsNavigatorGroupAirborne(group) then
-        self:_MarkNavigatorTakeoffComplete(state)
-        if state.currentWpIndex == 1 then
-          state.currentWpIndex = self:_GetInitialNavigatorWpIndex(plan)
-        end
-      end
+    if self:_IsNavigatorGroupAirborne(group) then
+      self:_MarkNavigatorTakeoffComplete(state)
+      state.currentWpIndex = self:_GetInitialNavigatorWpIndexByPosition(plan, group)
+      self:_ResetNavigatorCallouts(state)
       self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "on"))
+    else
+      local computed = nil
+      if type(self._GetActiveComputedPlan) == "function" then
+        computed = self:_GetActiveComputedPlan(
+          plan,
+          state.baseRolexSeconds or rolexSeconds or 0,
+          (state.missionRolexSeconds or 0) + (state.pilotRolexSeconds or 0)
+        )
+      end
+      state.currentWpIndex = self:_GetInitialNavigatorWpIndexByTot(plan, rolexSeconds, computed)
+      self:_ResetNavigatorCallouts(state)
+      local takeoff = self:_GetTakeoffWaypoint(plan)
+      local secondsToTakeoff = self:_GetSecondsToNavigatorWaypointEta(state, 1)
+      if takeoff and secondsToTakeoff and not state.takeoffComplete then
+        state.currentWpIndex = 1
+        self:_SendNavigatorMessage(group, self:_BuildNavigatorTakeoffMessage(state, "on"))
+      else
+        self:_SendNavigatorMessage(group, self:_BuildNavigatorWaypointCalloutMessage(state, "on"))
+      end
     end
   else
     self:_SendNavigatorMessage(group, "NAV off")
@@ -733,7 +884,6 @@ function MosieNavigator:_TickNavigatorState(state)
     return
   end
 
-  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
   local now = timer.getTime()
 
   local takeoff = self:_GetTakeoffWaypoint(state.plan)
@@ -750,25 +900,45 @@ function MosieNavigator:_TickNavigatorState(state)
     if waypoint.type == "TAKE_OFF" then
       state.currentWpIndex = self:_GetInitialNavigatorWpIndex(state.plan)
       waypoint = state.plan.waypoints[state.currentWpIndex]
-      secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
       if not waypoint then
         return
       end
     end
   end
 
-  if secondsToTot then
-    if waypoint.type == "HOLD" and secondsToTot <= 0 then
-      if self:_TickNavigatorHold(state, waypoint, now) then
-        return
-      end
-    end
+  local groupCoordinate = state.group:GetCoordinate()
+  if not groupCoordinate then
+    return
+  end
 
-    if secondsToTot <= 0 and state.currentWpIndex < #state.plan.waypoints then
+  if waypoint.type == "HOLD" then
+    self:_TickNavigatorHold(state, waypoint, now, groupCoordinate)
+    return
+  end
+
+  local previousWaypoint = state.plan.waypoints[state.currentWpIndex - 1]
+  local secondsToTot = self:_GetSecondsToNavigatorWaypointEta(state, state.currentWpIndex)
+
+  if self:_IsWaypointReachedPositionally(state, waypoint, previousWaypoint, groupCoordinate) then
+    if waypoint.type == "LANDING" then
+      self:_HandleNavigatorLandingReached(state)
+      return
+    end
+    if state.currentWpIndex < #state.plan.waypoints then
       self:_AdvanceNavigatorWaypoint(state, "new WP")
       return
     end
+  end
 
+  if secondsToTot and secondsToTot < 0 then
+    self:_HandleEtaLateAlert(state, waypoint)
+  end
+
+  if waypoint.type == "TARGET" then
+    self:_HandleTargetDepartureAlert(state, waypoint, groupCoordinate)
+  end
+
+  if secondsToTot then
     local thresholds = waypoint.type == "TARGET" and self.Config.navigatorTargetCalloutSeconds or self.Config.navigatorWaypointCalloutSeconds
     local eventKey = string.format("%s:%d", waypoint.type == "TARGET" and "TARGET" or "WP", state.currentWpIndex)
     local sentCallout = self:_RunTimedCallouts(state, eventKey, secondsToTot, thresholds, function(calloutSeconds)

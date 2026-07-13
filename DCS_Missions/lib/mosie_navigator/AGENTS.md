@@ -213,7 +213,7 @@ Flight plan CSV layout:
 
 ```text
 # PLAN,<plan>
-ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT
+ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT,PASS_RADIUS_M
 ```
 
 - `LAT`, `LON` are signed decimal degrees to 6 dp.
@@ -221,6 +221,7 @@ ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT
 - `ALT_FT` is the declared `__A` value; empty when the waypoint has no `__A` token.
 - `TOT` is the declared `__T` value, formatted as `HH:MM`; empty when the waypoint has no `__T` token.
 - `SPEED_KT` is the declared `__S` value; empty when the waypoint has no `__S` token.
+- `PASS_RADIUS_M` is the ME trigger-zone radius rounded to whole metres; empty for non-circular zones. The runtime navigator uses this radius as the fly-over pass threshold for that waypoint. TARGET and HOLD use it strictly; NAV/INGRESS/EGRESS additionally trigger on fly-by when the pilot's CPA passes the leg end and cross-track error is within `PASS_RADIUS_M × navigatorFlyByRadiusMultiplier`.
 - Inherited/default/computed values and group ROLEX offsets are not written to flight plan CSV.
 
 Beacon CSV layout:

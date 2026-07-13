@@ -2276,7 +2276,8 @@ suite("Navigator waypoint callouts", function()
         { "MN_TEST_03_INGRESS_IP__T00:10__A500", NM * 30 },
         { "MN_TEST_04_LANDING", NM * 45 },
       })
-      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      -- Group positioned at WP02 to trigger fly-over
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, NM * 15, 0, 120)
       local state = M:_GetNavigatorState(group, plan, 0)
       state.enabled = true
       state.currentWpIndex = 2
@@ -2286,7 +2287,7 @@ suite("Navigator waypoint callouts", function()
       M:_TickNavigatorState(state)
 
       assertEq(#messages, 1)
-      assertEq(messages[1], "NAV: Set course for WP03 IP, DIST 30.0 NM, PLAN ETA 00:10, ACT ETA 00:20, REQ IAS 360 kt >MAX, SPD CORR +240 kt UNACH. Steer 000M, height 500 feet. We are on track.")
+      assertEq(messages[1], "NAV: Set course for WP03 IP, DIST 15.0 NM, PLAN ETA 00:10, ACT ETA 00:12:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 500 feet. We are on track.")
       assertEq(state.currentWpIndex, 3)
     end)
   end)
@@ -2299,7 +2300,8 @@ suite("Navigator waypoint callouts", function()
         { "MN_TEST_03_INGRESS_IP__T00:10__A500", NM * 30 },
         { "MN_TEST_04_LANDING", NM * 45 },
       })
-      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      -- Group positioned at WP02 to trigger fly-over
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, NM * 15, 0, 120)
       local state = M:_GetNavigatorState(group, plan, 0)
       state.enabled = true
       state.currentWpIndex = 2
@@ -2309,7 +2311,7 @@ suite("Navigator waypoint callouts", function()
       setAbsTime(301); setTime(301); M:_TickNavigatorState(state)
 
       assertEq(#messages, 2)
-      assertEq(messages[2], "5:00 CALLOUT: NAV: WP03 IP, DIST 30.0 NM, PLAN ETA 00:10, ACT ETA 00:20:01, REQ IAS 361 kt >MAX, SPD CORR +241 kt UNACH. Steer 000M, height 500 feet. We are on track.")
+      assertEq(messages[2], "5:00 CALLOUT: NAV: WP03 IP, DIST 15.0 NM, PLAN ETA 00:10, ACT ETA 00:12:31, REQ IAS 181 kt, SPD CORR +61 kt. Steer 000M, height 500 feet. We are on track.")
     end)
   end)
 
@@ -2379,7 +2381,8 @@ suite("Navigator waypoint callouts", function()
         { "MN_TEST_03_TARGET_Prison__T00:10__A50", NM * 30 },
         { "MN_TEST_04_LANDING", NM * 45 },
       })
-      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      -- Group positioned at WP02 to trigger fly-over → advance to TARGET
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, NM * 15, 0, 120)
       local state = M:_GetNavigatorState(group, plan, 0)
       state.enabled = true
       state.currentWpIndex = 2
@@ -2388,7 +2391,7 @@ suite("Navigator waypoint callouts", function()
       setTime(300)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: Set course for TARGET WP03 Prison, DIST 30.0 NM, PLAN ETA 00:10, ACT ETA 00:20, REQ IAS 360 kt >MAX, SPD CORR +240 kt UNACH. Steer 000M, height 50 feet. We are on track.")
+      assertEq(messages[1], "NAV: Set course for TARGET WP03 Prison, DIST 15.0 NM, PLAN ETA 00:10, ACT ETA 00:12:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 50 feet. We are on track.")
     end)
   end)
 
@@ -2520,7 +2523,8 @@ suite("Navigator waypoint callouts", function()
         { "MN_TEST_03_NAV_Exit__T00:15__A500", NM * 20 },
         { "MN_TEST_04_LANDING", NM * 30 },
       })
-      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      -- Group positioned at HOLD zone to trigger positional entry
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, NM * 10, 0, 120)
       local state = M:_GetNavigatorState(group, plan, 0)
       state.enabled = true
       state.currentWpIndex = 2
@@ -2536,7 +2540,7 @@ suite("Navigator waypoint callouts", function()
 
       setAbsTime(725); setTime(725); M:_TickNavigatorState(state)
 
-      assertEq(messages[#messages], "NAV: Leaving hold. Set course for WP03 Exit, DIST 20.0 NM, PLAN ETA 00:15, ACT ETA 00:22:05, REQ IAS 411 kt >MAX, SPD CORR +291 kt UNACH. Steer 000M, height 500 feet. We are on track.")
+      assertEq(messages[#messages], "NAV: Leaving hold. Set course for WP03 Exit, DIST 10.0 NM, PLAN ETA 00:15, ACT ETA 00:17:05, REQ IAS 206 kt, SPD CORR +86 kt. Steer 000M, height 500 feet. We are on track.")
       assertEq(state.currentWpIndex, 3)
     end)
   end)
@@ -2553,14 +2557,15 @@ suite("Navigator waypoint callouts", function()
     assertEq(M:_GetInitialNavigatorWpIndexByTot(plan, 0), 2)
   end)
 
-  it("uses computed ETA for waypoint without raw __T", function()
+  it("advances positionally past waypoint without raw __T", function()
     withCapturedNavigatorMessages(function(messages)
       local plan = makePlan({
         { "MN_TEST_01_TAKE_OFF__T00:00__S180__A0", 0 },
         { "MN_TEST_02_NAV_Checkpoint", NM * 15 },
         { "MN_TEST_03_LANDING__T00:10", NM * 30 },
       })
-      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      -- Group positioned at WP02 to trigger fly-over
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, NM * 15, 0, 120)
       local state = M:_GetNavigatorState(group, plan, 0)
       state.enabled = true
       state.currentWpIndex = 2
@@ -2569,7 +2574,7 @@ suite("Navigator waypoint callouts", function()
       setTime(300)
       M:_TickNavigatorState(state)
 
-      assertEq(messages[1], "NAV: Set course for HOME PLATE WP03 LANDING, DIST 30.0 NM, PLAN ETA 00:10, ACT ETA 00:20, REQ IAS 360 kt >MAX, SPD CORR +240 kt UNACH. Steer 000M, height 0 feet. We are on track.")
+      assertEq(messages[1], "NAV: Set course for HOME PLATE WP03 LANDING, DIST 15.0 NM, PLAN ETA 00:10, ACT ETA 00:12:30, REQ IAS 180 kt, SPD CORR +60 kt. Steer 000M, height 0 feet. We are on track.")
       assertEq(state.currentWpIndex, 3)
     end)
   end)
@@ -2669,7 +2674,8 @@ suite("Navigator waypoint callouts", function()
         { "MN_TEST_03_NAV_Exit__T00:15__A500", NM * 20 },
         { "MN_TEST_04_LANDING", NM * 30 },
       })
-      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, 0, 0, 120)
+      -- Group positioned at HOLD zone for positional entry
+      local group = makeAirborneNavGroup("MOSQUITO 1-1 [MN:TEST]", 0, NM * 10, 0, 120)
       local state = M:_GetNavigatorState(group, plan, 0)
       state.enabled = true
       state.currentWpIndex = 2
@@ -3588,9 +3594,9 @@ suite("Build flight plan CSV", function()
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
     assertEq(lines[1], "# PLAN,JERICHO")
-    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
-    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,1500,07:00,220")
-    assertEq(lines[4], "2,NAV,,50.900000,-0.650000,,,")
+    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT,PASS_RADIUS_M")
+    assertEq(lines[3], "1,TAKE_OFF,Tangmere,50.850000,-0.700000,1500,07:00,220,")
+    assertEq(lines[4], "2,NAV,,50.900000,-0.650000,,,,")
   end)
 
   it("GROUP and ROLEX headers are not included", function()
@@ -3602,7 +3608,7 @@ suite("Build flight plan CSV", function()
     local csv = M:_BuildFlightPlanCsv(plan, "MOSQUITO 1-1", 300)
     local lines = splitLines(csv)
     assertEq(lines[1], "# PLAN,JERICHO")
-    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT")
+    assertEq(lines[2], "ORDER,TYPE,NAME,LAT,LON,ALT_FT,TOT,SPEED_KT,PASS_RADIUS_M")
     assertTrue(not string.find(csv, "GROUP"), "CSV should not include group headers")
     assertTrue(not string.find(csv, "ROLEX_SEC"), "CSV should not include ROLEX headers")
   end)
@@ -3641,9 +3647,9 @@ suite("Build flight plan CSV", function()
     plan.name = "JERICHO"
     local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
     local lines = splitLines(csv)
-    assertMatch(lines[4], "^2,NAV,,[^,]+,[^,]+,500,,200$")
-    assertMatch(lines[5], "^3,TARGET,,[^,]+,[^,]+,,07:30,$")
-    assertMatch(lines[6], "^4,LANDING,,[^,]+,[^,]+,,,$")
+    assertMatch(lines[4], "^2,NAV,,[^,]+,[^,]+,500,,200,$")
+    assertMatch(lines[5], "^3,TARGET,,[^,]+,[^,]+,,07:30,,$")
+    assertMatch(lines[6], "^4,LANDING,,[^,]+,[^,]+,,,,$")
   end)
 
   it("row count matches waypoint count", function()
@@ -5005,6 +5011,634 @@ suite("_SetPilotRolex / _AdjustPilotRolex", function()
     M.GroupPlanStates = origStates
     assertEq(#setCalls, 1)
     assertEq(setCalls[1], 60)
+  end)
+end)
+
+------------------------------------------------------------
+-- Positional navigation helpers (new)
+------------------------------------------------------------
+
+suite("_GetWaypointPassRadiusM", function()
+  it("returns explicit radiusM when set on waypoint", function()
+    assertEq(M:_GetWaypointPassRadiusM({type="NAV", radiusM=300}), 300)
+  end)
+  it("TARGET uses config fallback", function()
+    assertEq(M:_GetWaypointPassRadiusM({type="TARGET"}), M.Config.navigatorTargetPassRadiusM)
+  end)
+  it("HOLD uses config fallback", function()
+    assertEq(M:_GetWaypointPassRadiusM({type="HOLD"}), M.Config.navigatorHoldEntryRadiusM)
+  end)
+  it("LANDING uses config fallback", function()
+    assertEq(M:_GetWaypointPassRadiusM({type="LANDING"}), M.Config.navigatorLandingPassRadiusM)
+  end)
+  it("NAV uses config fallback", function()
+    assertEq(M:_GetWaypointPassRadiusM({type="NAV"}), M.Config.navigatorWaypointPassRadiusM)
+  end)
+end)
+
+suite("_IsWaypointReachedFlyOver", function()
+  it("true when within default pass radius", function()
+    local wp = {type="NAV", coordinate = makeCoord({x=0, z=0})}
+    assertTrue(M:_IsWaypointReachedFlyOver(wp, makeCoord({x=0, z=400})))
+  end)
+  it("false when beyond default pass radius", function()
+    local wp = {type="NAV", coordinate = makeCoord({x=0, z=0})}
+    assertTrue(not M:_IsWaypointReachedFlyOver(wp, makeCoord({x=0, z=600})))
+  end)
+  it("respects explicit radiusM", function()
+    local wp = {type="NAV", radiusM=200, coordinate = makeCoord({x=0, z=0})}
+    assertTrue(M:_IsWaypointReachedFlyOver(wp, makeCoord({x=0, z=150})))
+    assertTrue(not M:_IsWaypointReachedFlyOver(wp, makeCoord({x=0, z=250})))
+  end)
+end)
+
+suite("_IsWaypointReachedFlyBy", function()
+  local prevWp = {coordinate = makeCoord({x=0, z=0})}
+  local navWp  = {type="NAV", coordinate = makeCoord({x=0, z=NM * 10})}
+
+  it("false with no previous waypoint", function()
+    assertTrue(not M:_IsWaypointReachedFlyBy(nil, navWp, makeCoord({x=0, z=NM*11})))
+  end)
+  it("false when not yet past leg", function()
+    assertTrue(not M:_IsWaypointReachedFlyBy(prevWp, navWp, makeCoord({x=0, z=NM*5})))
+  end)
+  it("true when past leg and within fly-by radius", function()
+    assertTrue(M:_IsWaypointReachedFlyBy(prevWp, navWp, makeCoord({x=0, z=NM*11})))
+  end)
+  it("false when past leg but outside fly-by radius", function()
+    assertTrue(not M:_IsWaypointReachedFlyBy(prevWp, navWp, makeCoord({x=1200, z=NM*11})))
+  end)
+  it("uses explicit radiusM for fly-by corridor", function()
+    local wp = {type="NAV", radiusM=200, coordinate = makeCoord({x=0, z=NM*10})}
+    assertTrue(M:_IsWaypointReachedFlyBy(prevWp, wp, makeCoord({x=300, z=NM*11})))
+    assertTrue(not M:_IsWaypointReachedFlyBy(prevWp, wp, makeCoord({x=500, z=NM*11})))
+  end)
+end)
+
+suite("_IsWaypointReachedPositionally — TARGET fly-over only", function()
+  local prevWp = {coordinate = makeCoord({x=0, z=0})}
+
+  it("TARGET: past leg within fly-by distance does NOT advance (fly-over only)", function()
+    local wp = {type="TARGET", coordinate = makeCoord({x=0, z=NM*10})}
+    local state = {plan={waypoints={prevWp,wp}}, currentWpIndex=2}
+    assertTrue(not M:_IsWaypointReachedPositionally(state, wp, prevWp, makeCoord({x=0,z=NM*11})))
+  end)
+  it("TARGET: fly-over within pass radius triggers advance", function()
+    local wp = {type="TARGET", radiusM=300, coordinate = makeCoord({x=0, z=NM*10})}
+    local state = {plan={waypoints={prevWp,wp}}, currentWpIndex=2}
+    assertTrue(M:_IsWaypointReachedPositionally(state, wp, prevWp, makeCoord({x=0,z=NM*10})))
+  end)
+  it("NAV: fly-by past leg within corridor triggers advance", function()
+    local wp = {type="NAV", coordinate = makeCoord({x=0, z=NM*10})}
+    local state = {plan={waypoints={prevWp,wp}}, currentWpIndex=2}
+    assertTrue(M:_IsWaypointReachedPositionally(state, wp, prevWp, makeCoord({x=0,z=NM*11})))
+  end)
+end)
+
+suite("_ComputeHoldExitClockSec", function()
+  it("uses computed plan etaSec + holdDurationSec", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD__T00:05",              NM*10},
+      {"MN_T_03_LANDING__T00:15",           NM*20},
+    })
+    local state = M:_GetNavigatorState({GetName=function() return "G" end}, plan, 0)
+    setAbsTime(0)
+    local exitClock = M:_ComputeHoldExitClockSec(state, 2)
+    assertNear(exitClock, 720, 5)
+  end)
+
+  it("fallback to raw plan when computed waypoint unavailable", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD__T00:05",              NM*10},
+      {"MN_T_03_LANDING__T00:15",           NM*20},
+    })
+    local state = M:_GetNavigatorState({GetName=function() return "G" end}, plan, 0)
+    local origGet = M._GetNavigatorComputedWaypoint
+    M._GetNavigatorComputedWaypoint = function() return nil end
+    local exitClock = M:_ComputeHoldExitClockSec(state, 2)
+    M._GetNavigatorComputedWaypoint = origGet
+    assertNear(exitClock, 300, 2)
+  end)
+
+  it("returns nil when HOLD has no __T and fallback used", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD",                       NM*10},
+      {"MN_T_03_LANDING",                    NM*20},
+    })
+    local state = M:_GetNavigatorState({GetName=function() return "G" end}, plan, 0)
+    local origGet = M._GetNavigatorComputedWaypoint
+    M._GetNavigatorComputedWaypoint = function() return nil end
+    local result = M:_ComputeHoldExitClockSec(state, 2)
+    M._GetNavigatorComputedWaypoint = origGet
+    assertNil(result)
+  end)
+end)
+
+suite("_HandleEtaLateAlert — one-shot warning", function()
+  it("fires exactly once when ETA passed but waypoint not reached", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_NAV_Checkpoint__T00:05",     NM*15},
+      {"MN_T_03_LANDING",                    NM*30},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return true end,
+      GetCoordinate=function() return makeCoord({x=0, z=0}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 120 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.currentWpIndex = 2; state.takeoffComplete = true
+
+    setAbsTime(400); setTime(400); M:_TickNavigatorState(state)
+    setAbsTime(401); setTime(401); M:_TickNavigatorState(state)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    local count = 0
+    for _, msg in ipairs(messages) do
+      if string.find(msg, "ETA passed") then count = count + 1 end
+    end
+    assertEq(count, 1)
+  end)
+end)
+
+suite("_HandleTargetDepartureAlert", function()
+  it("fires alert when approaching then moving away from TARGET", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A50", 0},
+      {"MN_T_02_TARGET_Prison__T00:10",       NM*10},
+      {"MN_T_03_LANDING",                     NM*20},
+    })
+    local state = M:_GetNavigatorState({GetName=function() return "G" end}, plan, 0)
+    state.currentWpIndex = 2
+    local wp = plan.waypoints[2]
+    -- TARGET at (0, NM*10); passRadius=500; threshold=1500m
+    M:_HandleTargetDepartureAlert(state, wp, makeCoord({x=0, z=NM*10 - 1400}))
+    M:_HandleTargetDepartureAlert(state, wp, makeCoord({x=0, z=NM*10 - 2100}))
+
+    M._SendNavigatorMessage = origSend
+
+    local found = false
+    for _, msg in ipairs(messages) do
+      if string.find(msg, "Departing") then found = true end
+    end
+    assertTrue(found, "departure alert should fire")
+  end)
+
+  it("does not fire when never approaching within threshold", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A50", 0},
+      {"MN_T_02_TARGET_Prison__T00:10",       NM*10},
+      {"MN_T_03_LANDING",                     NM*20},
+    })
+    local state = M:_GetNavigatorState({GetName=function() return "G" end}, plan, 0)
+    state.currentWpIndex = 2
+    local wp = plan.waypoints[2]
+    M:_HandleTargetDepartureAlert(state, wp, makeCoord({x=0, z=NM*10 - 5000}))
+    M:_HandleTargetDepartureAlert(state, wp, makeCoord({x=0, z=NM*10 - 6000}))
+
+    M._SendNavigatorMessage = origSend
+    assertTrue(#messages == 0, "no alert when never close enough")
+  end)
+end)
+
+suite("_HandleNavigatorLandingReached", function()
+  it("disables navigator and sends home plate message", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_LANDING", NM*15},
+    })
+    local state = M:_GetNavigatorState({GetName=function() return "G" end}, plan, 0)
+    state.enabled = true
+    M:_HandleNavigatorLandingReached(state)
+
+    M._SendNavigatorMessage = origSend
+    assertEq(state.enabled, false)
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "Home plate")
+  end)
+end)
+
+suite("LANDING fly-over completes navigation", function()
+  it("_TickNavigatorState: fly-over of LANDING disables navigator", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_NAV", NM*10},
+      {"MN_T_03_LANDING__T00:10", NM*20},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return true end,
+      GetCoordinate=function() return makeCoord({x=0, z=NM*20}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 120 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.currentWpIndex = 3; state.takeoffComplete = true
+
+    setAbsTime(600); setTime(600); M:_TickNavigatorState(state)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    assertEq(state.enabled, false)
+    local found = false
+    for _, msg in ipairs(messages) do
+      if string.find(msg, "Home plate") then found = true end
+    end
+    assertTrue(found, "home plate message expected")
+  end)
+end)
+
+suite("_GetInitialNavigatorWpIndexByPosition", function()
+  it("falls back to first non-TAKE_OFF when group is nil", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_NAV", NM*10},
+      {"MN_T_03_LANDING", NM*20},
+    })
+    assertEq(M:_GetInitialNavigatorWpIndexByPosition(plan, nil), 2)
+  end)
+
+  it("returns first non-TAKE_OFF WP when group is before it", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_NAV", NM*10},
+      {"MN_T_03_LANDING", NM*20},
+    })
+    local g = {GetCoordinate=function() return makeCoord({x=0, z=NM*3}) end}
+    assertEq(M:_GetInitialNavigatorWpIndexByPosition(plan, g), 2)
+  end)
+
+  it("returns WP03 when group is past WP02 but before WP03", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_NAV", NM*10},
+      {"MN_T_03_LANDING", NM*20},
+    })
+    local g = {GetCoordinate=function() return makeCoord({x=0, z=NM*12}) end}
+    assertEq(M:_GetInitialNavigatorWpIndexByPosition(plan, g), 3)
+  end)
+
+  it("returns nearest WP when group is past all WPs", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_NAV", NM*10},
+      {"MN_T_03_LANDING", NM*20},
+    })
+    local g = {GetCoordinate=function() return makeCoord({x=0, z=NM*25}) end}
+    assertEq(M:_GetInitialNavigatorWpIndexByPosition(plan, g), 3)
+  end)
+end)
+
+suite("HOLD approach callouts before positional entry", function()
+  it("fires approach callout when not yet in HOLD zone", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD__T00:05",              NM*10},
+      {"MN_T_03_LANDING__T00:15",           NM*20},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return true end,
+      GetCoordinate=function() return makeCoord({x=0, z=0}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 200 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.currentWpIndex = 2; state.takeoffComplete = true
+
+    setAbsTime(0); setTime(0); M:_TickNavigatorState(state)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    local found = false
+    for _, msg in ipairs(messages) do
+      if string.find(msg, "5:00 CALLOUT") then found = true end
+    end
+    assertTrue(found, "approach callout should fire before entering HOLD zone")
+  end)
+end)
+
+suite("HOLD late arrival — skip when past planned exit", function()
+  it("skips hold and advances when arriving past planned exit", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD__T00:05",              NM*10},
+      {"MN_T_03_LANDING__T00:15",           NM*20},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return true end,
+      GetCoordinate=function() return makeCoord({x=0, z=NM*10}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 200 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.currentWpIndex = 2; state.takeoffComplete = true
+
+    setAbsTime(800); setTime(800); M:_TickNavigatorState(state)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    assertEq(state.currentWpIndex, 3)
+    local found = false
+    for _, msg in ipairs(messages) do
+      if string.find(msg, "skipped") then found = true end
+    end
+    assertTrue(found, "skip message should be emitted")
+  end)
+end)
+
+suite("_SetNavigatorEnabled — non-airborne takeoff-complete path", function()
+  it("emits waypoint callout when takeoff already complete (not airborne)", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_LANDING__T00:10", NM*15},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return false end,
+      GetCoordinate=function() return makeCoord({x=0, z=0}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 0 end,
+    }
+    setAbsTime(0); setTime(0)
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.takeoffComplete = true
+    M:_SetNavigatorEnabled(fakeGroup, plan, 0, true)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    assertEq(state.enabled, true)
+    assertEq(#messages, 1)
+    local hasBrake = false
+    for _, msg in ipairs(messages) do
+      if string.find(msg, "Brake") then hasBrake = true end
+    end
+    assertTrue(not hasBrake, "should not send takeoff message when takeoffComplete")
+  end)
+end)
+
+suite("_FormatRadiusForCsv", function()
+  it("returns empty string for nil radiusM", function()
+    assertEq(M:_FormatRadiusForCsv({}), "")
+    assertEq(M:_FormatRadiusForCsv({radiusM=nil}), "")
+  end)
+  it("formats whole-number radius", function()
+    assertEq(M:_FormatRadiusForCsv({radiusM=500}), "500")
+  end)
+  it("rounds fractional radius", function()
+    assertEq(M:_FormatRadiusForCsv({radiusM=250.6}), "251")
+  end)
+end)
+
+suite("CSV PASS_RADIUS_M — explicit radiusM exported", function()
+  it("exports PASS_RADIUS_M when set on waypoint", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_TARGET", NM*10},
+      {"MN_T_03_LANDING", NM*20},
+    })
+    plan.name = "T"
+    plan.waypoints[2].radiusM = 300
+    local csv = M:_BuildFlightPlanCsv(plan, nil, 0)
+    local lines = {}
+    for l in (csv.."\n"):gmatch("([^\n]*)\n") do table.insert(lines, l) end
+    assertMatch(lines[4], ",300$")
+    assertMatch(lines[5], ",$")
+  end)
+end)
+
+suite("DiscoverZones reads radiusM from zone", function()
+  it("waypoint.radiusM populated from zone.GetRadius", function()
+    local original = SET_ZONE
+    local fakeSet = {
+      FilterPrefixes = function(self) return self end,
+      FilterStart    = function(self) return self end,
+      ForEachZone    = function(self, cb)
+        cb({
+          GetName       = function() return "MN_JRAD_01_TAKE_OFF" end,
+          GetCoordinate = function() return makeCoord({x=0,z=0}) end,
+          GetRadius     = function() return 250 end,
+        })
+        return self
+      end,
+    }
+    SET_ZONE = { New = function() return fakeSet end }
+    local ok, plans = pcall(function() return M:_DiscoverZones() end)
+    SET_ZONE = original
+    if not ok then error(plans) end
+    assertEq(plans["JRAD"].waypoints[1].radiusM, 250)
+  end)
+end)
+
+suite("_SetNavigatorEnabled extra paths", function()
+  local function capturedEnable(fn)
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+    local ok, err = pcall(fn, messages)
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+    if not ok then error(err, 2) end
+    return messages
+  end
+
+  it("enabled=false sends NAV off", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:01__S180__A0", 0},
+      {"MN_T_02_LANDING", NM*15},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return false end,
+    }
+    local messages = capturedEnable(function()
+      M:_SetNavigatorEnabled(fakeGroup, plan, 0, false)
+    end)
+    assertEq(#messages, 1)
+    assertEq(messages[1], "NAV off")
+  end)
+
+  it("non-airborne with pending takeoff sends takeoff message", function()
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:01__S180__A0", 0},
+      {"MN_T_02_LANDING", NM*15},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return false end,
+    }
+    setAbsTime(0)
+    local messages = capturedEnable(function()
+      M:_SetNavigatorEnabled(fakeGroup, plan, 0, true)
+    end)
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "Brake release")
+  end)
+end)
+
+suite("_SetNavigatorReportInterval", function()
+  it("sets reportInterval and sends confirmation", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S180__A0", 0},
+      {"MN_T_02_LANDING", NM*15},
+    })
+    local fakeGroup = {GetName=function() return "G" end}
+    M:_SetNavigatorReportInterval(fakeGroup, plan, 0, 120)
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    assertEq(state.reportInterval, 120)
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "120")
+  end)
+end)
+
+suite("_FormatNavigatorSpeedCorrection on-speed branch", function()
+  it("returns 'on speed' when delta <= 5 kt", function()
+    assertEq(M:_FormatNavigatorSpeedCorrection(120, 122), "on speed")
+    assertEq(M:_FormatNavigatorSpeedCorrection(120, 120), "on speed")
+    assertEq(M:_FormatNavigatorSpeedCorrection(120, 115), "on speed")
+  end)
+end)
+
+suite("HOLD interval report — in-hold phase", function()
+  it("sends interval report when in hold and no callout fires", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD__T00:05",              NM*10},
+      {"MN_T_03_LANDING__T00:15",           NM*20},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return true end,
+      GetCoordinate=function() return makeCoord({x=0, z=NM*10}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 200 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.currentWpIndex = 2; state.takeoffComplete = true
+    -- Enter hold at t=300 (exactly on plan)
+    setAbsTime(300); setTime(300); M:_TickNavigatorState(state)
+    -- Clear messages; tick at t=400 (holdRemaining=320 > suppress=300, no callout threshold)
+    local countBefore = #messages
+    state.reportInterval = 10
+    setAbsTime(400); setTime(400); M:_TickNavigatorState(state)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    assertTrue(#messages > countBefore, "interval report should fire inside hold")
+    local found = false
+    for i = countBefore + 1, #messages do
+      if string.find(messages[i], "to leave hold") then found = true end
+    end
+    assertTrue(found, "interval report should mention hold exit time")
+  end)
+end)
+
+suite("HOLD interval report — approach phase", function()
+  it("sends interval report when approaching HOLD with ETA far away", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, _, text) table.insert(messages, text) end
+    M.NavigatorStates = nil
+
+    -- HOLD at 00:20 so secondsToTot=1200 > all callout thresholds at t=0
+    local plan = makePlan({
+      {"MN_T_01_TAKE_OFF__T00:00__S200__A0", 0},
+      {"MN_T_02_HOLD__T00:20",              NM*40},
+      {"MN_T_03_LANDING__T00:30",           NM*60},
+    })
+    local fakeGroup = {
+      GetName=function() return "G" end,
+      IsAlive=function() return true end,
+      IsAirborne=function() return true end,
+      GetCoordinate=function() return makeCoord({x=0, z=0}) end,
+      GetAltitude=function() return 0 end,
+      GetVelocityKNOTS=function() return 200 end,
+    }
+    local state = M:_GetNavigatorState(fakeGroup, plan, 0)
+    state.enabled = true; state.currentWpIndex = 2; state.takeoffComplete = true
+    state.reportInterval = 10
+
+    setAbsTime(0); setTime(0); M:_TickNavigatorState(state)
+
+    M._SendNavigatorMessage = origSend
+    M.NavigatorStates = nil
+
+    -- secondsToTot=1200, no callout, no suppress → interval report fires
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "NAV")
   end)
 end)
 

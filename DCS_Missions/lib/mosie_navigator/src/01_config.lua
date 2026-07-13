@@ -36,6 +36,13 @@ local MosieNavigatorConfigDefaults = {
   navigatorHoldExitCalloutSeconds = {300, 240, 180, 120, 60, 30},
   navigatorXteStepNm = 1,
   navigatorRequiredMaxIasKt = 350 * 0.8689762419,
+  navigatorWaypointPassRadiusM = 500,
+  navigatorTargetPassRadiusM   = 500,
+  navigatorHoldEntryRadiusM    = 750,
+  navigatorLandingPassRadiusM  = 1000,
+  navigatorFlyByRadiusMultiplier = 2,
+  navigatorEtaLateAlertOnce    = true,
+  navigatorEarlyPassCalloutThresholdSec = 60,
 }
 
 MosieNavigator.Config = MosieNavigator.Config or {}

@@ -99,6 +99,7 @@ function MosieNavigator:_DiscoverZones()
       waypoint.zoneName = zoneName
       waypoint.zone = zone
       waypoint.coordinate = zone:GetCoordinate()
+      waypoint.radiusM = type(zone.GetRadius) == "function" and zone:GetRadius() or nil
       plans[waypoint.plan] = plans[waypoint.plan] or {name = waypoint.plan, waypoints = {}}
       table.insert(plans[waypoint.plan].waypoints, waypoint)
       return

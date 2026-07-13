@@ -80,7 +80,7 @@ end
 
 function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinate)
   if not previousWaypoint or not waypoint then
-    return nil, nil
+    return nil, nil, nil, nil
   end
 
   local startVec = previousWaypoint.coordinate:GetVec3()
@@ -91,7 +91,7 @@ function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinat
   local legLength = math.sqrt(legX * legX + legZ * legZ)
 
   if legLength <= 0 then
-    return nil, nil
+    return nil, nil, nil, nil
   end
 
   local currentX = currentVec.x - startVec.x
@@ -99,6 +99,7 @@ function MosieNavigator:_CalculateXte(previousWaypoint, waypoint, groupCoordinat
   local cross = legX * currentZ - legZ * currentX
   local xteNm = UTILS.MetersToNM(math.abs(cross / legLength))
   local side = cross > 0 and "stbd" or "port"
+  local alongTrackM = (legX * currentX + legZ * currentZ) / legLength
 
-  return xteNm, side
+  return xteNm, side, alongTrackM, legLength
 end
