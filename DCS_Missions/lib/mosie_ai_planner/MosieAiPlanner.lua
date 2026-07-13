@@ -1,3 +1,10 @@
+-- ============================================================
+-- MosieAiPlanner.lua — GENERATED FILE. DO NOT EDIT DIRECTLY.
+-- Edit source modules under src/ and run: python3 build.py
+-- ============================================================
+
+-- ==== 01_config.lua ====
+
 MosieAiPlanner = MosieAiPlanner or {}
 
 local MosieAiPlannerConfigDefaults = {
@@ -23,6 +30,8 @@ for key, value in pairs(MosieAiPlannerConfigDefaults) do
     MosieAiPlanner.Config[key] = value
   end
 end
+
+-- ==== 02_util.lua ====
 
 function MosieAiPlanner:_Log(message)
   env.info("MOSIE_AI_PLANNER: " .. tostring(message))
@@ -123,6 +132,8 @@ function MosieAiPlanner:_LogStateOnce(state, key, message)
   self:_Log(message)
 end
 
+-- ==== 03_time.lua ====
+
 function MosieAiPlanner:_GetMissionTime()
   if timer and type(timer.getAbsTime) == "function" then
     return timer.getAbsTime()
@@ -143,6 +154,8 @@ function MosieAiPlanner:_FormatClock(seconds)
   local s = seconds % 60
   return string.format("%02d:%02d:%02d", h, m, s)
 end
+
+-- ==== 04_io.lua ====
 
 function MosieAiPlanner:_GetOutputDirectory()
   local navigator = self:_GetNavigator()
@@ -243,11 +256,11 @@ function MosieAiPlanner:_SetAiMode(state, mode, reason, details)
     return
   end
 
-  local previousMode = state.aiMode
-  local previousReason = state.aiModeReason
+  local previousMode    = state.aiMode
+  local previousReason  = state.aiModeReason
   local previousDetails = state.aiModeDetails
-  state.aiMode = mode or "UNKNOWN"
-  state.aiModeReason = reason
+  state.aiMode        = mode or "UNKNOWN"
+  state.aiModeReason  = reason
   state.aiModeDetails = details
 
   if previousMode ~= state.aiMode or previousReason ~= state.aiModeReason or previousDetails ~= state.aiModeDetails then
@@ -259,6 +272,8 @@ function MosieAiPlanner:_SetAiMode(state, mode, reason, details)
     ))
   end
 end
+
+-- ==== 05_plans.lua ====
 
 function MosieAiPlanner:_GetMissionRolexSeconds()
   local navigator = self:_GetNavigator()
@@ -335,9 +350,9 @@ function MosieAiPlanner:_GetSecondsToClockSeconds(clockSeconds)
     return nil
   end
 
-  local secondsPerDay = SECONDS_PER_DAY or 86400
+  local secondsPerDay     = SECONDS_PER_DAY or 86400
   local secondsPerHalfDay = SECONDS_PER_HALF_DAY or 43200
-  local now = timer.getAbsTime() % secondsPerDay
+  local now   = timer.getAbsTime() % secondsPerDay
   local delta = (clockSeconds % secondsPerDay) - now
   if delta < -secondsPerHalfDay then
     delta = delta + secondsPerDay
@@ -346,6 +361,8 @@ function MosieAiPlanner:_GetSecondsToClockSeconds(clockSeconds)
   end
   return delta
 end
+
+-- ==== 06_geo.lua ====
 
 function MosieAiPlanner:_CoordinateToVec2(coordinate)
   if not coordinate then
@@ -500,6 +517,8 @@ function MosieAiPlanner:_GetDistanceNm(fromCoordinate, toCoordinate)
   return self:_MetersToNm(fromCoordinate:Get2DDistance(toCoordinate))
 end
 
+-- ==== 07_zone.lua ====
+
 function MosieAiPlanner:_IsCoordinateInWaypointZone(coordinate, waypoint)
   if not coordinate or not waypoint or not waypoint.zone then
     return false, nil, nil
@@ -551,8 +570,8 @@ function MosieAiPlanner:_FormatAiZoneDumpEntry(state, waypoint, computedWaypoint
     end
   end
 
-  local speedKt = group.GetVelocityKNOTS and group:GetVelocityKNOTS() or nil
-  local altitude = group.GetAltitude and group:GetAltitude() or nil
+  local speedKt   = group.GetVelocityKNOTS and group:GetVelocityKNOTS() or nil
+  local altitude  = group.GetAltitude and group:GetAltitude() or nil
 
   return string.format(
     "[%s] AI_ZONE_ENTRY group=\"%s\" plan=\"%s\" wp=WP%02d type=%s name=\"%s\" zone=\"%s\" dist_nm=%s radius_nm=%s eta=%s delta_sec=%s speed_kt=%s alt_m=%s pos_x=%s pos_y=%s",
@@ -564,13 +583,13 @@ function MosieAiPlanner:_FormatAiZoneDumpEntry(state, waypoint, computedWaypoint
     tostring(waypoint.name or "---"),
     tostring(waypoint.zoneName or "---"),
     distanceNm and string.format("%.3f", distanceNm) or "---",
-    radiusNm and string.format("%.3f", radiusNm) or "---",
-    etaSec and self:_FormatClock(etaSec) or "---",
-    deltaSec and string.format("%+.0f", deltaSec) or "---",
-    speedKt and string.format("%.0f", speedKt) or "---",
-    altitude and string.format("%.0f", altitude) or "---",
-    vec2.x and string.format("%.1f", vec2.x) or "---",
-    vec2.y and string.format("%.1f", vec2.y) or "---"
+    radiusNm   and string.format("%.3f", radiusNm)   or "---",
+    etaSec     and self:_FormatClock(etaSec)          or "---",
+    deltaSec   and string.format("%+.0f", deltaSec)   or "---",
+    speedKt    and string.format("%.0f", speedKt)     or "---",
+    altitude   and string.format("%.0f", altitude)    or "---",
+    vec2.x     and string.format("%.1f", vec2.x)      or "---",
+    vec2.y     and string.format("%.1f", vec2.y)      or "---"
   )
 end
 
@@ -629,9 +648,9 @@ function MosieAiPlanner:_GetAiXte(state, groupCoordinate)
     return nil, nil
   end
 
-  local currentIndex = state.currentWpIndex or 2
+  local currentIndex    = state.currentWpIndex or 2
   local previousWaypoint = self:_GetPlanWaypoint(state, currentIndex - 1)
-  local waypoint = self:_GetPlanWaypoint(state, currentIndex)
+  local waypoint         = self:_GetPlanWaypoint(state, currentIndex)
   if not previousWaypoint or not waypoint then
     return nil, nil
   end
@@ -640,22 +659,22 @@ function MosieAiPlanner:_GetAiXte(state, groupCoordinate)
 end
 
 function MosieAiPlanner:_FormatAiFlightSample(state, computed)
-  local group = state.assignment.group
-  local groupCoordinate = self:_GetGroupCoordinate(group)
-  local vec2 = self:_CoordinateToVec2(groupCoordinate) or {}
-  local currentIndex = state.currentWpIndex or 2
-  local planWaypoint = self:_GetPlanWaypoint(state, currentIndex)
+  local group            = state.assignment.group
+  local groupCoordinate  = self:_GetGroupCoordinate(group)
+  local vec2             = self:_CoordinateToVec2(groupCoordinate) or {}
+  local currentIndex     = state.currentWpIndex or 2
+  local planWaypoint     = self:_GetPlanWaypoint(state, currentIndex)
   local computedWaypoint = self:_GetComputedWaypoint(computed, currentIndex)
   local waypoint = computedWaypoint and (computedWaypoint.source or (computedWaypoint.coordinate and computedWaypoint)) or planWaypoint
 
-  local distanceNm = waypoint and waypoint.coordinate and self:_GetDistanceNm(groupCoordinate, waypoint.coordinate) or nil
-  local speedKt = group.GetVelocityKNOTS and group:GetVelocityKNOTS() or nil
+  local distanceNm              = waypoint and waypoint.coordinate and self:_GetDistanceNm(groupCoordinate, waypoint.coordinate) or nil
+  local speedKt                 = group.GetVelocityKNOTS and group:GetVelocityKNOTS() or nil
   local actualSecondsToWaypoint = distanceNm and speedKt and speedKt > 1 and distanceNm / speedKt * 3600 or nil
-  local plannedEtaSec = computedWaypoint and computedWaypoint.etaSec or nil
-  local actualEtaSec = actualSecondsToWaypoint and ((self:_GetMissionTime() + actualSecondsToWaypoint) % (SECONDS_PER_DAY or 86400)) or nil
-  local plannedSecondsToEta = plannedEtaSec and self:_GetSecondsToClockSeconds(plannedEtaSec) or nil
-  local etaDeltaSec = nil
-  local requiredSpeedKt = nil
+  local plannedEtaSec           = computedWaypoint and computedWaypoint.etaSec or nil
+  local actualEtaSec            = actualSecondsToWaypoint and ((self:_GetMissionTime() + actualSecondsToWaypoint) % (SECONDS_PER_DAY or 86400)) or nil
+  local plannedSecondsToEta     = plannedEtaSec and self:_GetSecondsToClockSeconds(plannedEtaSec) or nil
+  local etaDeltaSec             = nil
+  local requiredSpeedKt         = nil
   if distanceNm and plannedSecondsToEta and plannedSecondsToEta > 0 then
     requiredSpeedKt = distanceNm / plannedSecondsToEta * 3600
   end
@@ -664,7 +683,7 @@ function MosieAiPlanner:_FormatAiFlightSample(state, computed)
   end
 
   local xteNm, xteSide = self:_GetAiXte(state, groupCoordinate)
-  local altitude = group.GetAltitude and group:GetAltitude() or nil
+  local altitude       = group.GetAltitude and group:GetAltitude() or nil
 
   return string.format(
     "[%s] AI_FLIGHT_SAMPLE group=\"%s\" plan=\"%s\" mode=%s reason=%s wp=%s type=%s dist_nm=%s plan_eta=%s act_eta=%s eta_delta_sec=%s req_speed_kt=%s speed_kt=%s alt_m=%s xte_nm=%s xte_side=%s last_retask=\"%s\" pos_x=%s pos_y=%s",
@@ -675,14 +694,14 @@ function MosieAiPlanner:_FormatAiFlightSample(state, computed)
     tostring(state.aiModeReason or "---"),
     waypoint and string.format("WP%02d", waypoint.order or currentIndex) or "---",
     waypoint and tostring(waypoint.type or "---") or "---",
-    distanceNm and string.format("%.3f", distanceNm) or "---",
+    distanceNm    and string.format("%.3f", distanceNm)    or "---",
     self:_FormatClockOrDash(plannedEtaSec),
     self:_FormatClockOrDash(actualEtaSec),
     self:_FormatSignedSeconds(etaDeltaSec),
     requiredSpeedKt and string.format("%.0f", requiredSpeedKt) or "---",
-    speedKt and string.format("%.0f", speedKt) or "---",
-    altitude and string.format("%.0f", altitude) or "---",
-    xteNm and string.format("%.3f", xteNm) or "---",
+    speedKt   and string.format("%.0f", speedKt)   or "---",
+    altitude  and string.format("%.0f", altitude)  or "---",
+    xteNm     and string.format("%.3f", xteNm)     or "---",
     tostring(xteSide or "---"),
     tostring(state.lastRouteReason or "---"),
     vec2.x and string.format("%.1f", vec2.x) or "---",
@@ -708,8 +727,10 @@ function MosieAiPlanner:_GetWaypointSpeedKt(computedWaypoint)
   return computedWaypoint and (computedWaypoint.legGsKt or computedWaypoint.legTasKt or computedWaypoint.speedKt) or nil
 end
 
+-- ==== 08_route.lua ====
+
 function MosieAiPlanner:_BuildRoutePoint(computedWaypoint, speedKt)
-  local waypoint = computedWaypoint.source or computedWaypoint
+  local waypoint      = computedWaypoint.source or computedWaypoint
   local landingAirbase = nil
   local routeCoordinate = waypoint.coordinate
 
@@ -724,24 +745,24 @@ function MosieAiPlanner:_BuildRoutePoint(computedWaypoint, speedKt)
   end
 
   local routePoint = {
-    x = vec2.x,
-    y = vec2.y,
-    alt = self:_FeetToMeters(computedWaypoint.resolvedAltFt or waypoint.altitudeFt or 0),
-    alt_type = "BARO",
-    speed = self:_KnotsToMps(speedKt or self:_GetWaypointSpeedKt(computedWaypoint) or self.Config.minSpeedKt),
+    x          = vec2.x,
+    y          = vec2.y,
+    alt        = self:_FeetToMeters(computedWaypoint.resolvedAltFt or waypoint.altitudeFt or 0),
+    alt_type   = "BARO",
+    speed      = self:_KnotsToMps(speedKt or self:_GetWaypointSpeedKt(computedWaypoint) or self.Config.minSpeedKt),
     speed_locked = true,
-    type = "Turning Point",
-    action = "Fly Over Point",
-    task = {id = "ComboTask", params = {tasks = {}}},
+    type       = "Turning Point",
+    action     = "Fly Over Point",
+    task       = {id = "ComboTask", params = {tasks = {}}},
   }
 
   if waypoint.type == "LANDING" then
     local airbaseId = self:_GetAirbaseId(landingAirbase)
     if airbaseId then
-      routePoint.type = "Land"
-      routePoint.action = "Landing"
+      routePoint.type        = "Land"
+      routePoint.action      = "Landing"
       routePoint.speed_locked = false
-      routePoint.airdromeId = airbaseId
+      routePoint.airdromeId  = airbaseId
       local airbaseName = self:_GetAirbaseName(landingAirbase)
       if airbaseName then
         routePoint.name = airbaseName
@@ -760,15 +781,15 @@ function MosieAiPlanner:_BuildVec2RoutePoint(vec2, altitudeMeters, speedKt)
   end
 
   return {
-    x = vec2.x,
-    y = vec2.y,
-    alt = altitudeMeters or 0,
-    alt_type = "BARO",
-    speed = self:_KnotsToMps(speedKt or self.Config.minSpeedKt),
+    x          = vec2.x,
+    y          = vec2.y,
+    alt        = altitudeMeters or 0,
+    alt_type   = "BARO",
+    speed      = self:_KnotsToMps(speedKt or self.Config.minSpeedKt),
     speed_locked = true,
-    type = "Turning Point",
-    action = "Turning Point",
-    task = {id = "ComboTask", params = {tasks = {}}},
+    type       = "Turning Point",
+    action     = "Turning Point",
+    task       = {id = "ComboTask", params = {tasks = {}}},
   }
 end
 
@@ -783,19 +804,19 @@ function MosieAiPlanner:_GetLineInterceptVec2(state, computed, startIndex)
   end
 
   local previousWaypoint = computed.waypoints[currentIndex - 1]
-  local currentWaypoint = computed.waypoints[currentIndex]
+  local currentWaypoint  = computed.waypoints[currentIndex]
   if not previousWaypoint or not currentWaypoint then
     return nil, nil
   end
 
   local previousSource = previousWaypoint.source or previousWaypoint
-  local currentSource = currentWaypoint.source or currentWaypoint
+  local currentSource  = currentWaypoint.source  or currentWaypoint
   if not previousSource.coordinate or not currentSource.coordinate then
     return nil, nil
   end
 
-  local groupCoordinate = self:_GetGroupCoordinate(state.assignment.group)
-  local distanceToWaypointNm = self:_GetDistanceNm(groupCoordinate, currentSource.coordinate)
+  local groupCoordinate       = self:_GetGroupCoordinate(state.assignment.group)
+  local distanceToWaypointNm  = self:_GetDistanceNm(groupCoordinate, currentSource.coordinate)
   if not distanceToWaypointNm or distanceToWaypointNm <= self.Config.lineInterceptMinDistanceNm then
     return nil, nil
   end
@@ -805,18 +826,18 @@ function MosieAiPlanner:_GetLineInterceptVec2(state, computed, startIndex)
     return nil, nil
   end
 
-  local startVec = previousSource.coordinate:GetVec3()
-  local endVec = currentSource.coordinate:GetVec3()
+  local startVec  = previousSource.coordinate:GetVec3()
+  local endVec    = currentSource.coordinate:GetVec3()
   local currentVec = groupCoordinate:GetVec3()
-  local legX = endVec.x - startVec.x
-  local legZ = endVec.z - startVec.z
+  local legX      = endVec.x - startVec.x
+  local legZ      = endVec.z - startVec.z
   local legLength = math.sqrt(legX * legX + legZ * legZ)
   if legLength <= 0 then
     return nil, nil
   end
 
-  local currentX = currentVec.x - startVec.x
-  local currentZ = currentVec.z - startVec.z
+  local currentX    = currentVec.x - startVec.x
+  local currentZ    = currentVec.z - startVec.z
   local alongMeters = (currentX * legX + currentZ * legZ) / legLength
   if alongMeters < 0 then
     alongMeters = 0
@@ -824,7 +845,7 @@ function MosieAiPlanner:_GetLineInterceptVec2(state, computed, startIndex)
     return nil, nil
   end
 
-  local lookaheadMeters = (self.Config.lineInterceptLookaheadNm or 0) * 1852
+  local lookaheadMeters      = (self.Config.lineInterceptLookaheadNm or 0) * 1852
   local interceptAlongMeters = math.min(legLength, alongMeters + lookaheadMeters)
   if legLength - interceptAlongMeters < 1 then
     return nil, nil
@@ -843,11 +864,11 @@ function MosieAiPlanner:_GetLineInterceptVec2(state, computed, startIndex)
 end
 
 function MosieAiPlanner:_BuildRoute(stateOrGroup, computed, startIndex, firstLegSpeedKt)
-  local route = {}
-  local state = stateOrGroup and stateOrGroup.assignment and stateOrGroup or nil
-  local group = state and state.assignment.group or stateOrGroup
+  local route      = {}
+  local state      = stateOrGroup and stateOrGroup.assignment and stateOrGroup or nil
+  local group      = state and state.assignment.group or stateOrGroup
   local groupCoordinate = self:_GetGroupCoordinate(group)
-  local routeMode = "DIRECT_WP"
+  local routeMode    = "DIRECT_WP"
   local routeDetails = "route follows active waypoint sequence"
 
   if groupCoordinate then
@@ -858,15 +879,15 @@ function MosieAiPlanner:_BuildRoute(stateOrGroup, computed, startIndex, firstLeg
   local interceptVec2, interceptDetails = self:_GetLineInterceptVec2(state, computed, startIndex)
   if interceptVec2 then
     table.insert(route, self:_BuildVec2RoutePoint(interceptVec2, group.GetAltitude and group:GetAltitude() or 0, firstLegSpeedKt))
-    routeMode = "INTERCEPT_LINE"
+    routeMode    = "INTERCEPT_LINE"
     routeDetails = interceptDetails or "intercept planned track"
   end
 
   for index = startIndex or 1, #(computed.waypoints or {}) do
     local waypoint = computed.waypoints[index]
-    local source = waypoint.source or waypoint
+    local source   = waypoint.source or waypoint
     if source.type ~= "TAKE_OFF" then
-      local speedKt = index == startIndex and firstLegSpeedKt or self:_GetWaypointSpeedKt(waypoint)
+      local speedKt  = index == startIndex and firstLegSpeedKt or self:_GetWaypointSpeedKt(waypoint)
       local routePoint = self:_BuildRoutePoint(waypoint, speedKt)
       if routePoint then
         table.insert(route, routePoint)
@@ -894,7 +915,7 @@ function MosieAiPlanner:_RetaskRoute(state, reason, firstLegSpeedKt)
   end
 
   state.assignment.group:Route(route, 1)
-  state.lastRetaskTime = now
+  state.lastRetaskTime  = now
   state.lastRouteReason = reason or "route"
   self:_SetAiMode(state, routeMode or "DIRECT_WP", state.lastRouteReason, routeDetails or "route follows active waypoint sequence")
   self:_AppendAiCommandDump(state, "ROUTE", string.format(
@@ -907,6 +928,8 @@ function MosieAiPlanner:_RetaskRoute(state, reason, firstLegSpeedKt)
   self:_Log(string.format("retasked %s: %s", state.assignment.groupName, state.lastRouteReason))
   return true
 end
+
+-- ==== 09_control.lua ====
 
 function MosieAiPlanner:_MaybeStartUncontrolled(state, computed)
   local airborne = self:_IsGroupAirborne(state.assignment.group)
@@ -940,7 +963,7 @@ function MosieAiPlanner:_MaybeStartUncontrolled(state, computed)
   if secondsToTakeoff and secondsToTakeoff <= self.Config.startLeadSeconds then
     if type(state.assignment.group.StartUncontrolled) == "function" then
       state.assignment.group:StartUncontrolled()
-      state.startCommanded = true
+      state.startCommanded  = true
       state.startCommandTime = timer and timer.getTime and timer.getTime() or 0
       self:_AppendAiCommandDump(state, "START_UNCONTROLLED", string.format("seconds_to_takeoff=%.0f", secondsToTakeoff or 0))
       self:_Log(string.format("StartUncontrolled sent to %s", state.assignment.groupName))
@@ -957,13 +980,13 @@ function MosieAiPlanner:_AdvanceArrivedWaypoint(state, computed)
   end
 
   local groupCoordinate = self:_GetGroupCoordinate(state.assignment.group)
-  local source = waypoint.source or waypoint
-  local distNm = self:_GetDistanceNm(groupCoordinate, source.coordinate)
+  local source          = waypoint.source or waypoint
+  local distNm          = self:_GetDistanceNm(groupCoordinate, source.coordinate)
   if distNm and distNm <= self.Config.waypointArrivalRadiusNm and state.currentWpIndex < #computed.waypoints then
-    local previousIndex = state.currentWpIndex
-    state.currentWpIndex = state.currentWpIndex + 1
-    state.holdStarted = false
-    state.lastRetaskTime = nil
+    local previousIndex   = state.currentWpIndex
+    state.currentWpIndex  = state.currentWpIndex + 1
+    state.holdStarted     = false
+    state.lastRetaskTime  = nil
     self:_AppendAiCommandDump(state, "WP_ADVANCE", string.format(
       "from=WP%02d to=WP%02d dist_nm=%.3f",
       previousIndex,
@@ -985,14 +1008,14 @@ function MosieAiPlanner:_TickHold(state, computed, waypoint)
     return false
   end
 
-  local holdDuration = waypoint.holdDurationSec or 0
+  local holdDuration  = waypoint.holdDurationSec or 0
   local secondsToExit = self:_GetSecondsToClockSeconds((waypoint.etaSec + holdDuration) % (SECONDS_PER_DAY or 86400))
   if secondsToExit and secondsToExit <= 0 then
     if state.currentWpIndex < #computed.waypoints then
-      local previousIndex = state.currentWpIndex
-      state.currentWpIndex = state.currentWpIndex + 1
-      state.holdStarted = false
-      state.lastRetaskTime = nil
+      local previousIndex   = state.currentWpIndex
+      state.currentWpIndex  = state.currentWpIndex + 1
+      state.holdStarted     = false
+      state.lastRetaskTime  = nil
       self:_AppendAiCommandDump(state, "HOLD_EXIT", string.format("from=WP%02d to=WP%02d", previousIndex, state.currentWpIndex))
       self:_RetaskRoute(state, "hold exit")
     end
@@ -1033,10 +1056,10 @@ function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed, orb
     return false
   end
 
-  local orbitSource = orbitWaypoint and (orbitWaypoint.source or orbitWaypoint) or nil
-  local groupCoordinate = self:_GetGroupCoordinate(group)
-  local orbitCoordinate = orbitSource and orbitSource.coordinate or groupCoordinate
-  local vec2 = self:_CoordinateToVec2(orbitCoordinate)
+  local orbitSource      = orbitWaypoint and (orbitWaypoint.source or orbitWaypoint) or nil
+  local groupCoordinate  = self:_GetGroupCoordinate(group)
+  local orbitCoordinate  = orbitSource and orbitSource.coordinate or groupCoordinate
+  local vec2             = self:_CoordinateToVec2(orbitCoordinate)
   if not vec2 then
     return false
   end
@@ -1044,9 +1067,9 @@ function MosieAiPlanner:_StartTimingOrbit(state, waypoint, rawRequiredSpeed, orb
   local altitudeMeters = group.GetAltitude and group:GetAltitude() or self:_FeetToMeters((waypoint and waypoint.resolvedAltFt) or 0)
   local task = group:TaskOrbitCircleAtVec2(vec2, altitudeMeters, self:_KnotsToMps(self.Config.holdSpeedKt))
   group:SetTask(task, 1)
-  state.timingOrbit = true
+  state.timingOrbit             = true
   state.timingOrbitWaypointIndex = state.currentWpIndex
-  state.lastRetaskTime = nil
+  state.lastRetaskTime          = nil
   self:_SetAiMode(state, "TIMING_ORBIT", "early_min_speed", string.format("raw_required_speed=%.0f", rawRequiredSpeed or 0))
   local source = waypoint and (waypoint.source or waypoint) or nil
   self:_AppendAiCommandDump(state, "SET_TASK_TIMING_ORBIT", string.format(
@@ -1075,9 +1098,9 @@ function MosieAiPlanner:_StopTimingOrbit(state, requiredSpeed)
     return false
   end
 
-  state.timingOrbit = false
+  state.timingOrbit              = false
   state.timingOrbitWaypointIndex = nil
-  state.lastRetaskTime = nil
+  state.lastRetaskTime           = nil
   self:_SetAiMode(state, "DIRECT_WP", "timing_orbit_exit", string.format("required_speed=%.0f", requiredSpeed or 0))
   self:_AppendAiCommandDump(state, "TIMING_ORBIT_EXIT", string.format("required_speed_kt=%.0f", requiredSpeed or 0))
   return self:_RetaskRoute(state, "timing orbit exit", requiredSpeed)
@@ -1085,18 +1108,18 @@ end
 
 function MosieAiPlanner:_RequiredSpeedToWaypointKt(state, waypoint)
   local groupCoordinate = self:_GetGroupCoordinate(state.assignment.group)
-  local source = waypoint.source or waypoint
-  local distNm = self:_GetDistanceNm(groupCoordinate, source.coordinate)
-  local secondsToEta = self:_GetSecondsToClockSeconds(waypoint.etaSec)
+  local source          = waypoint.source or waypoint
+  local distNm          = self:_GetDistanceNm(groupCoordinate, source.coordinate)
+  local secondsToEta    = self:_GetSecondsToClockSeconds(waypoint.etaSec)
 
   if not distNm or not secondsToEta or secondsToEta <= 0 then
     return nil, nil
   end
 
-  local requiredSpeed = distNm / secondsToEta * 3600
-  local currentSpeed = state.assignment.group.GetVelocityKNOTS and state.assignment.group:GetVelocityKNOTS() or self:_GetWaypointSpeedKt(waypoint) or requiredSpeed
+  local requiredSpeed  = distNm / secondsToEta * 3600
+  local currentSpeed   = state.assignment.group.GetVelocityKNOTS and state.assignment.group:GetVelocityKNOTS() or self:_GetWaypointSpeedKt(waypoint) or requiredSpeed
   local predictedSeconds = currentSpeed > 1 and distNm / currentSpeed * 3600 or secondsToEta
-  local etaErrorSeconds = predictedSeconds - secondsToEta
+  local etaErrorSeconds  = predictedSeconds - secondsToEta
   return self:_Clamp(requiredSpeed, self.Config.minSpeedKt, self.Config.maxSpeedKt), etaErrorSeconds, requiredSpeed, currentSpeed, secondsToEta
 end
 
@@ -1161,6 +1184,8 @@ function MosieAiPlanner:_TickAssignment(state)
   end
   self:_TickFlightSampleDump(state, computed)
 end
+
+-- ==== 10_main.lua ====
 
 function MosieAiPlanner:Tick()
   if not self.Config.enabled then

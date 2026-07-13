@@ -1,0 +1,14 @@
+return {
+  statsfile = "luacov.stats.out",
+  reportfile = "luacov.report.out",
+  include = {
+    "^src/",
+  },
+  exclude = {
+    "Moose",
+    "spec",
+    "test_helpers",
+    "mosie_navigator",
+  },
+  deletestats = false,
+}

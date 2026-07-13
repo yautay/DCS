@@ -1,0 +1,5 @@
+MOSIE NAVIGATOR FLIGHT PLAN
+PLAN  : JERICHO
+ACFT  : Mosquito FB Mk VI
+
+ERROR: TAKE_OFF must have __T (brake release time)

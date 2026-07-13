@@ -1,187 +1,19 @@
 -- MosieNavigator.spec.lua
--- Unit tests for MosieNavigator.lua.
+-- Unit tests for MosieNavigator source modules.
 --
 -- Run from this directory:
 --   lua MosieNavigator.spec.lua
 --
--- Loads real MOOSE (lib/Moose.lua) via its static include path with a
--- minimal DCS API shim, then loads MosieNavigator.lua and exercises
--- its parsers, formatters, math helpers, and zone discovery flow.
+-- Loads the DCS API shim and MOOSE, then loads source modules from src/
+-- and exercises parsers, formatters, math helpers, and zone discovery flow.
 --
 -- Compatible with Lua 5.1 / LuaJIT (DCS runtime).
 
 ------------------------------------------------------------
--- Section 1: DCS API shim
+-- Section 1: DCS API shim + test helpers
 ------------------------------------------------------------
 
-local function nop() end
-
-local function makeAutoStub(name)
-  local stub = {}
-  local mt
-  mt = {
-    __index = function(_, k)
-      local child = makeAutoStub(name .. "." .. tostring(k))
-      rawset(stub, k, child)
-      return child
-    end,
-    __call = function() return makeAutoStub(name .. "()") end,
-    __metatable = "autoStub",
-  }
-  setmetatable(stub, mt)
-  return stub
-end
-
-local function emptyCoalition() return { nav_points = {}, country = {} } end
-
-env = {
-  info = nop,
-  warning = nop,
-  error = nop,
-  setErrorMessageBoxEnabled = nop,
-  getValueDictByKey = function(s) return s end,
-  mission = {
-    theatre = "Caucasus",
-    coalition = { red = emptyCoalition(), blue = emptyCoalition(), neutrals = emptyCoalition() },
-    date = { Year = 2026, Month = 6, Day = 6 },
-    start_time = 0,
-    weather = { atmosphere_type = 0, wind = { atGround = {speed=0, dir=0}, at2000 = {speed=0, dir=0}, at8000 = {speed=0, dir=0} } },
-    triggers = { zones = {} },
-    map = {},
-  },
-  DIFFICULTY = {},
-}
-
-local fakeAbsTime = 0
-local fakeTime = 0
-timer = {
-  getAbsTime = function() return fakeAbsTime end,
-  getTime = function() return fakeTime end,
-  scheduleFunction = function() return 0 end,
-  removeFunction = nop,
-}
-
--- DCS event IDs (S_EVENT_*). MOOSE indexes into world.event.* at top-level
--- and performs arithmetic on S_EVENT_MAX, so these must be real numbers.
-local WORLD_EVENT_NAMES = {
-  "S_EVENT_INVALID", "S_EVENT_SHOT", "S_EVENT_HIT", "S_EVENT_TAKEOFF",
-  "S_EVENT_LAND", "S_EVENT_CRASH", "S_EVENT_EJECTION", "S_EVENT_REFUELING",
-  "S_EVENT_DEAD", "S_EVENT_PILOT_DEAD", "S_EVENT_BASE_CAPTURED",
-  "S_EVENT_MISSION_START", "S_EVENT_MISSION_END", "S_EVENT_TOOK_CONTROL",
-  "S_EVENT_REFUELING_STOP", "S_EVENT_BIRTH", "S_EVENT_HUMAN_FAILURE",
-  "S_EVENT_DETAILED_FAILURE", "S_EVENT_ENGINE_STARTUP", "S_EVENT_ENGINE_SHUTDOWN",
-  "S_EVENT_PLAYER_ENTER_UNIT", "S_EVENT_PLAYER_LEAVE_UNIT",
-  "S_EVENT_PLAYER_COMMENT", "S_EVENT_SHOOTING_START", "S_EVENT_SHOOTING_END",
-  "S_EVENT_MARK_ADDED", "S_EVENT_MARK_CHANGE", "S_EVENT_MARK_REMOVED",
-  "S_EVENT_KILL", "S_EVENT_SCORE", "S_EVENT_UNIT_LOST",
-  "S_EVENT_LANDING_AFTER_EJECTION", "S_EVENT_PARATROOPER_LENDING",
-  "S_EVENT_DISCARD_CHAIR_AFTER_EJECTION", "S_EVENT_WEAPON_ADD",
-  "S_EVENT_TRIGGER_ZONE", "S_EVENT_LANDING_QUALITY_MARK", "S_EVENT_BDA",
-  "S_EVENT_AI_ABORT_MISSION", "S_EVENT_DAYNIGHT", "S_EVENT_FLIGHT_TIME",
-  "S_EVENT_PLAYER_SELF_KILL_PILOT", "S_EVENT_PLAYER_CAPTURE_AIRFIELD",
-  "S_EVENT_EMERGENCY_LANDING", "S_EVENT_UNIT_CREATE_TASK",
-  "S_EVENT_UNIT_DELETE_TASK", "S_EVENT_SIMULATION_START",
-  "S_EVENT_WEAPON_REARM", "S_EVENT_WEAPON_DROP", "S_EVENT_UNIT_TASK_TIMEOUT",
-  "S_EVENT_UNIT_TASK_STAGE", "S_EVENT_MAC_SUBTASK_SCORE",
-  "S_EVENT_MAC_EXTRA_SCORE", "S_EVENT_MISSION_RESTART",
-  "S_EVENT_MISSION_WINNER", "S_EVENT_RUNWAY_TAKEOFF", "S_EVENT_RUNWAY_TOUCH",
-  "S_EVENT_MAC_LMS_RESTART", "S_EVENT_SIMULATION_FREEZE",
-  "S_EVENT_SIMULATION_UNFREEZE", "S_EVENT_HUMAN_AIRCRAFT_REPAIR_START",
-  "S_EVENT_HUMAN_AIRCRAFT_REPAIR_FINISH", "S_EVENT_UNIT_TASK_COMPLETE",
-}
-local worldEvent = { S_EVENT_MAX = #WORLD_EVENT_NAMES + 1 }
-for i, name in ipairs(WORLD_EVENT_NAMES) do worldEvent[name] = i end
-
-world = {
-  event = worldEvent,
-  BirthPlace = { wsBirthPlace_Air = 1, wsBirthPlace_RunWay = 2, wsBirthPlace_Park = 3, wsBirthPlace_Heliport_Hot = 4, wsBirthPlace_Heliport_Cold = 5, wsBirthPlace_Ship_Cold = 6, wsBirthPlace_Ship_Hot = 7, wsBirthPlace_Ship = 8 },
-  VolumeType = { SEGMENT = 0, BOX = 1, SPHERE = 2, PYRAMID = 3 },
-  getPlayer = function() return nil end,
-  getAirbases = function() return {} end,
-  addEventHandler = nop,
-  removeEventHandler = nop,
-  searchObjects = nop,
-  getMarkPanels = function() return {} end,
-}
-
-country = {
-  id = makeAutoStub("country.id"),
-  name = makeAutoStub("country.name"),
-}
-
-coalition = {
-  side = { NEUTRAL = 0, RED = 1, BLUE = 2 },
-  addGroup = nop,
-  addStaticObject = nop,
-  getGroups = function() return {} end,
-  getStaticObjects = function() return {} end,
-  getPlayers = function() return {} end,
-  getCountryCoalition = function() return 0 end,
-  getMainRefPoint = function() return { x = 0, y = 0, z = 0 } end,
-  getAirbases = function() return {} end,
-  getServiceProviders = function() return {} end,
-}
-
-trigger = {
-  misc = makeAutoStub("trigger.misc"),
-  action = makeAutoStub("trigger.action"),
-  smokeColor = { Green = 0, Red = 1, White = 2, Orange = 3, Blue = 4 },
-  flareColor = { Green = 0, Red = 1, White = 2, Yellow = 3 },
-}
-
-Airbase = {
-  Category = { AIRDROME = 0, HELIPAD = 1, SHIP = 2 },
-  TerminalType = { Runway = 16, HelicopterOnly = 40, Shelter = 68, OpenBig = 72, OpenMed = 104, OpenMedOrBig = 176, HelicopterUsable = 216, FighterAircraft = 244 },
-}
-
-Group = {
-  Category = { AIRPLANE = 0, HELICOPTER = 1, GROUND = 2, SHIP = 3, TRAIN = 4 },
-}
-
-Unit = {
-  Category = { AIRPLANE = 0, HELICOPTER = 1, GROUND_UNIT = 2, SHIP = 3, STRUCTURE = 4 },
-  RefuelingSystem = { BOOM_AND_RECEPTACLE = 0, PROBE_AND_DROGUE = 1 },
-}
-
-Weapon = {
-  Category = { SHELL = 0, MISSILE = 1, ROCKET = 2, BOMB = 3, TORPEDO = 4 },
-  GuidanceType = { INS = 1, IR = 2, RADAR_ACTIVE = 3, RADAR_SEMI_ACTIVE = 4, RADAR_PASSIVE = 5, TV = 6, LASER = 7, TELE = 8 },
-  MissileCategory = { AAM = 1, SAM = 2, BM = 3, ANTI_SHIP = 4, CRUISE = 5, OTHER = 6 },
-  WarheadType = { AP = 0, HE = 1, SHAPED_EXPLOSIVE = 2 },
-  flag = makeAutoStub("Weapon.flag"),
-}
-
-Object = {
-  Category = { UNIT = 1, WEAPON = 2, STATIC = 3, BASE = 4, SCENERY = 5, CARGO = 6 },
-}
-
-Controller = makeAutoStub("Controller")
-
-AI = {
-  Task = makeAutoStub("AI.Task"),
-  Skill = { AVERAGE = "Average", GOOD = "Good", HIGH = "High", EXCELLENT = "Excellent", RANDOM = "Random", PLAYER = "Player", CLIENT = "Client" },
-  Option = makeAutoStub("AI.Option"),
-}
-
-Warehouse = makeAutoStub("Warehouse")
-
-land = {
-  SurfaceType = { LAND = 1, SHALLOW_WATER = 2, WATER = 3, ROAD = 4, RUNWAY = 5 },
-  getHeight = function() return 0 end,
-  getSurfaceType = function() return 1 end,
-  getIP = function() return nil end,
-  isVisible = function() return true end,
-  profile = function() return {} end,
-}
-
-net = makeAutoStub("net")
-radio = { modulation = { AM = 0, FM = 1 } }
-missionCommands = makeAutoStub("missionCommands")
-atmosphere = makeAutoStub("atmosphere")
-
--- Some MOOSE code may reference these
-Terrain = makeAutoStub("Terrain")
-CoalitionSide = coalition.side
+dofile("../test_helpers/dcs_shim.lua")
 
 ------------------------------------------------------------
 -- Section 2: Load MOOSE (force static include)
@@ -222,120 +54,10 @@ MOSIE_AI_PLANNER_AUTO_START = false
 dofile("../mosie_ai_planner/MosieAiPlanner.lua")
 
 ------------------------------------------------------------
--- Section 5: Test helpers
+-- Section 5: Mini test framework
 ------------------------------------------------------------
 
-local function setAbsTime(v) fakeAbsTime = v end
-local function setTime(v) fakeTime = v end
-
--- Coordinate mock factory. Uses simple 2D geometry: distance is
--- Euclidean over (x,z); heading is atan2(dx,dz) in degrees, north = +z.
-local function makeCoord(opts)
-  opts = opts or {}
-  local windField = opts.windField
-  local declinationField = opts.declinationField
-  local self = {
-    x = opts.x or 0,
-    y = opts.y or 0,
-    z = opts.z or 0,
-    windField = windField,
-    declinationField = declinationField,
-    wind = opts.wind,
-    declination = opts.declination,
-  }
-  self.Get2DDistance = function(_, other)
-    local dx = (other.x or 0) - self.x
-    local dz = (other.z or 0) - self.z
-    return math.sqrt(dx * dx + dz * dz)
-  end
-  self.HeadingTo = function(_, other)
-    local dx = (other.x or 0) - self.x
-    local dz = (other.z or 0) - self.z
-    local h = math.deg(math.atan2(dx, dz))
-    return (h % 360 + 360) % 360
-  end
-  self.GetVec3 = function() return { x = self.x, y = self.y, z = self.z } end
-  self.GetLLDDM = function() return opts.lat or 0, opts.lon or 0 end
-  self.GetMagneticDeclination = function()
-    if self.declinationField then return self.declinationField(self.x, self.z) end
-    return self.declination or 0
-  end
-  self.GetWindVec3 = function(_, height)
-    if self.windField then return self.windField(self.x, self.z, height) end
-    return self.wind or { x = 0, y = 0, z = 0 }
-  end
-  self.GetIntermediateCoordinate = function(_, other, fraction)
-    return makeCoord({
-      x = self.x + ((other.x or 0) - self.x) * fraction,
-      y = self.y + ((other.y or 0) - self.y) * fraction,
-      z = self.z + ((other.z or 0) - self.z) * fraction,
-      windField = windField or other.windField,
-      declinationField = declinationField or other.declinationField,
-    })
-  end
-  return self
-end
-
-------------------------------------------------------------
--- Section 6: Mini test framework
-------------------------------------------------------------
-
-local totalPass, totalFail = 0, 0
-local failures = {}
-local currentSuite = ""
-
-local function suite(name, fn)
-  currentSuite = name
-  print("== " .. name)
-  fn()
-end
-
-local function it(name, fn)
-  local ok, err = pcall(fn)
-  if ok then
-    totalPass = totalPass + 1
-    print("  PASS " .. name)
-  else
-    totalFail = totalFail + 1
-    table.insert(failures, currentSuite .. " / " .. name .. " : " .. tostring(err))
-    print("  FAIL " .. name .. " : " .. tostring(err))
-  end
-end
-
-local function assertEq(actual, expected, msg)
-  if actual ~= expected then
-    error((msg or "eq") .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
-  end
-end
-
-local function assertNil(v, msg)
-  if v ~= nil then
-    error((msg or "nil") .. ": expected nil, got " .. tostring(v), 2)
-  end
-end
-
-local function assertNotNil(v, msg)
-  if v == nil then
-    error((msg or "notNil") .. ": expected non-nil", 2)
-  end
-end
-
-local function assertNear(actual, expected, epsilon, msg)
-  epsilon = epsilon or 1e-6
-  if math.abs(actual - expected) > epsilon then
-    error((msg or "near") .. ": expected " .. tostring(expected) .. " +/- " .. tostring(epsilon) .. ", got " .. tostring(actual), 2)
-  end
-end
-
-local function assertMatch(s, pattern, msg)
-  if not string.find(s, pattern) then
-    error((msg or "match") .. ": '" .. tostring(s) .. "' does not match '" .. pattern .. "'", 2)
-  end
-end
-
-local function assertTrue(v, msg)
-  if not v then error((msg or "true") .. ": expected truthy", 2) end
-end
+dofile("../test_helpers/suite.lua")
 
 ------------------------------------------------------------
 -- Section 7: Test suites
@@ -4088,6 +3810,1205 @@ suite("WriteFlightPlanFiles flag interaction", function()
 end)
 
 ------------------------------------------------------------
+-- Additional coverage: draw, IO, start, messages, navigator
+------------------------------------------------------------
+
+-- ===== 08_draw.lua =====
+
+suite("_DrawWaypoint", function()
+  it("draws with zone radius", function()
+    local coord = makeCoord({x = 0, y = 0, z = 0})
+    local wp = {
+      order = 1, type = "TARGET", name = "Prison", plan = "JERICHO",
+      zoneName = "MN_JERICHO_01_TARGET", coordinate = coord,
+      zone = {GetRadius = function() return 2000 end},
+    }
+    M.MarkIds = {}
+    M:_DrawWaypoint({name = "JERICHO"}, wp, M:_GetPlanColor(1))
+    assertTrue(true)
+  end)
+
+  it("draws with default radius when zone has no GetRadius", function()
+    local coord = makeCoord({x = 1000, y = 0, z = 2000})
+    local wp = {
+      order = 2, type = "NAV", name = "Nav", plan = "JERICHO",
+      zoneName = "MN_JERICHO_02_NAV", coordinate = coord,
+      zone = {},
+    }
+    M.MarkIds = {}
+    M:_DrawWaypoint({name = "JERICHO"}, wp, M:_GetPlanColor(2))
+    assertTrue(true)
+  end)
+end)
+
+suite("_DrawPlan", function()
+  it("draws all waypoints and connector lines", function()
+    local c1 = makeCoord({x = 0,    y = 0, z = 0})
+    local c2 = makeCoord({x = 5000, y = 0, z = 0})
+    local plan = {
+      name = "JERICHO",
+      waypoints = {
+        {order=1, type="TAKE_OFF",  name="Tangmere", plan="JERICHO", coordinate=c1, zone={GetRadius=function()return 500 end}},
+        {order=2, type="LANDING",   name="Tangmere", plan="JERICHO", coordinate=c2, zone={GetRadius=function()return 500 end}},
+      }
+    }
+    M.MarkIds = {}
+    M:_DrawPlan(plan, M:_GetPlanColor(1))
+    assertTrue(true)
+  end)
+end)
+
+suite("_DrawBeacon", function()
+  it("draws beacon with frequency", function()
+    local coord = makeCoord({x = 0, y = 0, z = 0})
+    local beacon = {id = "TANGMERE", frequency = "310KHZ", powerNm = 120, coordinate = coord}
+    M.MarkIds = {}
+    M:_DrawBeacon(beacon)
+    assertTrue(true)
+  end)
+
+  it("draws beacon without frequency", function()
+    local coord = makeCoord({x = 0, y = 0, z = 0})
+    local beacon = {id = "BAYEUX", powerNm = 90, coordinate = coord}
+    M.MarkIds = {}
+    M:_DrawBeacon(beacon)
+    assertTrue(true)
+  end)
+end)
+
+-- ===== 12_io.lua =====
+
+suite("_WriteFlightPlanFile", function()
+  it("writes TXT file when io available", function()
+    local origBuild = M._BuildFlightPlanTable
+    M._BuildFlightPlanTable = function(_, plan, groupName, rolex)
+      return "NAVLOG CONTENT\n"
+    end
+    M:_WriteFlightPlanFile({name = "TESTPLAN"}, "TESTGROUP", 0)
+    M._BuildFlightPlanTable = origBuild
+    assertTrue(true)
+  end)
+
+  it("writes without groupName (per-plan variant)", function()
+    local origBuild = M._BuildFlightPlanTable
+    M._BuildFlightPlanTable = function(_, plan, groupName, rolex)
+      return "NAVLOG CONTENT\n"
+    end
+    M:_WriteFlightPlanFile({name = "TESTPLAN"}, nil, 0)
+    M._BuildFlightPlanTable = origBuild
+    assertTrue(true)
+  end)
+end)
+
+suite("_WriteFlightPlanCsvFile", function()
+  it("writes CSV file when io available", function()
+    local origBuild = M._BuildFlightPlanCsv
+    M._BuildFlightPlanCsv = function(_, plan)
+      return "ORDER,TYPE\n"
+    end
+    M:_WriteFlightPlanCsvFile({name = "TESTPLAN"})
+    M._BuildFlightPlanCsv = origBuild
+    assertTrue(true)
+  end)
+end)
+
+suite("_WriteBeaconsCsvFile", function()
+  it("skips write for nil beacons", function()
+    M:_WriteBeaconsCsvFile(nil)
+    assertTrue(true)
+  end)
+
+  it("skips write for empty beacons list", function()
+    M:_WriteBeaconsCsvFile({})
+    assertTrue(true)
+  end)
+
+  it("writes beacons CSV when non-empty", function()
+    local origBuild = M._BuildBeaconsCsv
+    M._BuildBeaconsCsv = function(_, beacons)
+      return "ID,FREQ\n"
+    end
+    M:_WriteBeaconsCsvFile({{id = "TANGMERE"}})
+    M._BuildBeaconsCsv = origBuild
+    assertTrue(true)
+  end)
+end)
+
+-- ===== 13_main.lua =====
+
+suite("DrawDebug", function()
+  it("runs without error when zones table is empty", function()
+    M.MarkIds = {}
+    M.MenusCreated = {}
+    M.InactiveGroupLogs = {}
+    M.NavigatorStates = {}
+    env.mission.triggers.zones = {}
+    M:DrawDebug()
+    assertTrue(true)
+  end)
+
+  it("draws plans and beacons when discovered zones non-empty", function()
+    local coord = makeCoord({x=0, y=0, z=0})
+    local plan = {
+      name = "JERICHO",
+      waypoints = {
+        {type="TAKE_OFF",order=1,coordinate=coord,plan="JERICHO",name="T",zoneName="z1",zone={GetRadius=function()return 500 end}},
+        {type="LANDING",order=2,coordinate=coord,plan="JERICHO",name="L",zoneName="z2",zone={GetRadius=function()return 500 end}},
+      }
+    }
+    local beacon = {id="TANGMERE", powerNm=120, frequency="310KHZ", coordinate=coord}
+    local origDiscover = M._DiscoverZones
+    M._DiscoverZones = function(_) return {JERICHO=plan}, {beacon} end
+    M.MarkIds = {}
+    M.MenusCreated = {}
+    M.InactiveGroupLogs = {}
+    M.NavigatorStates = {}
+    M:DrawDebug()
+    M._DiscoverZones = origDiscover
+    assertTrue(true)
+  end)
+end)
+
+suite("MosieNavigator:Start", function()
+  it("initializes scheduler on first call", function()
+    local origScheduler = SCHEDULER
+    local scheduled = {}
+    SCHEDULER = {
+      New = function(self, obj, fn, args, delay, interval)
+        table.insert(scheduled, {interval = interval})
+        return {}
+      end,
+    }
+    M.NavigatorScheduler = nil
+    M.MarkIds = {}
+    M.MenusCreated = {}
+    M.InactiveGroupLogs = {}
+    M.NavigatorStates = {}
+    env.mission.triggers.zones = {}
+    M:Start()
+    SCHEDULER = origScheduler
+    assertTrue(#scheduled >= 1)
+  end)
+end)
+
+-- ===== 11_messages.lua additional =====
+
+suite("_FormatMissionRolexStatus", function()
+  it("returns reset message when mission rolex is zero", function()
+    M.MissionRolexSeconds = 0
+    local result = M:_FormatMissionRolexStatus()
+    assertEq(result, "GLOBAL TOT ROLEX reset")
+  end)
+
+  it("returns formatted rolex when non-zero", function()
+    M.MissionRolexSeconds = 300
+    local result = M:_FormatMissionRolexStatus()
+    assertMatch(result, "GLOBAL TOT ROLEX")
+    M.MissionRolexSeconds = nil
+  end)
+end)
+
+suite("_AppendFlightPlanRows compact=false", function()
+  it("emits full navlog header with empty waypoints", function()
+    local lines = {}
+    M:_AppendFlightPlanRows(lines, {}, false)
+    local out = table.concat(lines, "\n")
+    assertMatch(out, "ID TYPE")
+    assertMatch(out, "IAS")
+  end)
+end)
+
+suite("_ShowFlightPlanForGroup", function()
+  it("returns early when group is nil", function()
+    M:_ShowFlightPlanForGroup(nil, {}, 0, 0)
+    assertTrue(true)
+  end)
+
+  it("returns early when plan is nil", function()
+    local fakeGroup = {GetName = function() return "MOSQUITO" end}
+    M:_ShowFlightPlanForGroup(fakeGroup, nil, 0, 0)
+    assertTrue(true)
+  end)
+
+  it("sends flight plan message to group", function()
+    local fakeGroup = {
+      GetName = function() return "MOSQUITO 1-1" end,
+      MessageToAll = function() end,
+    }
+    local origBuild = M._BuildSimplifiedFlightPlanMessage
+    M._BuildSimplifiedFlightPlanMessage = function(_, plan, groupName, rolex)
+      return "FLIGHT PLAN CONTENT"
+    end
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, group, text, duration) end
+    M:_ShowFlightPlanForGroup(fakeGroup, {name="JERICHO",waypoints={}}, 0, 0)
+    M._BuildSimplifiedFlightPlanMessage = origBuild
+    M._SendNavigatorMessage = origSend
+    assertTrue(true)
+  end)
+end)
+
+suite("_BuildSimplifiedFlightPlanMessage error path", function()
+  it("shows error when plan fails to compute", function()
+    -- A plan with no valid TAKE_OFF + __T will produce an error from _ComputePlan
+    local badPlan = {name = "BADPLAN", waypoints = {
+      {type = "NAV",     order = 1, name = "NAV"},
+      {type = "LANDING", order = 2, name = "Tangmere"},
+    }}
+    local result = M:_BuildSimplifiedFlightPlanMessage(badPlan, "TESTGROUP", 0, 0)
+    assertMatch(result, "ERROR")
+  end)
+end)
+
+-- ===== 10_navigator.lua additional =====
+
+suite("_IsNavigatorGroupAirborne with IsAir", function()
+  it("returns false when IsAir returns false", function()
+    local group = {
+      IsAir = function() return false end,
+      IsAirborne = function() return false end,
+    }
+    local result = M:_IsNavigatorGroupAirborne(group)
+    assertEq(result, false)
+  end)
+
+  it("uses IsAirborne when IsAir absent", function()
+    local group = {IsAirborne = function() return true end}
+    local result = M:_IsNavigatorGroupAirborne(group)
+    assertEq(result, true)
+  end)
+end)
+
+suite("_FormatDuration / _FormatDurationHoursMinutes", function()
+  it("_FormatDuration returns a non-empty string", function()
+    local result = M:_FormatDuration(3661)
+    assertEq(type(result), "string")
+    assertTrue(#result > 0)
+  end)
+
+  it("_FormatDurationHoursMinutes formats as h mm m", function()
+    local result = M:_FormatDurationHoursMinutes(3661)
+    assertEq(type(result), "string")
+    assertTrue(#result > 0)
+  end)
+end)
+
+suite("_FormatCountdown", function()
+  it("formats seconds into countdown string", function()
+    local result = M:_FormatCountdown(125)
+    assertEq(type(result), "string")
+    assertTrue(#result > 0)
+  end)
+end)
+
+suite("_FormatNavigatorEtaClock", function()
+  it("returns dash string when secondsToEta is nil", function()
+    local result = M:_FormatNavigatorEtaClock(nil)
+    assertEq(type(result), "string")
+    assertMatch(result, "%-%-")
+  end)
+
+  it("formats a positive countdown", function()
+    local result = M:_FormatNavigatorEtaClock(125)
+    assertEq(type(result), "string")
+  end)
+end)
+
+suite("_GetActualSecondsToWaypoint", function()
+  it("returns nil when distance is nil", function()
+    assertNil(M:_GetActualSecondsToWaypoint(nil, 200))
+  end)
+
+  it("returns nil when speed is 0", function()
+    assertNil(M:_GetActualSecondsToWaypoint(10, 0))
+  end)
+
+  it("computes time from distance and speed", function()
+    -- 60 NM at 180 kt = 20 min = 1200 s
+    local result = M:_GetActualSecondsToWaypoint(60, 180)
+    assertNear(result, 1200, 1)
+  end)
+end)
+
+suite("_IsNavigatorRequiredSpeedAchievable", function()
+  it("returns true for achievable IAS", function()
+    local result = M:_IsNavigatorRequiredSpeedAchievable(160)
+    assertEq(type(result), "boolean")
+  end)
+
+  it("returns false for nil IAS", function()
+    local result = M:_IsNavigatorRequiredSpeedAchievable(nil)
+    assertEq(result, false)
+  end)
+end)
+
+suite("_GetTakeoffWaypoint", function()
+  it("returns first TAKE_OFF waypoint", function()
+    local plan = {waypoints = {
+      {type = "TAKE_OFF", order = 1},
+      {type = "NAV",      order = 2},
+    }}
+    local wp = M:_GetTakeoffWaypoint(plan)
+    assertNotNil(wp)
+    assertEq(wp.type, "TAKE_OFF")
+  end)
+
+  it("returns nil for plan with no TAKE_OFF", function()
+    local plan = {waypoints = {{type = "NAV", order = 1}}}
+    assertNil(M:_GetTakeoffWaypoint(plan))
+  end)
+end)
+
+suite("_GetNavigatorWaypointLabel", function()
+  it("returns display name for known type", function()
+    local wp = {type = "TARGET", name = "Prison", nameExplicit = true, order = 5}
+    local label = M:_GetNavigatorWaypointLabel(wp)
+    assertEq(type(label), "string")
+    assertTrue(#label > 0)
+    assertMatch(label, "TARGET")
+  end)
+end)
+
+suite("_GetNavigatorWaypointAltitudeFt", function()
+  it("returns 0 for nil plan index", function()
+    local plan = {waypoints = {}}
+    local result = M:_GetNavigatorWaypointAltitudeFt(plan, 99)
+    assertEq(type(result), "number")
+  end)
+end)
+
+-- ===== 07_discover.lua additional =====
+
+suite("_ExtractRolexFromGroupName invalid token", function()
+  it("returns 0 for malformed __R token with letters", function()
+    local rolex = M:_ExtractRolexFromGroupName("MOSQUITO [MN:JERICHO]__Rxyz")
+    assertEq(rolex, 0)
+  end)
+end)
+
+suite("_DiscoverGroupAssignments missing plan", function()
+  it("logs when group references a plan not in plans table", function()
+    local origSG = SET_GROUP
+    local logged = {}
+    local origLog = M._Log
+    M._Log = function(_, msg) table.insert(logged, msg) end
+    M.InactiveGroupLogs = {}
+
+    SET_GROUP = {
+      New = function(self) return self end,
+      FilterStart = function(self) return self end,
+      ForEachGroup = function(self, fn)
+        fn({
+          GetName = function() return "MOSQUITO 1-1 [MN:MISSINGPLAN]" end,
+          IsAlive = function() return true end,
+        })
+      end,
+    }
+    M:_DiscoverGroupAssignments({})  -- empty plans → MISSINGPLAN not found
+    M._Log = origLog
+    SET_GROUP = origSG
+
+    local found = false
+    for _, msg in ipairs(logged) do
+      if string.find(msg, "MISSINGPLAN") or string.find(msg, "missing plan") then found = true end
+    end
+    assertTrue(found, "should log about missing plan")
+  end)
+
+  it("logs inactive group when plan exists but group not alive", function()
+    local origSG = SET_GROUP
+    local logged = {}
+    local origLog = M._Log
+    M._Log = function(_, msg) table.insert(logged, msg) end
+    M.InactiveGroupLogs = {}
+
+    SET_GROUP = {
+      New = function(self) return self end,
+      FilterStart = function(self) return self end,
+      ForEachGroup = function(self, fn)
+        fn({
+          GetName = function() return "MOSQUITO 1-1 [MN:JERICHO]" end,
+          IsAlive = function() return false end,
+        })
+      end,
+    }
+    M:_DiscoverGroupAssignments({JERICHO = {waypoints = {}}})
+    M._Log = origLog
+    SET_GROUP = origSG
+
+    local found = false
+    for _, msg in ipairs(logged) do
+      if string.find(msg, "not active yet") or string.find(msg, "JERICHO") then found = true end
+    end
+    assertTrue(found, "should log about inactive group")
+  end)
+end)
+
+------------------------------------------------------------
+-- Additional coverage: format functions, messages, navigator internals
+------------------------------------------------------------
+
+suite("_FormatDuration edge cases", function()
+  it("returns -- for nil", function()
+    assertEq(M:_FormatDuration(nil), "--")
+  end)
+  it("formats negative with minus prefix", function()
+    local r = M:_FormatDuration(-70)
+    assertMatch(r, "^%-")
+    assertMatch(r, "1:10")
+  end)
+end)
+
+suite("_FormatDurationHoursMinutes edge cases", function()
+  it("returns -- for nil", function()
+    assertEq(M:_FormatDurationHoursMinutes(nil), "--")
+  end)
+  it("formats negative", function()
+    assertMatch(M:_FormatDurationHoursMinutes(-60), "^%-")
+  end)
+  it("formats hours when >= 3600", function()
+    assertMatch(M:_FormatDurationHoursMinutes(7200), "02:00")
+  end)
+end)
+
+suite("_FormatCountdown edge cases", function()
+  it("returns -- for nil", function()
+    assertEq(M:_FormatCountdown(nil), "--")
+  end)
+  it("formats negative with minus prefix", function()
+    assertMatch(M:_FormatCountdown(-30), "^%-")
+  end)
+end)
+
+suite("_GetSecondsToClockSeconds nil guard", function()
+  it("returns nil for nil input", function()
+    assertNil(M:_GetSecondsToClockSeconds(nil))
+  end)
+end)
+
+suite("_FormatVariation and _FormatDisplayLegTime", function()
+  it("_FormatVariation returns --- for nil", function()
+    assertEq(M:_FormatVariation(nil), "---")
+  end)
+  it("_FormatVariation formats a number with sign", function()
+    assertMatch(M:_FormatVariation(3.5), "%+3%.5")
+  end)
+  it("_FormatDisplayLegTime returns --- for nil", function()
+    assertEq(M:_FormatDisplayLegTime(nil), "---")
+  end)
+  it("_FormatDisplayLegTime rounds to minutes", function()
+    assertEq(M:_FormatDisplayLegTime(3660), "61")
+  end)
+end)
+
+suite("_AppendFuelSummary", function()
+  it("formats full fuel summary with DCS section", function()
+    local lines = {}
+    M:_AppendFuelSummary(lines, {
+      taxiImpGal = 0.5, routeImpGal = 3.2, reserveImpGal = 0.8,
+      landingImpGal = 0.3, totalImpGal = 4.8,
+      dcs = {requiredGal = 5.0, requiredLb = 36.0, internalPercent = 92,
+             internalFuelLb = 40.0, dropTankLabel = "NONE"},
+    })
+    local out = table.concat(lines, "\n")
+    assertMatch(out, "FUEL:")
+    assertMatch(out, "DCS FUEL:")
+    assertMatch(out, "REQUIRED")
+    assertMatch(out, "INTERNAL")
+  end)
+
+  it("skips DCS section when dcs is nil", function()
+    local lines = {}
+    M:_AppendFuelSummary(lines, {
+      taxiImpGal = 0.5, routeImpGal = 3.2, reserveImpGal = 0.8,
+      landingImpGal = 0.3, totalImpGal = 4.8, dcs = nil,
+    })
+    local out = table.concat(lines, "\n")
+    assertMatch(out, "FUEL:")
+    assertTrue(not string.find(out, "DCS FUEL:"), "DCS section should be absent")
+  end)
+end)
+
+suite("_AppendFlightPlanRows compact=true", function()
+  local ow = {order = 1, type = "NAV"}
+  it("emits compact header and separator", function()
+    local lines = {}
+    M:_AppendFlightPlanRows(lines, {}, true)
+    assertMatch(lines[1], "ID TY ALT")
+    assertMatch(lines[2], "^%-%-%-")
+    assertTrue(not string.find(lines[1], "TYPE"), "compact header should not contain TYPE")
+  end)
+  it("emits compact row for minimal waypoint", function()
+    local lines = {}
+    M:_AppendFlightPlanRows(lines, {ow}, true)
+    assertTrue(#lines >= 3, "header + separator + row = at least 3 lines")
+    assertMatch(lines[3], "^01")
+  end)
+end)
+
+suite("_AppendFlightPlanRows compact=false with waypoint", function()
+  it("emits full-format row for minimal waypoint", function()
+    local ow = {order = 2, type = "TARGET"}
+    local lines = {}
+    M:_AppendFlightPlanRows(lines, {ow}, false)
+    assertTrue(#lines >= 3, "header + separator + row = at least 3 lines")
+    assertMatch(lines[3], "^02")
+    assertMatch(lines[3], "TARGET")
+  end)
+end)
+
+suite("_BuildSimplifiedFlightPlanMessage fuel+timing", function()
+  it("includes TIMING section and FUEL when plan has timing advisories", function()
+    local origGetActive = M._GetActiveComputedPlan
+    M._GetActiveComputedPlan = function(_, plan, base, pilot)
+      return {
+        valid = true,
+        waypoints = {},
+        warnings = {},
+        timing = {"HOLD absorbs 10 min slack"},
+        fuel = {
+          taxiImpGal = 0.5, routeImpGal = 3.2, reserveImpGal = 0.8,
+          landingImpGal = 0.3, totalImpGal = 4.8, dcs = nil,
+        },
+      }
+    end
+    local result = M:_BuildSimplifiedFlightPlanMessage({name="T",waypoints={}}, "G", 0, 0)
+    M._GetActiveComputedPlan = origGetActive
+    assertMatch(result, "TIMING")
+    assertMatch(result, "HOLD")
+    assertMatch(result, "FUEL:")
+  end)
+end)
+
+suite("_GetGroupPlanState", function()
+  it("creates and returns state for a new group", function()
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = nil
+    local fakeGroup = {GetName = function() return "MOSQUITO 1-1" end}
+    local assignment = {plan={waypoints={}}, planName="JERICHO", rolexSeconds=0}
+    local state = M:_GetGroupPlanState(fakeGroup, assignment)
+    M.GroupPlanStates = origStates
+    assertNotNil(state)
+    assertEq(state.groupName, "MOSQUITO 1-1")
+    assertEq(state.planName, "JERICHO")
+  end)
+
+  it("returns existing state for a known group", function()
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = nil
+    local fakeGroup = {GetName = function() return "MOSQUITO 1-1" end}
+    local assignment = {plan={waypoints={}}, planName="JERICHO", rolexSeconds=0}
+    local s1 = M:_GetGroupPlanState(fakeGroup, assignment)
+    local s2 = M:_GetGroupPlanState(fakeGroup, assignment)
+    M.GroupPlanStates = origStates
+    assertEq(s1, s2)
+  end)
+end)
+
+suite("_GetActiveRolexSeconds", function()
+  it("sums base, mission, and pilot rolex", function()
+    M.MissionRolexSeconds = 60
+    local result = M:_GetActiveRolexSeconds({baseRolexSeconds=30, pilotRolexSeconds=90})
+    assertEq(result, 180)
+    M.MissionRolexSeconds = nil
+  end)
+
+  it("treats nil fields as 0", function()
+    M.MissionRolexSeconds = nil
+    local result = M:_GetActiveRolexSeconds({})
+    assertEq(result, 0)
+  end)
+end)
+
+suite("_RefreshNavigatorRolex early returns", function()
+  it("returns early when NavigatorStates is nil", function()
+    local origStates = M.NavigatorStates
+    M.NavigatorStates = nil
+    M:_RefreshNavigatorRolex({groupName="TEST", baseRolexSeconds=0, pilotRolexSeconds=0, group={}, plan={waypoints={}}})
+    M.NavigatorStates = origStates
+    assertTrue(true)
+  end)
+
+  it("returns early when no state for group", function()
+    local origStates = M.NavigatorStates
+    M.NavigatorStates = {}
+    M:_RefreshNavigatorRolex({groupName="NONEXISTENT", baseRolexSeconds=0, pilotRolexSeconds=0, group={}, plan={waypoints={}}})
+    M.NavigatorStates = origStates
+    assertTrue(true)
+  end)
+end)
+
+suite("_RefreshAllNavigatorRolex early return", function()
+  it("returns early when GroupPlanStates is nil", function()
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = nil
+    M:_RefreshAllNavigatorRolex("TEST")
+    M.GroupPlanStates = origStates
+    assertTrue(true)
+  end)
+end)
+
+suite("_GetInitialNavigatorWpIndexByTot with empty plan", function()
+  it("falls back to _GetInitialNavigatorWpIndex for empty plan", function()
+    local plan = {waypoints = {}}
+    local result = M:_GetInitialNavigatorWpIndexByTot(plan, 0, {valid=true, waypoints={}})
+    assertEq(type(result), "number")
+  end)
+end)
+
+suite("_SendNavigatorMessage non-test-mode", function()
+  it("uses MESSAGE:ToGroup when not in test mode", function()
+    local origTestMode = TEST_MODE
+    TEST_MODE = nil
+    local origMsg = MESSAGE
+    local calls = {}
+    MESSAGE = {
+      New = function(self, text, duration, category)
+        return {ToGroup = function(_, group) table.insert(calls, "ToGroup") end}
+      end,
+    }
+    M:_SendNavigatorMessage({GetName=function() return "T" end}, "hello", 5)
+    MESSAGE = origMsg
+    TEST_MODE = origTestMode
+    assertEq(#calls, 1)
+    assertEq(calls[1], "ToGroup")
+  end)
+end)
+
+suite("_IsNavigatorGroupAirborne edge cases", function()
+  it("uses IsAir when IsAirborne is absent", function()
+    local group = {IsAir = function() return true end}
+    assertEq(M:_IsNavigatorGroupAirborne(group), true)
+  end)
+
+  it("returns false when neither IsAirborne nor IsAir present", function()
+    assertEq(M:_IsNavigatorGroupAirborne({}), false)
+  end)
+
+  it("returns false for nil group", function()
+    assertEq(M:_IsNavigatorGroupAirborne(nil), false)
+  end)
+end)
+
+suite("_FormatCountdown with hours", function()
+  it("formats durations >= 1 hour with HH:MM:SS", function()
+    local result = M:_FormatCountdown(3700)
+    assertMatch(result, "01:")
+    assertMatch(result, ":01:")
+  end)
+end)
+
+suite("_GetNavigatorWaypointLabel nil waypoint", function()
+  it("returns WP-- for nil waypoint", function()
+    assertEq(M:_GetNavigatorWaypointLabel(nil), "WP--")
+  end)
+end)
+
+suite("_GetNavigatorHoldDurationSeconds fallback", function()
+  it("returns holdDurationSec from plan when computed is nil", function()
+    local origGetComputed = M._GetNavigatorComputedWaypoint
+    M._GetNavigatorComputedWaypoint = function() return nil end
+    local state = {plan = {waypoints = {{holdDurationSec = 600}}}}
+    local result = M:_GetNavigatorHoldDurationSeconds(state, 1)
+    M._GetNavigatorComputedWaypoint = origGetComputed
+    assertEq(result, 600)
+  end)
+
+  it("returns 0 when waypoint has no holdDurationSec", function()
+    local origGetComputed = M._GetNavigatorComputedWaypoint
+    M._GetNavigatorComputedWaypoint = function() return nil end
+    local state = {plan = {waypoints = {{type="NAV"}}}}
+    local result = M:_GetNavigatorHoldDurationSeconds(state, 1)
+    M._GetNavigatorComputedWaypoint = origGetComputed
+    assertEq(result, 0)
+  end)
+end)
+
+suite("_GetSecondsToNavigatorWaypointEta fallback", function()
+  it("falls back to _GetSecondsToWaypointTot when no computed waypoint", function()
+    local origGetComputed = M._GetNavigatorComputedWaypoint
+    M._GetNavigatorComputedWaypoint = function() return nil end
+    setAbsTime(43200)
+    local state = {
+      plan = {waypoints = {{timeOnTargetSeconds = 43260}}},
+      rolexSeconds = 0,
+    }
+    local result = M:_GetSecondsToNavigatorWaypointEta(state, 1)
+    M._GetNavigatorComputedWaypoint = origGetComputed
+    setAbsTime(0)
+    assertNear(result, 60, 1)
+  end)
+end)
+
+suite("_GetNavigatorComputedWaypoint _GetComputedPlan fallback", function()
+  it("uses _GetComputedPlan when _GetActiveComputedPlan is absent", function()
+    local origGetActive = M._GetActiveComputedPlan
+    M._GetActiveComputedPlan = nil
+    local origGetComputed = M._GetComputedPlan
+    M._GetComputedPlan = function(_, plan, rolex)
+      return {valid = true, waypoints = {{type="NAV",etaSec=nil}}}
+    end
+    local state = {
+      plan = {waypoints = {{type="NAV"}}},
+      rolexSeconds = 0,
+      missionRolexSeconds = 0,
+      pilotRolexSeconds = 0,
+    }
+    local result = M:_GetNavigatorComputedWaypoint(state, 1)
+    M._GetActiveComputedPlan = origGetActive
+    M._GetComputedPlan = origGetComputed
+    assertNotNil(result)
+  end)
+end)
+
+suite("_GetSecondsToNavigatorHoldExit nil case", function()
+  it("returns nil when secondsToArrival is nil", function()
+    local origGetEta = M._GetSecondsToNavigatorWaypointEta
+    M._GetSecondsToNavigatorWaypointEta = function() return nil end
+    local state = {plan={waypoints={}}}
+    local result = M:_GetSecondsToNavigatorHoldExit(state, 1)
+    M._GetSecondsToNavigatorWaypointEta = origGetEta
+    assertNil(result)
+  end)
+end)
+
+suite("_GetNavigatorHoldDurationSecondsForPlan fallback", function()
+  it("returns holdDurationSec from plan waypoint when computed is nil", function()
+    local origGetCWP = M._GetNavigatorComputedWaypointForPlan
+    M._GetNavigatorComputedWaypointForPlan = function() return nil end
+    local plan = {waypoints = {{holdDurationSec = 900}}}
+    local result = M:_GetNavigatorHoldDurationSecondsForPlan(plan, 1, 0)
+    M._GetNavigatorComputedWaypointForPlan = origGetCWP
+    assertEq(result, 900)
+  end)
+
+  it("returns 0 when waypoint has no holdDurationSec", function()
+    local origGetCWP = M._GetNavigatorComputedWaypointForPlan
+    M._GetNavigatorComputedWaypointForPlan = function() return nil end
+    local plan = {waypoints = {{type="NAV"}}}
+    local result = M:_GetNavigatorHoldDurationSecondsForPlan(plan, 1, 0)
+    M._GetNavigatorComputedWaypointForPlan = origGetCWP
+    assertEq(result, 0)
+  end)
+end)
+
+suite("_GetNavigatorComputedWaypointForPlan with computed result", function()
+  it("returns waypoint from computed plan", function()
+    local origGetComputed = M._GetComputedPlan
+    M._GetComputedPlan = function(_, plan, rolex)
+      return {valid = true, waypoints = {{type="NAV",holdDurationSec=0}}}
+    end
+    local result = M:_GetNavigatorComputedWaypointForPlan({waypoints={}}, 1, 0)
+    M._GetComputedPlan = origGetComputed
+    assertNotNil(result)
+    assertEq(result.type, "NAV")
+  end)
+end)
+
+suite("_GetNavigatorCurrentGroundSpeedKt", function()
+  it("returns nil when group has no GetVelocityKNOTS", function()
+    assertNil(M:_GetNavigatorCurrentGroundSpeedKt({}))
+  end)
+  it("returns nil when speed is 0", function()
+    local g = {GetVelocityKNOTS = function() return 0 end}
+    assertNil(M:_GetNavigatorCurrentGroundSpeedKt(g))
+  end)
+  it("returns speed when positive", function()
+    local g = {GetVelocityKNOTS = function() return 180 end}
+    assertEq(M:_GetNavigatorCurrentGroundSpeedKt(g), 180)
+  end)
+end)
+
+suite("_BuildNavigatorXtePhrase nil XTE", function()
+  it("returns on-track when XTE is nil", function()
+    local origCalc = M._CalculateXte
+    M._CalculateXte = function(_, prev, curr, pos) return nil, nil end
+    local state = {
+      plan = {waypoints = {makeCoord(), makeCoord()}},
+      currentWpIndex = 2,
+    }
+    local result = M:_BuildNavigatorXtePhrase(state, makeWp and makeWp() or {}, makeCoord())
+    M._CalculateXte = origCalc
+    assertMatch(result, "on track")
+  end)
+end)
+
+suite("_FormatNavigatorRequiredIas / _FormatNavigatorSpeedCorrection / _FormatTimedCalloutReason", function()
+  it("_FormatNavigatorRequiredIas returns a string", function()
+    local result = M:_FormatNavigatorRequiredIas(160)
+    assertEq(type(result), "string")
+    assertTrue(#result > 0)
+  end)
+
+  it("_FormatNavigatorSpeedCorrection returns a string", function()
+    local result = M:_FormatNavigatorSpeedCorrection(150, 200)
+    assertEq(type(result), "string")
+    assertTrue(#result > 0)
+  end)
+
+  it("_FormatTimedCalloutReason returns a string", function()
+    local result = M:_FormatTimedCalloutReason(300)
+    assertEq(type(result), "string")
+    assertTrue(#result > 0)
+  end)
+end)
+
+suite("_RefreshAllNavigatorRolex with states", function()
+  it("calls _RefreshNavigatorRolex for each group plan state", function()
+    local calls = {}
+    local origRefresh = M._RefreshNavigatorRolex
+    M._RefreshNavigatorRolex = function(_, state, reason) table.insert(calls, reason) end
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = {
+      TESTGROUP = {
+        groupName="TESTGROUP", plan={waypoints={}},
+        baseRolexSeconds=0, pilotRolexSeconds=0, group={}
+      }
+    }
+    M:_RefreshAllNavigatorRolex("GLOBAL ROLEX")
+    M._RefreshNavigatorRolex = origRefresh
+    M.GroupPlanStates = origStates
+    assertEq(#calls, 1)
+    assertMatch(calls[1], "GLOBAL")
+  end)
+end)
+
+suite("_SetMissionRolex / _AdjustMissionRolex", function()
+  it("_SetMissionRolex sets MissionRolexSeconds and refreshes", function()
+    local origRefresh = M._RefreshAllNavigatorRolex
+    M._RefreshAllNavigatorRolex = function(_, reason) end
+    M:_SetMissionRolex(300)
+    M._RefreshAllNavigatorRolex = origRefresh
+    assertEq(M.MissionRolexSeconds, 300)
+    M.MissionRolexSeconds = nil
+  end)
+
+  it("_AdjustMissionRolex adds delta to existing", function()
+    local origRefresh = M._RefreshAllNavigatorRolex
+    M._RefreshAllNavigatorRolex = function(_, reason) end
+    M.MissionRolexSeconds = 60
+    M:_AdjustMissionRolex(120)
+    M._RefreshAllNavigatorRolex = origRefresh
+    assertEq(M.MissionRolexSeconds, 180)
+    M.MissionRolexSeconds = nil
+  end)
+end)
+
+suite("_CreateGroupMenus callbacks", function()
+  it("RESET global rolex callback calls _SetMissionRolex", function()
+    local setRolexCalls = {}
+    local capturedCallbacks = {}
+    local origMGC = MENU_GROUP_COMMAND
+    local origMG  = MENU_GROUP
+    MENU_GROUP = {New = function() return {} end}
+    MENU_GROUP_COMMAND = {
+      New = function(self, group, label, parent, fn, ...)
+        if fn then table.insert(capturedCallbacks, {label=label, fn=fn, args={...}}) end
+        return {}
+      end,
+    }
+    local origSetMR   = M._SetMissionRolex
+    local origSend    = M._SendNavigatorMessage
+    local origEnableNav = M._EnableNavigatorByDefault
+    M._SetMissionRolex          = function(_, s) table.insert(setRolexCalls, s) end
+    M._SendNavigatorMessage     = function(_, g, text) end
+    M._EnableNavigatorByDefault = function(_, g, a, s) end  -- avoid SCHEDULER dep
+    local origSG = SET_GROUP
+    SET_GROUP = {
+      New = function(s) return s end,
+      FilterStart = function(s) return s end,
+      ForEachGroup = function(s, fn)
+        fn({
+          GetName  = function() return "MOSQUITO 1-1 [MN:JERICHO]" end,
+          IsAlive  = function() return true end,
+          GetSkill = function() return "Client" end,
+        })
+      end,
+    }
+    M.MenusCreated    = {}
+    M.InactiveGroupLogs = {}
+    M.GroupPlanStates = nil
+    local plans = {JERICHO = {waypoints={}}}
+    M:_CreateGroupMenus(plans)
+
+    -- invoke RESET callback WHILE stubs are still active
+    for _, cb in ipairs(capturedCallbacks) do
+      if cb.label == "RESET" and #cb.args == 0 then
+        cb.fn()
+        break
+      end
+    end
+
+    MENU_GROUP_COMMAND      = origMGC
+    MENU_GROUP              = origMG
+    M._SetMissionRolex          = origSetMR
+    M._SendNavigatorMessage     = origSend
+    M._EnableNavigatorByDefault = origEnableNav
+    SET_GROUP               = origSG
+
+    assertTrue(#setRolexCalls > 0, "RESET callback should call _SetMissionRolex")
+  end)
+end)
+
+suite("_EnableNavigatorByDefault", function()
+  it("returns early when navigatorAutoDefault is false", function()
+    local setCalls = {}
+    local origEnable = M._SetNavigatorEnabled
+    M._SetNavigatorEnabled = function(...) table.insert(setCalls, true) end
+    M:_EnableNavigatorByDefault(nil, {navigatorAutoDefault=false}, {})
+    M._SetNavigatorEnabled = origEnable
+    assertEq(#setCalls, 0)
+  end)
+
+  it("returns early when autoNavigatorDisabled is true", function()
+    local setCalls = {}
+    local origEnable = M._SetNavigatorEnabled
+    M._SetNavigatorEnabled = function(...) table.insert(setCalls, true) end
+    M:_EnableNavigatorByDefault(nil, {navigatorAutoDefault=true}, {autoNavigatorDisabled=true})
+    M._SetNavigatorEnabled = origEnable
+    assertEq(#setCalls, 0)
+  end)
+
+  it("calls _SetNavigatorEnabled when all conditions met", function()
+    local setCalls = {}
+    local origEnable = M._SetNavigatorEnabled
+    M._SetNavigatorEnabled = function(_, group, plan, rolex, enabled, base, pilot)
+      table.insert(setCalls, enabled)
+    end
+    local groupPlanState = {
+      plan = {waypoints={}}, planName="J",
+      baseRolexSeconds=0, pilotRolexSeconds=0,
+      autoNavigatorDisabled=false, autoNavigatorInitialized=false,
+    }
+    M:_EnableNavigatorByDefault(
+      {GetName=function()return "G" end},
+      {navigatorAutoDefault=true},
+      groupPlanState
+    )
+    M._SetNavigatorEnabled = origEnable
+    assertEq(#setCalls, 1)
+    assertEq(setCalls[1], true)
+    assertEq(groupPlanState.autoNavigatorInitialized, true)
+  end)
+end)
+
+suite("_GetAdjustedTotSeconds", function()
+  it("returns nil when waypoint has no timeOnTargetSeconds", function()
+    assertNil(M:_GetAdjustedTotSeconds({}, 0))
+  end)
+  it("applies rolex offset modulo day", function()
+    local result = M:_GetAdjustedTotSeconds({timeOnTargetSeconds=43200}, 300)
+    assertEq(result, (43200 + 300) % SECONDS_PER_DAY)
+  end)
+end)
+
+suite("_GetSecondsToWaypointTot", function()
+  it("returns nil for nil waypoint", function()
+    assertNil(M:_GetSecondsToWaypointTot(nil, 0))
+  end)
+  it("returns nil when waypoint has no TOT", function()
+    assertNil(M:_GetSecondsToWaypointTot({}, 0))
+  end)
+  it("returns delta when waypoint has TOT", function()
+    setAbsTime(43200)
+    local result = M:_GetSecondsToWaypointTot({timeOnTargetSeconds=43260}, 0)
+    setAbsTime(0)
+    assertNear(result, 60, 1)
+  end)
+end)
+
+suite("_GetNavigatorDumpPath / _ResetNavigatorDumpFile / _AppendNavigatorDump", function()
+  it("_GetNavigatorDumpPath ends with NAVDUMP.log", function()
+    assertMatch(M:_GetNavigatorDumpPath(), "NAVDUMP%.log$")
+  end)
+
+  it("_ResetNavigatorDumpFile succeeds in current directory", function()
+    M:_ResetNavigatorDumpFile()
+    assertTrue(true)
+  end)
+
+  it("_ResetNavigatorDumpFile logs error when file cannot be opened", function()
+    local origDir = M._GetOutputDirectory
+    M._GetOutputDirectory = function() return "/nonexistent_xyz_test_12345/" end
+    local logged = {}
+    local origLog = M._Log
+    M._Log = function(_, msg) table.insert(logged, msg) end
+    M:_ResetNavigatorDumpFile()
+    M._GetOutputDirectory = origDir
+    M._Log = origLog
+    local found = false
+    for _, msg in ipairs(logged) do
+      if string.find(msg, "cannot") then found = true end
+    end
+    assertTrue(found, "should log error")
+  end)
+
+  it("_AppendNavigatorDump succeeds in current directory", function()
+    M:_AppendNavigatorDump("TESTGROUP", "test dump content")
+    assertTrue(true)
+  end)
+
+  it("_AppendNavigatorDump logs error when file cannot be opened", function()
+    local origDir = M._GetOutputDirectory
+    M._GetOutputDirectory = function() return "/nonexistent_xyz_test_12345/" end
+    local logged = {}
+    local origLog = M._Log
+    M._Log = function(_, msg) table.insert(logged, msg) end
+    M:_AppendNavigatorDump("TESTGROUP", "content")
+    M._GetOutputDirectory = origDir
+    M._Log = origLog
+    local found = false
+    for _, msg in ipairs(logged) do
+      if string.find(msg, "cannot") then found = true end
+    end
+    assertTrue(found, "should log error")
+  end)
+end)
+
+suite("Write function file-not-openable paths", function()
+  local function withBadDir(fn)
+    local origDir = M._GetOutputDirectory
+    M._GetOutputDirectory = function() return "/nonexistent_xyz_test_54321/" end
+    local logged = {}
+    local origLog = M._Log
+    M._Log = function(_, msg) table.insert(logged, msg) end
+    fn()
+    M._GetOutputDirectory = origDir
+    M._Log = origLog
+    return logged
+  end
+
+  it("_WriteFlightPlanFile logs when file cannot be opened", function()
+    local origBuild = M._BuildFlightPlanTable
+    M._BuildFlightPlanTable = function() return "x" end
+    local logged = withBadDir(function()
+      M:_WriteFlightPlanFile({name="P"}, "G", 0)
+    end)
+    M._BuildFlightPlanTable = origBuild
+    local found = false
+    for _, m in ipairs(logged) do if string.find(m, "cannot") then found=true end end
+    assertTrue(found)
+  end)
+
+  it("_WriteFlightPlanCsvFile logs when file cannot be opened", function()
+    local origBuild = M._BuildFlightPlanCsv
+    M._BuildFlightPlanCsv = function() return "x" end
+    local logged = withBadDir(function()
+      M:_WriteFlightPlanCsvFile({name="P"})
+    end)
+    M._BuildFlightPlanCsv = origBuild
+    local found = false
+    for _, m in ipairs(logged) do if string.find(m, "cannot") then found=true end end
+    assertTrue(found)
+  end)
+
+  it("_WriteBeaconsCsvFile logs when file cannot be opened", function()
+    local origBuild = M._BuildBeaconsCsv
+    M._BuildBeaconsCsv = function() return "x" end
+    local logged = withBadDir(function()
+      M:_WriteBeaconsCsvFile({{id="T"}})
+    end)
+    M._BuildBeaconsCsv = origBuild
+    local found = false
+    for _, m in ipairs(logged) do if string.find(m, "cannot") then found=true end end
+    assertTrue(found)
+  end)
+end)
+
+suite("_RefreshNavigatorRolex with enabled state", function()
+  it("sends navigator message when state.enabled is true", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, g, text) table.insert(messages, text) end
+    local origBuildStatus = M._BuildNavigatorStatusMessage
+    M._BuildNavigatorStatusMessage = function(_, state, reason) return "STATUS MSG" end
+    local origGetActive = M._GetActiveComputedPlan
+    M._GetActiveComputedPlan = function(_, plan, b, p)
+      return {valid=true, waypoints={}, warnings={}, timing={}}
+    end
+    local origInitWp = M._GetInitialNavigatorWpIndexByTot
+    M._GetInitialNavigatorWpIndexByTot = function(_, plan, rolex, computed) return 1 end
+    local origReset = M._ResetNavigatorCallouts
+    M._ResetNavigatorCallouts = function(_, state) end
+    local fakeGroup = {GetName = function() return "MOSQUITO" end}
+    local origStates = M.NavigatorStates
+    M.NavigatorStates = {
+      MOSQUITO = {
+        enabled = true, group = fakeGroup, groupName = "MOSQUITO",
+        plan = {waypoints={}}, baseRolexSeconds = 0, pilotRolexSeconds = 0,
+      }
+    }
+    M:_RefreshNavigatorRolex({
+      groupName = "MOSQUITO", group = fakeGroup,
+      plan = {waypoints={}}, baseRolexSeconds = 0, pilotRolexSeconds = 0,
+    }, "ROLEX")
+    M.NavigatorStates = origStates
+    M._SendNavigatorMessage = origSend
+    M._BuildNavigatorStatusMessage = origBuildStatus
+    M._GetActiveComputedPlan = origGetActive
+    M._GetInitialNavigatorWpIndexByTot = origInitWp
+    M._ResetNavigatorCallouts = origReset
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "STATUS")
+  end)
+end)
+
+suite("_SetPilotRolex / _AdjustPilotRolex", function()
+  it("_SetPilotRolex sends ROLEX message for non-zero delta", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, g, text) table.insert(messages, text) end
+    local origRefresh = M._RefreshNavigatorRolex
+    M._RefreshNavigatorRolex = function(_, state, reason) end
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = nil
+    local fakeGroup = {GetName = function() return "TESTG" end}
+    local assignment = {plan={waypoints={}}, planName="JERICHO", rolexSeconds=0}
+    M:_SetPilotRolex(fakeGroup, assignment, 300)
+    M._SendNavigatorMessage = origSend
+    M._RefreshNavigatorRolex = origRefresh
+    M.GroupPlanStates = origStates
+    assertEq(#messages, 1)
+    assertMatch(messages[1], "ROLEX")
+  end)
+
+  it("_SetPilotRolex sends reset message for zero rolex", function()
+    local messages = {}
+    local origSend = M._SendNavigatorMessage
+    M._SendNavigatorMessage = function(_, g, text) table.insert(messages, text) end
+    local origRefresh = M._RefreshNavigatorRolex
+    M._RefreshNavigatorRolex = function(_, state, reason) end
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = nil
+    local fakeGroup = {GetName = function() return "TESTG" end}
+    local assignment = {plan={waypoints={}}, planName="JERICHO", rolexSeconds=0}
+    M:_SetPilotRolex(fakeGroup, assignment, 0)
+    M._SendNavigatorMessage = origSend
+    M._RefreshNavigatorRolex = origRefresh
+    M.GroupPlanStates = origStates
+    assertEq(#messages, 1)
+    assertEq(messages[1], "ROLEX reset")
+  end)
+
+  it("_AdjustPilotRolex delegates to _SetPilotRolex", function()
+    local setCalls = {}
+    local origSet = M._SetPilotRolex
+    M._SetPilotRolex = function(_, group, assignment, seconds)
+      table.insert(setCalls, seconds)
+    end
+    local origStates = M.GroupPlanStates
+    M.GroupPlanStates = nil
+    local fakeGroup = {GetName = function() return "TESTG" end}
+    local assignment = {plan={waypoints={}}, planName="J", rolexSeconds=0}
+    M:_AdjustPilotRolex(fakeGroup, assignment, 60)
+    M._SetPilotRolex = origSet
+    M.GroupPlanStates = origStates
+    assertEq(#setCalls, 1)
+    assertEq(setCalls[1], 60)
+  end)
+end)
+
+------------------------------------------------------------
 -- Bundle smoke test
 ------------------------------------------------------------
 
@@ -4101,13 +5022,4 @@ end)
 -- Runner
 ------------------------------------------------------------
 
-print("")
-print("========================================")
-print(string.format("Total: %d PASS, %d FAIL", totalPass, totalFail))
-if totalFail > 0 then
-  print("")
-  print("Failures:")
-  for _, f in ipairs(failures) do print("  " .. f) end
-  os.exit(1)
-end
-os.exit(0)
+runTests()

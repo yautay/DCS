@@ -51,3 +51,8 @@ coverage.xml
 **/dynamic_load.lua
 **/frameworks.lua
 **/script.lua
+
+# LuaCov coverage artefacts
+.coverage/
+DCS_Missions/lib/*/luacov.stats.out
+DCS_Missions/lib/*/luacov.report.out
