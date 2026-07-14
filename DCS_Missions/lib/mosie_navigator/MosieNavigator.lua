@@ -2139,10 +2139,10 @@ function MosieNavigator:_FormatNavigatorRequiredIas(requiredIas)
   end
 
   if not self:_IsNavigatorRequiredSpeedAchievable(requiredIas) then
-    return self:_FormatSpeed(requiredIas) .. " kt >MAX"
+    return self:_FormatSpeed(requiredIas) .. " kts >MAX"
   end
 
-  return self:_FormatSpeed(requiredIas) .. " kt"
+  return self:_FormatSpeed(requiredIas) .. " kts"
 end
 
 function MosieNavigator:_FormatNavigatorSpeedCorrection(currentIas, requiredIas)
@@ -2167,6 +2167,28 @@ function MosieNavigator:_FormatNavigatorSpeedCorrection(currentIas, requiredIas)
   end
 
   return string.format("%.0f kt%s", delta, suffix)
+end
+
+function MosieNavigator:_FormatNavigatorScheduleStatus(secondsToPlanEta, actualSecondsToWaypoint)
+  if not secondsToPlanEta or not actualSecondsToWaypoint then
+    return "Schedule unknown."
+  end
+
+  local delta = actualSecondsToWaypoint - secondsToPlanEta
+  local absDelta = math.abs(delta)
+
+  if absDelta <= 30 then
+    return "We are on schedule."
+  end
+
+  local minutes = math.floor(absDelta / 60 + 0.5)
+  if minutes < 1 then minutes = 1 end
+
+  if delta > 0 then
+    return string.format("We are %d min slow.", minutes)
+  else
+    return string.format("We are %d min fast.", minutes)
+  end
 end
 
 function MosieNavigator:_BuildNavigatorCalloutMessage(calloutSeconds, message)
@@ -2454,18 +2476,15 @@ function MosieNavigator:_BuildNavigatorWaypointGuidanceMessage(state, prefix)
   local headingTrue, _, requiredIas = self:_CalculateWindCorrectedGuidance(groupCoordinate, waypoint, secondsToPlanEta, currentAltitudeFt)
   local headingMagnetic = self:_FormatMagneticHeading(headingTrue, groupCoordinate)
   local plannedAltitudeFt = self:_GetNavigatorWaypointAltitudeFt(state.plan, state.currentWpIndex)
-  local currentIas = currentGroundSpeedKt and self:_ConvertTasToIas(currentGroundSpeedKt, currentAltitudeFt) or nil
 
   return string.format(
-    "%s, DIST %.1f NM, PLAN ETA %s, ACT ETA %s, REQ IAS %s, SPD CORR %s. Steer %sM, height %s feet. %s",
+    "%s, DIST %.1f NM. %s Required IAS %s. Steer %sM, height %s feet. %s",
     prefix,
     distanceNm,
-    self:_FormatNavigatorEtaClock(secondsToPlanEta),
-    self:_FormatNavigatorEtaClock(actualSecondsToWaypoint),
+    self:_FormatNavigatorScheduleStatus(secondsToPlanEta, actualSecondsToWaypoint),
     self:_FormatNavigatorRequiredIas(requiredIas),
-    self:_FormatNavigatorSpeedCorrection(currentIas, requiredIas),
     headingMagnetic,
-    self:_FormatOptional(plannedAltitudeFt, "%.0f"),
+    self:_FormatOptional(plannedAltitudeFt),
     self:_BuildNavigatorXtePhrase(state, waypoint, groupCoordinate)
   )
 end
