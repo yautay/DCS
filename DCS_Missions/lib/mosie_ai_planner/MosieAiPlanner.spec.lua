@@ -1183,18 +1183,55 @@ suite("_BuildRoutePoint", function()
     assertNear(rp.alt, P:_FeetToMeters(500), 1e-3)
   end)
 
-  it("builds Landing point when airbase found for LANDING waypoint", function()
-    local coord = makeCoord({x = 0, y = 0, z = 0})
-    local fakeAb = {
-      GetName = function() return "Tangmere" end,
-      GetCoordinate = function() return makeCoord({x = 0, y = 0, z = 0}) end,
-      GetVec2 = function() return {x = 0, y = 0} end,
-      GetID = function() return 42 end,
-    }
-    local origFind = P._FindNearestLandingAirbase
-    P._FindNearestLandingAirbase = function(_, c) return fakeAb, 0 end
+  it("builds Turning Point at zone coordinate for LANDING waypoint", function()
+    local coord = makeCoord({x = 300, y = 0, z = 400})
     local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = coord}), resolvedAltFt = 200})
     local rp = P:_BuildRoutePoint(cwp, 140)
+    assertNotNil(rp)
+    assertEq(rp.type, "Turning Point")
+    assertEq(rp.action, "Fly Over Point")
+    assertEq(rp.x, 300)
+    assertEq(rp.y, 400)
+    assertNear(rp.alt, P:_FeetToMeters(200), 1e-3)
+    assertEq(rp.speed_locked, true)
+  end)
+
+  it("LANDING fly-over preserves planned altitude", function()
+    local coord = makeCoord({x = 0, y = 0, z = 0})
+    local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = coord}), resolvedAltFt = 500})
+    local rp = P:_BuildRoutePoint(cwp, 140)
+    assertNotNil(rp)
+    assertNear(rp.alt, P:_FeetToMeters(500), 1e-3)
+  end)
+end)
+
+suite("_BuildAirbaseLandRoutePoint", function()
+  local function makeFakeAirbase(x, z, id, name)
+    return {
+      GetName       = function() return name or "Tangmere" end,
+      GetCoordinate = function() return makeCoord({x = x or 0, y = 0, z = z or 0}) end,
+      GetVec2       = function() return {x = x or 0, y = z or 0} end,
+      GetID         = function() return id or 42 end,
+    }
+  end
+
+  it("returns nil when no airbase found", function()
+    local coord = makeCoord({x = 0, y = 0, z = 0})
+    local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = coord}), resolvedAltFt = 200})
+    local origFind = P._FindNearestLandingAirbase
+    P._FindNearestLandingAirbase = function(_, c) return nil, nil end
+    local rp = P:_BuildAirbaseLandRoutePoint(cwp)
+    P._FindNearestLandingAirbase = origFind
+    assertNil(rp)
+  end)
+
+  it("returns Land point at airbase coordinate when airbase found", function()
+    local zoneCoord = makeCoord({x = 100, y = 0, z = 200})
+    local fakeAb = makeFakeAirbase(500, 600, 42, "Tangmere")
+    local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = zoneCoord}), resolvedAltFt = 200})
+    local origFind = P._FindNearestLandingAirbase
+    P._FindNearestLandingAirbase = function(_, c) return fakeAb, 0 end
+    local rp = P:_BuildAirbaseLandRoutePoint(cwp)
     P._FindNearestLandingAirbase = origFind
     assertNotNil(rp)
     assertEq(rp.type, "Land")
@@ -1202,17 +1239,42 @@ suite("_BuildRoutePoint", function()
     assertEq(rp.airdromeId, 42)
     assertEq(rp.name, "Tangmere")
     assertEq(rp.speed_locked, false)
+    assertEq(rp.x, 500)
+    assertEq(rp.y, 600)
   end)
 
-  it("falls back to fly-over for LANDING when no airbase found", function()
+  it("preserves resolvedAltFt from computed waypoint", function()
     local coord = makeCoord({x = 0, y = 0, z = 0})
+    local fakeAb = makeFakeAirbase(0, 0, 7, "Biggin")
+    local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = coord}), resolvedAltFt = 300})
     local origFind = P._FindNearestLandingAirbase
-    P._FindNearestLandingAirbase = function(_, c) return nil, nil end
-    local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = coord}), resolvedAltFt = 200})
-    local rp = P:_BuildRoutePoint(cwp, 140)
+    P._FindNearestLandingAirbase = function(_, c) return fakeAb, 0 end
+    local rp = P:_BuildAirbaseLandRoutePoint(cwp)
     P._FindNearestLandingAirbase = origFind
     assertNotNil(rp)
-    assertEq(rp.type, "Turning Point")
+    assertNear(rp.alt, P:_FeetToMeters(300), 1e-3)
+  end)
+
+  it("falls back to zone coordinate when airbase coordinate unavailable", function()
+    local zoneCoord = makeCoord({x = 300, y = 0, z = 400})
+    local fakeAb = {
+      GetName = function() return "X" end,
+      GetCoordinate = function() return nil end,
+      GetVec2 = function() return nil end,
+      GetID   = function() return 9 end,
+    }
+    local cwp = makeCWp({source = makeWp({type = "LANDING", coordinate = zoneCoord}), resolvedAltFt = 0})
+    local origFind = P._FindNearestLandingAirbase
+    P._FindNearestLandingAirbase = function(_, c) return fakeAb, 0 end
+    local origGetCoord = P._GetAirbaseCoordinate
+    P._GetAirbaseCoordinate = function(_, ab) return nil end
+    local rp = P:_BuildAirbaseLandRoutePoint(cwp)
+    P._FindNearestLandingAirbase = origFind
+    P._GetAirbaseCoordinate = origGetCoord
+    assertNotNil(rp)
+    assertEq(rp.type, "Land")
+    assertEq(rp.x, 300)
+    assertEq(rp.y, 400)
   end)
 end)
 
@@ -1266,6 +1328,67 @@ suite("_BuildRoute", function()
     local route, mode, details = P:_BuildRoute(state, computed, 2, 180)
     assertTrue(#route >= 1, "route should have at least current pos + NAV waypoint")
     assertEq(type(mode), "string")
+  end)
+
+  it("appends final Land point after LANDING fly-over when airbase found", function()
+    local group = makeGroup({
+      coordinate = makeCoord({x = 0, y = 0, z = 0}),
+      altitude = 500,
+    })
+    local state = makeState({
+      assignmentOpts = {group = group, plan = {waypoints = {}}},
+      currentWpIndex = 2,
+    })
+    local landCoord = makeCoord({x = 1000, y = 0, z = 2000})
+    local abCoord   = makeCoord({x = 1100, y = 0, z = 2100})
+    local fakeAb = {
+      GetName       = function() return "Tangmere" end,
+      GetCoordinate = function() return abCoord end,
+      GetVec2       = function() return {x = 1100, y = 2100} end,
+      GetID         = function() return 42 end,
+    }
+    local takeoffCwp = makeCWp({source = makeWp({type = "TAKE_OFF", coordinate = makeCoord()}), resolvedAltFt = 0, legGsKt = 180})
+    local landCwp    = makeCWp({source = makeWp({type = "LANDING",  coordinate = landCoord}),  resolvedAltFt = 200, legGsKt = 140})
+    local computed   = makeComputed({takeoffCwp, landCwp})
+    local origFind = P._FindNearestLandingAirbase
+    P._FindNearestLandingAirbase = function(_, c) return fakeAb, 0 end
+    local route, _, _ = P:_BuildRoute(state, computed, 2, 140)
+    P._FindNearestLandingAirbase = origFind
+    -- route: [current pos] [LANDING fly-over at zone] [Land at airbase]
+    assertTrue(#route >= 3, "expected current pos + LANDING fly-over + Land, got " .. #route)
+    local flyOver = route[#route - 1]
+    local land    = route[#route]
+    assertEq(flyOver.type,   "Turning Point")
+    assertEq(flyOver.action, "Fly Over Point")
+    assertEq(flyOver.x,      1000)
+    assertEq(flyOver.y,      2000)
+    assertEq(land.type,   "Land")
+    assertEq(land.action, "Landing")
+    assertEq(land.airdromeId, 42)
+    assertEq(land.speed_locked, false)
+  end)
+
+  it("no final Land point appended when LANDING has no nearby airbase", function()
+    local group = makeGroup({
+      coordinate = makeCoord({x = 0, y = 0, z = 0}),
+      altitude = 500,
+    })
+    local state = makeState({
+      assignmentOpts = {group = group, plan = {waypoints = {}}},
+      currentWpIndex = 2,
+    })
+    local landCoord  = makeCoord({x = 1000, y = 0, z = 2000})
+    local takeoffCwp = makeCWp({source = makeWp({type = "TAKE_OFF", coordinate = makeCoord()}), resolvedAltFt = 0, legGsKt = 180})
+    local landCwp    = makeCWp({source = makeWp({type = "LANDING",  coordinate = landCoord}),  resolvedAltFt = 200, legGsKt = 140})
+    local computed   = makeComputed({takeoffCwp, landCwp})
+    local origFind = P._FindNearestLandingAirbase
+    P._FindNearestLandingAirbase = function(_, c) return nil, nil end
+    local route, _, _ = P:_BuildRoute(state, computed, 2, 140)
+    P._FindNearestLandingAirbase = origFind
+    -- route: [current pos] [LANDING fly-over] — no extra Land point
+    assertTrue(#route >= 2, "expected at least current pos + LANDING fly-over")
+    local last = route[#route]
+    assertEq(last.type, "Turning Point")
   end)
 end)
 

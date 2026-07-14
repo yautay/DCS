@@ -730,21 +730,13 @@ end
 -- ==== 08_route.lua ====
 
 function MosieAiPlanner:_BuildRoutePoint(computedWaypoint, speedKt)
-  local waypoint      = computedWaypoint.source or computedWaypoint
-  local landingAirbase = nil
-  local routeCoordinate = waypoint.coordinate
-
-  if waypoint.type == "LANDING" then
-    landingAirbase = self:_FindNearestLandingAirbase(waypoint.coordinate)
-    routeCoordinate = self:_GetAirbaseCoordinate(landingAirbase) or routeCoordinate
-  end
-
-  local vec2 = self:_CoordinateToVec2(routeCoordinate)
+  local waypoint = computedWaypoint.source or computedWaypoint
+  local vec2 = self:_CoordinateToVec2(waypoint.coordinate)
   if not vec2 then
     return nil
   end
 
-  local routePoint = {
+  return {
     x          = vec2.x,
     y          = vec2.y,
     alt        = self:_FeetToMeters(computedWaypoint.resolvedAltFt or waypoint.altitudeFt or 0),
@@ -755,24 +747,6 @@ function MosieAiPlanner:_BuildRoutePoint(computedWaypoint, speedKt)
     action     = "Fly Over Point",
     task       = {id = "ComboTask", params = {tasks = {}}},
   }
-
-  if waypoint.type == "LANDING" then
-    local airbaseId = self:_GetAirbaseId(landingAirbase)
-    if airbaseId then
-      routePoint.type        = "Land"
-      routePoint.action      = "Landing"
-      routePoint.speed_locked = false
-      routePoint.airdromeId  = airbaseId
-      local airbaseName = self:_GetAirbaseName(landingAirbase)
-      if airbaseName then
-        routePoint.name = airbaseName
-      end
-    else
-      self:_Log(string.format("LANDING waypoint has no nearby airdrome — routing as fly-over"))
-    end
-  end
-
-  return routePoint
 end
 
 function MosieAiPlanner:_BuildVec2RoutePoint(vec2, altitudeMeters, speedKt)
@@ -791,6 +765,45 @@ function MosieAiPlanner:_BuildVec2RoutePoint(vec2, altitudeMeters, speedKt)
     action     = "Turning Point",
     task       = {id = "ComboTask", params = {tasks = {}}},
   }
+end
+
+function MosieAiPlanner:_BuildAirbaseLandRoutePoint(computedWaypoint)
+  local waypoint = computedWaypoint.source or computedWaypoint
+  local landingAirbase = self:_FindNearestLandingAirbase(waypoint.coordinate)
+  if not landingAirbase then
+    self:_Log("LANDING: no nearby airdrome found — skipping final Land point")
+    return nil
+  end
+
+  local airbaseCoordinate = self:_GetAirbaseCoordinate(landingAirbase) or waypoint.coordinate
+  local vec2 = self:_CoordinateToVec2(airbaseCoordinate)
+  if not vec2 then
+    return nil
+  end
+
+  local routePoint = {
+    x            = vec2.x,
+    y            = vec2.y,
+    alt          = self:_FeetToMeters(computedWaypoint.resolvedAltFt or waypoint.altitudeFt or 0),
+    alt_type     = "BARO",
+    speed        = self:_KnotsToMps(self.Config.minSpeedKt),
+    speed_locked = false,
+    type         = "Land",
+    action       = "Landing",
+    task         = {id = "ComboTask", params = {tasks = {}}},
+  }
+
+  local airbaseId = self:_GetAirbaseId(landingAirbase)
+  if airbaseId then
+    routePoint.airdromeId = airbaseId
+  end
+
+  local airbaseName = self:_GetAirbaseName(landingAirbase)
+  if airbaseName then
+    routePoint.name = airbaseName
+  end
+
+  return routePoint
 end
 
 function MosieAiPlanner:_GetLineInterceptVec2(state, computed, startIndex)
@@ -891,6 +904,18 @@ function MosieAiPlanner:_BuildRoute(stateOrGroup, computed, startIndex, firstLeg
       local routePoint = self:_BuildRoutePoint(waypoint, speedKt)
       if routePoint then
         table.insert(route, routePoint)
+      end
+    end
+  end
+
+  local waypoints = computed.waypoints or {}
+  local lastWp = waypoints[#waypoints]
+  if lastWp then
+    local lastSource = lastWp.source or lastWp
+    if lastSource.type == "LANDING" then
+      local landPoint = self:_BuildAirbaseLandRoutePoint(lastWp)
+      if landPoint then
+        table.insert(route, landPoint)
       end
     end
   end
