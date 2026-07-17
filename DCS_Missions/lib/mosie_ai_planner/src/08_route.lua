@@ -192,13 +192,13 @@ function MosieAiPlanner:_BuildRoute(stateOrGroup, computed, startIndex, firstLeg
   return route, routeMode, routeDetails
 end
 
-function MosieAiPlanner:_RetaskRoute(state, reason, firstLegSpeedKt)
+function MosieAiPlanner:_RetaskRoute(state, reason, firstLegSpeedKt, computedOverride)
   local now = timer and timer.getTime() or 0
   if state.lastRetaskTime and now - state.lastRetaskTime < self.Config.retaskCooldownSeconds then
     return false
   end
 
-  local computed = self:_GetComputedPlan(state.assignment)
+  local computed = computedOverride or self:_GetComputedPlan(state.assignment)
   if not computed or not computed.valid then
     return false
   end

@@ -19,22 +19,23 @@ For the machine-readable contract (token grammar, CSV layout, forbidden encoding
    - 3.3 [Beacon zones — `MNB_`](#33-beacon-zones--mnb_)
    - 3.4 [Group assignment — `[MN:<PLAN>]`](#34-group-assignment--mnplan)
 4. [Waypoint Types](#4-waypoint-types)
-5. [How the Plan Is Computed](#5-how-the-plan-is-computed)
-   - 5.1 [Mandatory rules](#51-mandatory-rules)
-   - 5.2 [Altitude cascade](#52-altitude-cascade)
-   - 5.3 [Speed resolution](#53-speed-resolution)
-   - 5.4 [HOLD duration](#54-hold-duration)
-   - 5.5 [ETA = TOT](#55-eta--tot)
-   - 5.6 [ROLEX offset](#56-rolex-offset)
-   - 5.7 [Speed envelope and clamping](#57-speed-envelope-and-clamping)
-6. [Mosquito FB Mk VI Engine Settings and Fuel](#6-mosquito-fb-mk-vi-engine-settings-and-fuel)
-7. [Reading the Navlog](#7-reading-the-navlog)
-8. [CSV Export](#8-csv-export)
-9. [Common Patterns](#9-common-patterns)
-10. [Worked Examples](#10-worked-examples)
-11. [Troubleshooting](#11-troubleshooting)
-12. [Token Reference](#12-token-reference)
-13. [Warnings Glossary](#13-warnings-glossary)
+5. [Planned AI Attack Packages](#5-planned-ai-attack-packages)
+6. [How the Plan Is Computed](#6-how-the-plan-is-computed)
+   - 6.1 [Mandatory rules](#61-mandatory-rules)
+   - 6.2 [Altitude cascade](#62-altitude-cascade)
+   - 6.3 [Speed resolution](#63-speed-resolution)
+   - 6.4 [HOLD duration](#64-hold-duration)
+   - 6.5 [ETA = TOT](#65-eta--tot)
+   - 6.6 [ROLEX offset](#66-rolex-offset)
+   - 6.7 [Speed envelope and clamping](#67-speed-envelope-and-clamping)
+7. [Mosquito FB Mk VI Engine Settings and Fuel](#7-mosquito-fb-mk-vi-engine-settings-and-fuel)
+8. [Reading the Navlog](#8-reading-the-navlog)
+9. [CSV Export](#9-csv-export)
+10. [Common Patterns](#10-common-patterns)
+11. [Worked Examples](#11-worked-examples)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Token Reference](#13-token-reference)
+14. [Warnings Glossary](#14-warnings-glossary)
 
 ---
 
@@ -109,14 +110,14 @@ Metadata tokens after the first `__` may appear in any order.
 **`__T<HH:MM[:SS]>`** — planned ETA at this waypoint (local mission time, 24-hour clock).
 - `__T14:30`, `__T14:30:15` are both valid.
 - On `TAKE_OFF`: **brake release time** — mandatory.
-- On other waypoints: timing constraint used by the speed/HOLD algorithm (see §5).
+- On other waypoints: timing constraint used by the speed/HOLD algorithm (see §6).
 - There is no separate "TOT vs ETA" distinction; `__T` means both.
 
 **`__S<kt>`** — planned ground speed (no-wind TAS at MSL) in knots for the leg **arriving at** this waypoint.
 - `__S180`, `__S180KT` are both valid.
 - On `TAKE_OFF`: overrides the **default cruise GS for the whole plan** (propagates forward).
 - On later waypoints: overrides the default for that specific leg only, then reverts.
-- See §5.3 for interaction with `__T` constraints.
+- See §6.3 for interaction with `__T` constraints.
 
 ### 3.3 Beacon zones — `MNB_`
 
@@ -159,23 +160,88 @@ MOSQUITO 1-2 [MN:JERICHO]__R0:05
 | `INGRESS` | Initial Point (IP) — entry to the target area. |
 | `TARGET` | Strike/attack point. |
 | `EGRESS` | Exit from the target area. |
-| `HOLD` | Orbit point — absorbs timing slack (see §5.4). |
+| `HOLD` | Orbit point — absorbs timing slack (see §6.4). |
 | `LANDING` | Destination. Usually last in order. |
 
 `LAND` is accepted as a Mission Editor alias and is normalized to `LANDING`.
 
 ---
 
-## 5. How the Plan Is Computed
+## 5. Planned AI Attack Packages
 
-### 5.1 Mandatory rules
+This section describes the intended MosieAiPlanner attack-package contract. It is a planning
+contract for mission authors and is not part of the current navigator-only flight-plan
+calculation.
+
+Use a normal `TARGET` waypoint as the attack commit point, then point it at a reusable target
+package with `__P_<PACKAGE_ID>`:
+
+```text
+MN_<PLAN>_<ORDER>_TARGET_<NAME>__A<ALT_FT>__T<HH:MM>__S<GS_KT>__P_<PACKAGE_ID>
+```
+
+Define the actual target with a separate `MNT_` trigger zone:
+
+```text
+MNT_<PACKAGE_ID>_<PROFILE>[_<NAME>]
+```
+
+The `MNT_` zone position is the aim/search centre. Its radius is the CEP or search radius.
+The same `MNT_` package can be reused by multiple plans or multiple AI groups. `MNT_` package
+zones are data-only and must not be drawn on the F10 map.
+
+Example:
+
+```text
+MN_JERICHO_04_TARGET_Prison__A50__T14:30__S240__P_PRISON_BOMB
+MNT_PRISON_BOMB_DIVE_BOMB_Prison
+```
+
+Attack flow:
+
+1. AI follows the normal `MN_` route through `TAKE_OFF`, `NAV`, and `INGRESS`.
+2. The `TARGET` waypoint remains part of the route and controls timing, callouts, and attack-axis geometry.
+3. When the group reaches the `TARGET` waypoint radius, MosieAiPlanner enters `ATTACKING` mode.
+4. While `ATTACKING`, normal route retasks, ETA correction, and timing-orbit retasks are suspended.
+5. The attack task is built against the referenced `MNT_` target package, not against the `TARGET` waypoint coordinate.
+6. After weapon delivery or attack timeout, the group is routed to the next `EGRESS` waypoint.
+7. After `EGRESS`, normal route following and ETA correction resume.
+
+Planned profiles:
+
+| Profile | Meaning |
+|---|---|
+| `ILLUM` | Illuminate the target area. |
+| `DIVE_BOMB` | Unguided bomb attack from a dive. |
+| `LEVEL_BOMB` | Unguided level/carpet bombing attack. |
+| `ROCKETS` | Rocket attack. |
+| `STRAFE` | Cannon/gun strafe. |
+| `SEARCH_DESTROY` | Search hostile units in the `MNT_` radius and attack matching targets. |
+
+For `SEARCH_DESTROY`, target filters will be declared on the `MNT_` zone with additional
+tokens, for example:
+
+```text
+MNT_PRISON_AAA_SEARCH_DESTROY_AAA__U_AAA
+MNT_CONVOY_SEARCH_SEARCH_DESTROY_Convoy__U_TRUCK__U_APC
+```
+
+The initial abstract unit filters are planned as `__U_AAA`, `__U_TRUCK`, `__U_APC`, `__U_TANK`,
+`__U_ARTY`, `__U_INF`, `__U_SHIP`, and `__U_ANY`. By default, attack profiles expend all
+allowed weapons for that profile.
+
+---
+
+## 6. How the Plan Is Computed
+
+### 6.1 Mandatory rules
 
 1. The first waypoint **must** be `TAKE_OFF`.
 2. `TAKE_OFF` **must** have `__T` (brake release time). Without it, no navlog is generated.
 3. The last waypoint **must** be `LANDING`.
 4. If `TAKE_OFF` has no `__S`, the plan default cruise speed is 228 mph converted internally to 198.1 kt. `__S` tokens are always knots; individual waypoint `__S` tokens still override the arriving leg.
 
-### 5.2 Altitude cascade
+### 6.2 Altitude cascade
 
 `__A` on `TAKE_OFF` → default altitude for the whole plan. Each waypoint without its own
 `__A` inherits the previous waypoint's resolved altitude.
@@ -194,7 +260,7 @@ warning is emitted.
 
 Inherited speeds in the text navlog are marked with `*`, matching inherited altitude notation.
 
-### 5.3 Speed resolution
+### 6.3 Speed resolution
 
 Each leg is classified as either **FIXED** (the arriving WP has an explicit `__S`) or
 **FREE** (no explicit `__S`).
@@ -212,11 +278,11 @@ between consecutive anchors:
 
 **Segment containing a HOLD, or legs after the last anchor:**
 
-Each leg uses its own `__S` or the plan default GS. The HOLD absorbs timing slack (see §5.4).
+Each leg uses its own `__S` or the plan default GS. The HOLD absorbs timing slack (see §6.4).
 
 **Default GS.** Comes from `__S` on `TAKE_OFF` in knots, or from the Mosquito default cruise speed of 228 mph (198.1 kt) when `TAKE_OFF __S` is absent. It propagates forward until overridden by a later `__S` (which applies to that one leg only).
 
-### 5.4 HOLD duration
+### 6.4 HOLD duration
 
 A HOLD waypoint pauses the flight for some duration before the next leg. Duration is
 determined as follows:
@@ -231,12 +297,12 @@ determined as follows:
 The HOLD's arrival ETA is shown in the navlog row. The orbit fuel and exit time appear on
 a sub-line below the row.
 
-### 5.5 ETA = TOT
+### 6.5 ETA = TOT
 
 There is no distinction between ETA and TOT. `__T` is simply the planned time at that
 waypoint. The navlog shows `ETA` for all waypoints uniformly.
 
-### 5.6 ROLEX offset
+### 6.6 ROLEX offset
 
 A group's `__R` value shifts the T0 (TAKE_OFF `__T`) and all downstream ETAs by the same
 amount. It does not affect speed calculations — the whole plan is shifted uniformly.
@@ -247,7 +313,7 @@ token in the group name. The `__R` baseline is not displayed to pilots as active
 pilot changes from F10 are labeled as `ROLEX`. Pilot ROLEX shifts ETA values on top of the
 baseline computed plan and does not resample forecast wind or magnetic variation.
 
-### 5.7 Speed envelope and clamping
+### 6.7 Speed envelope and clamping
 
 All speed calculations are converted to IAS (knots) at the leg altitude and checked against
 the Mosquito envelope (`minIasKt` / `maxIasKt`). If a derived or declared speed falls outside
@@ -256,7 +322,7 @@ constraint may not be met when clamping occurs.
 
 ---
 
-## 6. Mosquito FB Mk VI Engine Settings and Fuel
+## 7. Mosquito FB Mk VI Engine Settings and Fuel
 
 The fuel estimate uses Merlin 25 engine settings defined in `MosieNavigator.Aircraft`.
 Manual fuel values are per engine; Mosie Navigator stores total aircraft burn for both engines.
@@ -293,7 +359,7 @@ The DCS fuel recommendation uses 3269 lb internal fuel and 7.215 lb/gal (200 gal
 
 ---
 
-## 7. Reading the Navlog
+## 8. Reading the Navlog
 
 Column meanings in the text navlog:
 
@@ -333,7 +399,7 @@ At the end of the navlog:
 
 ---
 
-## 8. CSV Export
+## 9. CSV Export
 
 Filenames written to `Logs/` (or `Config.flightPlanOutputDirectory`):
 
@@ -358,7 +424,7 @@ Toggle CSV output independently: `MosieNavigator.Config.generateCsvFiles = false
 
 ---
 
-## 9. Common Patterns
+## 10. Common Patterns
 
 ### "Just fly there" (no timing constraints)
 
@@ -425,7 +491,7 @@ MN_ALPHA_06_LANDING
 
 ---
 
-## 10. Worked Examples
+## 11. Worked Examples
 
 These eight examples correspond to the design test cases in `MosieNavigator.spec.lua`.
 All use 500 ft altitude at MSL unless noted. At 500 ft, IAS ≈ GS.
@@ -597,7 +663,7 @@ ETA ~12:05:46).
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -612,7 +678,7 @@ ETA ~12:05:46).
 
 ---
 
-## 12. Token Reference
+## 13. Token Reference
 
 | Token | Location | Format | Meaning |
 |---|---|---|---|
@@ -624,7 +690,9 @@ ETA ~12:05:46).
 | `__A<ft>` | After `__` | `__A500`, `__A500FT` | Altitude in feet |
 | `__T<time>` | After `__` | `__T12:00`, `__T12:00:30` | ETA/TOT |
 | `__S<kt>` | After `__` | `__S180`, `__S180KT` | Ground speed in knots |
+| `__P_<PACKAGE_ID>` | TARGET zone | `__P_PRISON_BOMB` | Planned AI attack package reference |
 | `MNB` | Zone prefix | literal | Marks a beacon zone |
+| `MNT` | Zone prefix | literal | Planned AI target package zone |
 | `[MN:PLAN]` | Group name | `[MN:JERICHO]` | Assigns group to plan |
 | `__R<offset>` | Group name | `__R5`, `__R0:05`, `__R0:00:30` | ROLEX delay in min / H:MM / H:MM:SS |
 
@@ -642,7 +710,7 @@ ETA ~12:05:46).
 
 ---
 
-## 13. Warnings Glossary
+## 14. Warnings Glossary
 
 | Warning text (partial) | Meaning |
 |---|---|

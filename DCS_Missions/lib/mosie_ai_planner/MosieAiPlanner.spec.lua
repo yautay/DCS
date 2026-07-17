@@ -50,7 +50,8 @@ TEST_MODE = true
 for _, name in ipairs({
   "src/01_config.lua", "src/02_util.lua", "src/03_time.lua",
   "src/04_io.lua",     "src/05_plans.lua", "src/06_geo.lua",
-  "src/07_zone.lua",   "src/08_route.lua", "src/09_control.lua",
+  "src/07_zone.lua",   "src/08_route.lua", "src/09_attack.lua",
+  "src/09_control.lua",
   "src/10_main.lua",
 }) do dofile(name) end
 
@@ -75,6 +76,7 @@ local function makeGroup(opts)
     _coordinate = opts.coordinate or makeCoord({x = 0, y = 0, z = 0}),
     _velocity  = opts.velocity  or 0,
     _altitude  = opts.altitude  or 1000,
+    _coalition = opts.coalition or coalition.side.BLUE,
     _routeCalls = routeCalls,
     _startUncontrolledCalled = false,
     _setTaskCalled           = false,
@@ -87,6 +89,7 @@ local function makeGroup(opts)
   function g:GetCoordinate() return self._coordinate end
   function g:GetVelocityKNOTS() return self._velocity end
   function g:GetAltitude()  return self._altitude end
+  function g:GetCoalition() return self._coalition end
   function g:Route(route, delay)
     table.insert(self._routeCalls, {route = route, delay = delay})
   end
@@ -143,6 +146,7 @@ local function makeWp(opts)
     legGsKt          = opts.legGsKt,
     legTasKt         = opts.legTasKt,
     speedKt          = opts.speedKt,
+    targetPackageId  = opts.targetPackageId,
     zone             = opts.zone,
     source           = opts.source,
   }
@@ -161,6 +165,21 @@ local function makeCWp(opts)
     speedKt         = opts.speedKt,
     coordinate      = opts.coordinate or src.coordinate,
   }
+end
+
+local function makeZone(name, coord, radius)
+  local zone = {
+    _name = name,
+    _coord = coord or makeCoord(),
+    _radius = radius or 500,
+  }
+  function zone:GetName() return self._name end
+  function zone:GetCoordinate() return self._coord end
+  function zone:GetRadius() return self._radius end
+  function zone:IsCoordinateInZone(coord)
+    return coord:Get2DDistance(self._coord) <= self._radius
+  end
+  return zone
 end
 
 local P = MosieAiPlanner
@@ -187,6 +206,8 @@ suite("Config defaults", function()
     assertEq(MosieAiPlanner.Config.lineInterceptMinDistanceNm, 10)
     assertEq(MosieAiPlanner.Config.lineInterceptXteThresholdNm, 1)
     assertEq(MosieAiPlanner.Config.lineInterceptLookaheadNm, 5)
+    assertEq(MosieAiPlanner.Config.targetPackageZonePrefix, "MNT_")
+    assertEq(MosieAiPlanner.Config.attackTimeoutSeconds, 120)
   end)
 
   it("pre-configured values are not overwritten", function()
@@ -710,6 +731,48 @@ suite("_DiscoverAssignments", function()
     local result = P:_DiscoverAssignments(plans)
     SET_GROUP = nil
     assertEq(#result, 0)
+  end)
+end)
+
+suite("Target package parsing and discovery", function()
+  it("parses package id, DIVE_BOMB profile, and name", function()
+    local package = P:_ParseTargetPackageZoneName("MNT_PRISON_BOMB_DIVE_BOMB_Prison")
+    assertNotNil(package)
+    assertEq(package.id, "PRISON_BOMB")
+    assertEq(package.profile, "DIVE_BOMB")
+    assertEq(package.name, "Prison")
+  end)
+
+  it("parses SEARCH_DESTROY unit filters", function()
+    local package = P:_ParseTargetPackageZoneName("MNT_PRISON_AAA_SEARCH_DESTROY_AAA__U_AAA__U_TRUCK")
+    assertNotNil(package)
+    assertEq(package.id, "PRISON_AAA")
+    assertEq(package.profile, "SEARCH_DESTROY")
+    assertEq(package.name, "AAA")
+    assertEq(#package.unitFilters, 2)
+    assertEq(package.unitFilters[1], "AAA")
+    assertEq(package.unitFilters[2], "TRUCK")
+  end)
+
+  it("rejects malformed target package zones", function()
+    assertNil(P:_ParseTargetPackageZoneName("MN_JERICHO_01_NAV"))
+    assertNil(P:_ParseTargetPackageZoneName("MNT_PRISON_BOMB_UNKNOWN_Profile"))
+  end)
+
+  it("discovers MNT zones into TargetPackages without drawing them", function()
+    local zone = makeZone("MNT_PRISON_BOMB_DIVE_BOMB_Prison", makeCoord({x = 100, z = 200}), 300)
+    local originalSetZone = SET_ZONE
+    SET_ZONE = {
+      New = function(self) return self end,
+      FilterPrefixes = function(self, prefixes) self._prefixes = prefixes return self end,
+      FilterStart = function(self) return self end,
+      ForEachZone = function(self, fn) fn(zone) end,
+    }
+    local packages = P:_DiscoverTargetPackages()
+    SET_ZONE = originalSetZone
+    assertNotNil(packages.PRISON_BOMB)
+    assertEq(packages.PRISON_BOMB.profile, "DIVE_BOMB")
+    assertEq(packages.PRISON_BOMB.radiusM, 300)
   end)
 end)
 
@@ -1705,6 +1768,137 @@ suite("_StartTimingOrbit / _StopTimingOrbit", function()
     assertEq(state.timingOrbit, false)
     assertNil(state.timingOrbitWaypointIndex)
     assertEq(state.aiMode, "DIRECT_WP")
+  end)
+end)
+
+suite("Attack package tasking", function()
+  local function makeAttackComputed(group, targetPackageId)
+    local ingress = makeCWp({source = makeWp({type = "INGRESS", order = 1, coordinate = makeCoord({x = -1000, y = 0, z = 0})}), resolvedAltFt = 500, legGsKt = 180})
+    local targetZone = makeZone("MN_TEST_02_TARGET_Prison__P_" .. targetPackageId, makeCoord({x = 0, y = 0, z = 0}), 500)
+    local target = makeCWp({
+      source = makeWp({
+        type = "TARGET",
+        order = 2,
+        name = "Prison",
+        coordinate = makeCoord({x = 0, y = 0, z = 0}),
+        zone = targetZone,
+        targetPackageId = targetPackageId,
+      }),
+      resolvedAltFt = 500,
+      legGsKt = 180,
+      etaSec = 43200,
+    })
+    local egress = makeCWp({source = makeWp({type = "EGRESS", order = 3, coordinate = makeCoord({x = 5000, y = 0, z = 0})}), resolvedAltFt = 500, legGsKt = 180, etaSec = 43300})
+    local landing = makeCWp({source = makeWp({type = "LANDING", order = 4, coordinate = makeCoord({x = 8000, y = 0, z = 0})}), resolvedAltFt = 500, legGsKt = 180, etaSec = 43400})
+    local computed = makeComputed({ingress, target, egress, landing})
+    local plan = {waypoints = {ingress.source, target.source, egress.source, landing.source}}
+    local state = makeState({assignmentOpts = {group = group, plan = plan}, currentWpIndex = 2})
+    return state, computed
+  end
+
+  it("starts DIVE_BOMB attack when AI reaches TARGET commit zone", function()
+    local group = makeGroup({airborne = true, coordinate = makeCoord({x = 0, y = 0, z = 0})})
+    local state, computed = makeAttackComputed(group, "PRISON_BOMB")
+    P.TargetPackages = {
+      PRISON_BOMB = {
+        id = "PRISON_BOMB",
+        profile = "DIVE_BOMB",
+        coordinate = makeCoord({x = 1000, y = 0, z = 0}),
+        radiusM = 250,
+      }
+    }
+    setTime(10)
+    local started = P:_MaybeStartAttack(state, computed, computed.waypoints[2])
+    setTime(0)
+    assertEq(started, true)
+    assertEq(state.aiMode, "ATTACKING")
+    assertNotNil(state.attack)
+    assertEq(group._setTaskCalled, true)
+    assertEq(group._lastTask.id, "ComboTask")
+    assertEq(group._lastTask.params.tasks[1].id, "Bombing")
+    assertEq(group._lastTask.params.tasks[1].params.attackType, "Dive")
+  end)
+
+  it("routes to next EGRESS after attack timeout", function()
+    local group = makeGroup({airborne = true, coordinate = makeCoord({x = 0, y = 0, z = 0})})
+    local state, computed = makeAttackComputed(group, "PRISON_BOMB")
+    state.attack = {
+      startedAt = 0,
+      timeoutSeconds = 10,
+      targetWpIndex = 2,
+      egressWpIndex = 3,
+      packageId = "PRISON_BOMB",
+      profile = "DIVE_BOMB",
+    }
+    setTime(11)
+    local active = P:_TickAttack(state, computed)
+    setTime(0)
+    assertEq(active, true)
+    assertNil(state.attack)
+    assertEq(state.currentWpIndex, 3)
+    assertEq(#group._routeCalls, 1)
+  end)
+
+  it("ILLUM triggers illumination and immediately routes egress", function()
+    local group = makeGroup({airborne = true, coordinate = makeCoord({x = 0, y = 0, z = 0})})
+    local state, computed = makeAttackComputed(group, "PRISON_ILLUM")
+    P.TargetPackages = {
+      PRISON_ILLUM = {
+        id = "PRISON_ILLUM",
+        profile = "ILLUM",
+        coordinate = makeCoord({x = 1000, y = 0, z = 0}),
+        radiusM = 250,
+      }
+    }
+    local originalIllum = trigger.action.illuminationBomb
+    local illumCalled = false
+    trigger.action.illuminationBomb = function(vec3, power) illumCalled = true end
+    local started = P:_MaybeStartAttack(state, computed, computed.waypoints[2])
+    trigger.action.illuminationBomb = originalIllum
+    assertEq(started, true)
+    assertEq(illumCalled, true)
+    assertNil(state.attack)
+    assertEq(state.currentWpIndex, 3)
+    assertEq(#group._routeCalls, 1)
+  end)
+
+  it("SEARCH_DESTROY builds AttackUnit tasks for hostile matching units", function()
+    local group = makeGroup({airborne = true, coalition = coalition.side.BLUE})
+    local package = {
+      id = "PRISON_AAA",
+      profile = "SEARCH_DESTROY",
+      coordinate = makeCoord({x = 0, y = 0, z = 0}),
+      radiusM = 1000,
+      unitFilters = {"AAA"},
+    }
+    local hostileAaa = {
+      getID = function() return 101 end,
+      getCoalition = function() return coalition.side.RED end,
+      isExist = function() return true end,
+      getLife = function() return 10 end,
+      getDesc = function() return {category = Unit.Category.GROUND_UNIT, attributes = {AAA = true}} end,
+      getTypeName = function() return "Flak18" end,
+    }
+    local friendlyAaa = {
+      getID = function() return 102 end,
+      getCoalition = function() return coalition.side.BLUE end,
+      isExist = function() return true end,
+      getLife = function() return 10 end,
+      getDesc = function() return {category = Unit.Category.GROUND_UNIT, attributes = {AAA = true}} end,
+      getTypeName = function() return "Flak18" end,
+    }
+    local originalSearch = world.searchObjects
+    world.searchObjects = function(category, area, cb)
+      cb(hostileAaa)
+      cb(friendlyAaa)
+    end
+    local state = makeState({assignmentOpts = {group = group, plan = {waypoints = {}}}})
+    local tasks, foundCount = P:_BuildSearchDestroyTask(state, package)
+    world.searchObjects = originalSearch
+    assertEq(foundCount, 1)
+    assertEq(#tasks, 1)
+    assertEq(tasks[1].id, "AttackUnit")
+    assertEq(tasks[1].params.unitId, 101)
   end)
 end)
 

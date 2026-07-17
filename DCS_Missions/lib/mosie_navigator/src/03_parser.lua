@@ -54,6 +54,7 @@ function MosieNavigator:_ParseWaypointMetadata(metadataTokens)
     local timeText = string.match(token, "^T(.+)$")
     local speed = string.match(upperToken, "^S(%d+)$")
       or string.match(upperToken, "^S(%d+)KT$")
+    local targetPackageId = string.match(token, "^[Pp]_(.+)$")
 
     if altitude then
       metadata.altitudeFt = tonumber(altitude)
@@ -64,6 +65,8 @@ function MosieNavigator:_ParseWaypointMetadata(metadataTokens)
       end
     elseif speed then
       metadata.speedKt = tonumber(speed)
+    elseif targetPackageId then
+      metadata.targetPackageId = targetPackageId
     else
       self:_Log("Ignoring unknown waypoint metadata token: " .. token)
     end
@@ -124,6 +127,7 @@ function MosieNavigator:_ParseWaypointZoneName(zoneName)
     nameExplicit = nameExplicit,
     altitudeFt = metadata.altitudeFt,
     speedKt = metadata.speedKt,
+    targetPackageId = metadata.targetPackageId,
     timeOnTarget = metadata.timeOnTarget,
     timeOnTargetSeconds = metadata.timeOnTargetSeconds,
   }

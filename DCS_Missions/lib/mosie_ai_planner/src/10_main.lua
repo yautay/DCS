@@ -4,6 +4,7 @@ function MosieAiPlanner:Tick()
   end
 
   local plans = self:_GetPlans()
+  self.TargetPackages = self:_DiscoverTargetPackages()
   local assignments = self:_DiscoverAssignments(plans)
   self.States = self.States or {}
 

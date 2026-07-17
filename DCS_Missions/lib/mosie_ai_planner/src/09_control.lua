@@ -211,12 +211,22 @@ function MosieAiPlanner:_TickAssignment(state)
     return
   end
 
+  if self:_TickAttack(state, computed) then
+    self:_TickFlightSampleDump(state, computed)
+    return
+  end
+
   local waypoint = computed.waypoints[state.currentWpIndex]
   if not waypoint then
     return
   end
 
   if self:_TickHold(state, computed, waypoint) then
+    self:_TickFlightSampleDump(state, computed)
+    return
+  end
+
+  if self:_MaybeStartAttack(state, computed, waypoint) then
     self:_TickFlightSampleDump(state, computed)
     return
   end

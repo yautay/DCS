@@ -10,6 +10,34 @@ function MosieAiPlanner:_GetNavigator()
   return MosieNavigator
 end
 
+function MosieAiPlanner:_SplitPlain(value, delimiter)
+  local result = {}
+  local startIndex = 1
+
+  while true do
+    local delimiterStart, delimiterEnd = string.find(value or "", delimiter, startIndex, true)
+    if not delimiterStart then
+      table.insert(result, string.sub(value or "", startIndex))
+      break
+    end
+
+    table.insert(result, string.sub(value or "", startIndex, delimiterStart - 1))
+    startIndex = delimiterEnd + 1
+  end
+
+  return result
+end
+
+function MosieAiPlanner:_Join(tokens, startIndex, endIndex, separator)
+  local result = {}
+  local lastIndex = endIndex or #tokens
+  for index = startIndex, lastIndex do
+    table.insert(result, tokens[index])
+  end
+
+  return table.concat(result, separator or "")
+end
+
 function MosieAiPlanner:_ExtractPlanFromGroupName(groupName)
   return string.match(groupName or "", self.Config.groupPlanTagPattern)
 end

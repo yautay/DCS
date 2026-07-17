@@ -3,6 +3,7 @@ MosieAiPlanner = MosieAiPlanner or {}
 local MosieAiPlannerConfigDefaults = {
   enabled = true,
   groupPlanTagPattern = "%[MN:([%w%-]+)%]",
+  targetPackageZonePrefix = "MNT_",
   tickInterval = 15,
   retaskCooldownSeconds = 30,
   flightSampleIntervalSeconds = 15,
@@ -15,6 +16,10 @@ local MosieAiPlannerConfigDefaults = {
   lineInterceptMinDistanceNm = 10,
   lineInterceptXteThresholdNm = 1,
   lineInterceptLookaheadNm = 5,
+  attackTimeoutSeconds = 120,
+  attackStrafeLengthMeters = 400,
+  attackCarpetLengthMeters = 500,
+  searchDestroyMaxTargets = 4,
 }
 
 MosieAiPlanner.Config = MosieAiPlanner.Config or {}
