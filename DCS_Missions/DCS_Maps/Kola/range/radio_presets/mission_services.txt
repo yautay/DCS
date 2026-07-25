@@ -1,0 +1,71 @@
+MISSION SERVICES
+================
+
+Carrier button plan:
+  Button 1  = Tower / Paddles / LSO
+  Button 2  = Departure
+  Button 3  = Strike
+  Button 4  = Red Crown
+  Button 15 = CCA Final A
+  Button 16 = Marshal / AIRBOSS
+  Button 17 = CCA Final B
+
+AWACS: Wizard
+  FREQUENCY: 250.000 AM
+  ROLE: CVN recovery AWACS
+  TACAN: n/a
+  ICLS: n/a
+  LINK4/ACLS: not configured in mission scripts
+
+AWACS: Darkstar
+  FREQUENCY: 249.000 AM
+  ROLE: Blue C3I AWACS
+  TACAN: n/a
+  ICLS: n/a
+  LINK4/ACLS: not configured in mission scripts
+
+AAR: Navy One
+  FREQUENCY: 252.500 AM
+  ROLE: CVN recovery tanker
+  TACAN: 1Y RCV
+  ICLS: n/a
+  LINK4/ACLS: n/a
+
+AAR: Texaco One
+  FREQUENCY: 252.300 AM
+  ROLE: Boom tanker
+  TACAN: 52Y TX1
+  ICLS: n/a
+  LINK4/ACLS: n/a
+
+AAR: Shell One
+  FREQUENCY: 252.100 AM
+  ROLE: Probe-and-drogue tanker
+  TACAN: 51Y SH1
+  ICLS: n/a
+  LINK4/ACLS: n/a
+
+CARRIER: CVN-75
+  FREQUENCY: 127.500 AM DCS ATC
+  ROLE: Supercarrier
+  TACAN: 75X CVN
+  ICLS: 11 C75
+  LINK4/ACLS: not configured in mission scripts
+  BUTTONS:
+    Button  1: 260.000 AM - Tower / Paddles / LSO
+    Button  2: 260.100 AM - Departure
+    Button  3: 249.100 AM - Strike
+    Button  4: 258.200 AM - Red Crown
+    Button 15: 260.200 AM - CCA Final A
+    Button 16: 260.300 AM - Marshal / AIRBOSS
+    Button 17: 260.400 AM - CCA Final B
+
+CARRIER: LHA-1
+  FREQUENCY: 128.500 AM DCS ATC
+  ROLE: Amphibious assault ship
+  TACAN: 51X LHA
+  ICLS: 13 LHA
+  LINK4/ACLS: not configured in mission scripts
+  BUTTONS:
+    Button  1: 261.000 AM - Tower / Paddles / LSO
+    Button 16: 261.300 AM - Marshal / AIRBOSS

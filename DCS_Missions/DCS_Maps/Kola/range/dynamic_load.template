@@ -1,0 +1,38 @@
+env.info( 'CUSTOM *** DYNAMIC LOAD SCRIPTS *** ' )
+if __KOLA_RANGE_LOADED then
+	env.info( 'CUSTOM *** KOLA RANGE ALREADY LOADED - SKIPPING DYNAMIC LOAD *** ' )
+	return
+end
+__KOLA_RANGE_LOADED = true
+
+local base = _G
+
+FRAMEWORKS_PLACEHOLDER
+SCRIPTS_PLACEHOLDER
+
+__Script = {}
+__Script.Include = function(IncludeFile)
+	if not __Script.Includes[IncludeFile] then
+		__Script.Includes[IncludeFile] = IncludeFile
+		local f = assert(base.loadfile(IncludeFile))
+		if f == nil then
+			error ("ERROR Could not load Script file " .. IncludeFile )
+		else
+			env.info( "CUSTOM file -> " .. IncludeFile .. " dynamically loaded." )
+			return f()
+		end
+	end
+end
+
+__Script.Includes = {}
+
+for i, v in pairs(FRAMEWORKS) do
+	__Script.Include(v)
+end
+
+for i, v in pairs(SCRIPTS) do
+	__Script.Include(v)
+end
+
+BASE:TraceOnOff(true)
+env.info( 'CUSTOM *** DYNAMIC LOAD END *** ' )
