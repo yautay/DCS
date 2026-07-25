@@ -19,7 +19,7 @@ scripts_order["\n--1.1 - VARIABLES\n"] = PATH_SCRIPT_VARIABLES
 scripts_order["\n--1.2 - COMMON\n"] = PATH_SCRIPT_COMMON
 scripts_order["\n--2.2 - CLIENT\n"] = PATH_SCRIPT_CLIENTS
 scripts_order["\n--3.2 - AIRBOSS\n"] = PATH_SCRIPT_AIRBOSS
-scripts_order["\n--3.3 - Base\n"] = PATH_SCRIPT_RANGE
+scripts_order["\n--3.3 - Range\n"] = PATH_SCRIPT_RANGE
 
 scripts_order["\n--AW.1 - AW AKROTIRI\n"] = PATH_SCRIPT_AW_AKROTIRI
 scripts_order["\n--TANKERS BLUE\n"] = PATH_SCRIPT_TANKERS_BLUE
