@@ -55,6 +55,7 @@ cvn_75_airboss:Load()
 cvn_75_airboss:SetAutoSave()
 cvn_75_airboss:SetTrapSheet(SHEET_PATH, nil)
 cvn_75_airboss:SetHandleAION()
+cvn_75_airboss:SetFunkManOn(10042, "127.0.0.1")
 if SERVER then
     cvn_75_airboss:SetMPWireCorrection()
 end
@@ -96,6 +97,7 @@ lha_1_airboss:SetDefaultPlayerSkill("Naval Aviator")
 lha_1_airboss:SetMenuRecovery(30, 7, true)
 lha_1_airboss:SetDespawnOnEngineShutdown()
 lha_1_airboss:SetHandleAION()
+lha_1_airboss:SetFunkManOn(10042, "127.0.0.1")
 lha_1_airboss:Start()
 
 function lha_1_airboss:OnAfterStart(From, Event, To)

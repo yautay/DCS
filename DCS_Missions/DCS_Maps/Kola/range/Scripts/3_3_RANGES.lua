@@ -20,6 +20,7 @@
  RangeAG:SetTargetSheet(SHEET_PATH, "Range-")
  RangeAG:SetAutosaveOn()
  RangeAG:SetMessageTimeDuration(10)
+ RangeAG:SetFunkManOn(10042, "127.0.0.1")
  RangeAG:Start()
 
  function targets_coordinates(list_targets_names)
